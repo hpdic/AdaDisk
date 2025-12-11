@@ -1,6 +1,9 @@
 # HPDIC MOD
 
 ## Compilation
+The original DiskANN didn't work for AMD CPUs due to the use of some Intel-specific optimizations.
+We have modified the build scripts to allow compilation on AMD CPUs by replacing Intel MKL with OpenBLAS.
+To build the modified DiskANN library, follow these steps:
 ```bash
 bash build_shared.sh
 bash patch_and_build.sh
