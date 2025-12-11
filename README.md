@@ -1,3 +1,30 @@
+# HPDIC MOD for AMD CPUs
+```bash
+bash build_shared.sh
+bash patch_and_build.sh
+cd examples
+g++ -std=c++17 -march=native hello_hpdic.cpp \
+    -I../include -L../build/src -ldiskann -laio -o hello_diskann.bin
+./hello_diskann 
+# compiler+linker smoke test OK
+g++ -std=c++17 -march=native hello_diskann_index.cpp \
+    -I../include \
+    -L../build/src \
+    -Wl,-rpath=../build/src \
+    -ldiskann -laio -lgomp -lpthread \
+    -o hello_diskann_index.bin
+./hello_diskann_index.bin
+# Initializing Index...
+# L2: Using AVX2 distance computation DistanceL2Float
+# Building index...
+# Using only first 1000 from file.. 
+# Starting index build with 1000 points... 
+# 0% of index build completed.Starting final cleanup..done. Link time: 1.36068s
+# Index built with degree: max:32  avg:32  min:32  count(deg<2):0
+# Searching...
+# Top-1 ID: 64 Dist: 8.40254
+```
+
 # DiskANN
 
 [![DiskANN Main](https://github.com/microsoft/DiskANN/actions/workflows/push-test.yml/badge.svg?branch=main)](https://github.com/microsoft/DiskANN/actions/workflows/push-test.yml)
