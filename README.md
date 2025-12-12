@@ -48,11 +48,11 @@ make -j
 ./agent_query
 cd ..
 # Run multiple agents:
-python agent_AdaDisk.py
+python agent_AdaDisk.py # --model llama4:maverick
 ```
 
 ## Run singular DiskANN programs with CPP
-If you prefer cmake, do the regular things; otherwise you can test it by directly compiling the examples:
+If you prefer *cmake*, do the regular things (e.g., `mkdir build; cd build; cmake ..; make -j;`); otherwise you can test it by directly compiling the examples:
 ```bash
 cd examples
 g++ -std=c++17 -march=native hello_hpdic.cpp \
