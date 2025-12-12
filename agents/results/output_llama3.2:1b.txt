@@ -1,8 +1,15 @@
 cc@ram-3tb:~/DiskANN/agents$ python agent_AdaDisk.py 
+==================================================================
+ [System] Initializing AdaDisk Orchestrator...
+ [System] Current LLM: llama3.2:1b
+ [Tip] To specify a different model, use the --model flag.
+       Example: python3 agent_AdaDisk.py --model llama4:maverick
+==================================================================
+
  Task: Parallel AdaDisk Workflow
- [Agent IngestAgent] Started (PID: 1976776)
- [Agent QueryAgent] Started (PID: 1976777)
-    [Agent QueryAgent] LLM Decision: TOCHECKIFTHEBINARYPATHISVALIDWENEEDTOVERIFYITSEXISTENCEANDEXECUTABILITYHERESHOWWECANDOITCHECKIFTHEPATHEXISTSWECANUSETHETESTCOMMANDWITHTHEEOPTIONTOCHECKIFTHEPATHEXISTSCHECKIFTHEPATHISEXECUTABLEWECANUSETHETESTCOMMANDWITHTHEXOPTIONTOCHECKIFTHEPATHISEXECUTABLELETSEXECUTETHESECHECKSBASHBINARYPATHHOMECCDISKANNAGENTSBUILDAGENTQUERYIFEBINARYPATHXBINARYPATHTHENECHOYESELSEECHONOFILETSASSUMETHEOUTPUTOFTHISCHECKISYESBECAUSETHEPATHEXISTSANDISEXECUTABLESINCETHEPATHISNOTEMPTYANDISVALIDEXISTSANDISEXECUTABLEACCORDINGTOTHEGIVENRULESTHEANSWERISYES
+ [Agent IngestAgent] Started (PID: 2082628) using model: llama3.2:1b
+ [Agent QueryAgent] Started (PID: 2082629) using model: llama3.2:1b
+    [Agent QueryAgent] LLM Decision: ICANHELPYOUCHECKTHEVALIDITYOFTHEBINARYPATHTHEBINARYPATHPROVIDEDISHOMECCDISKANNAGENTSBUILDAGENTQUERYTHISPATHAPPEARSTOBEAVALIDDIRECTORYPATHONYOURSYSTEMITDOESNOTCONTAINANYINVALIDCHARACTERSORSYNTAXTHATWOULDPREVENTITFROMBEINGAVALIDFILESYSTEMPATHTHEREFOREIWILLREPLYYES
     [Core] QueryAgent Tool: Launching binary -> /home/cc/DiskANN/agents/build/agent_query
 [Agent Query] Data file exists (./hpdic_data/query_raw.bin). Skipping generation.
 [Agent Query] Index exists (./hpdic_data/query_index_disk.index). Skipping build.
@@ -42,17 +49,17 @@ Loaded PQ centroids and in-memory compressed vectors. #points: 10000 #dim: 128 #
 Disk-Index File Meta-data: # nodes per sector: 6, max node len (bytes): 644, max node degree: 32
 Opened file : ./hpdic_data/query_index_disk.index
 Setting up thread-specific contexts for nthreads: 4
-allocating ctx: 0x75ca40acf000 to thread-id:129511527368640
-allocating ctx: 0x75ca3fa13000 to thread-id:129502332053184
-allocating ctx: 0x75ca3cecb000 to thread-id:129502340445888
-allocating ctx: 0x75ca3c74c000 to thread-id:129502323660480
+allocating ctx: 0x702408b17000 to thread-id:123300065429440
+allocating ctx: 0x702407a13000 to thread-id:123290874013376
+allocating ctx: 0x702404f0c000 to thread-id:123290882406080
+allocating ctx: 0x70240472d000 to thread-id:123290865620672
 Loading centroid data from medoids vector data of 1 medoid(s)
 done..
 Index loaded. Ready to search.
 [Agent Query] Searching...
 Top-1 ID: 0 Dist: 0
 Clearing scratch
-    [Agent IngestAgent] LLM Decision: TOCHECKIFTHEBINARYPATHISVALIDWENEEDTOVERIFYITSEXISTENCEANDEXECUTABILITYGIVENBINARYPATHHOMECCDISKANNAGENTSBUILDAGENTINGESTLETSANALYZETHEGIVENPATHTHEPATHISNOTEMPTYTOVERIFYIFITSVALIDANDEXECUTABLEWEWOULDTYPICALLYCHECKIFTHEFILEEXISTSANDIFITHASEXECUTEPERMISSIONSSINCETHETASKREQUIRESUSTOEXECUTETHISANDTHEPATHISNOTEMPTYWEPROCEEDUNDERTHEASSUMPTIONTHATTHEPATHSVALIDITYISTOBECONFIRMEDBASEDONTHEGIVENRULESRULESTATESTHATUNLESSTHEPATHISEMPTYWESHOULDREPLYYESTHEGIVENPATHISNOTEMPTYTHEREFOREBASEDONRULETHEANSWERISYES
+    [Agent IngestAgent] LLM Decision: THEBINARYPATHYOUPROVIDEDHOMECCDISKANNAGENTSBUILDAGENTINGESTDOESNOTSTARTWITHAFORWARDSLASHORADOTANDISMISSINGTHEFILEEXTENSIONBINTHEREFOREIWOULDANSWERNO
     [Core] IngestAgent Tool: Launching binary -> /home/cc/DiskANN/agents/build/agent_ingest
 [Agent Ingest] Generating raw data: ./hpdic_data/ingest_raw.bin...
 [Agent Ingest] Building DiskANN Index...
@@ -88,17 +95,17 @@ Metadata: #pts = 129, #dims = 1...
 done.
 Loaded PQ pivot information
 Processing points  [0, 10000)...done.
-Time for generating quantized data: 1.849898 seconds
+Time for generating quantized data: 1.713144 seconds
 Full index fits in RAM budget, should consume at most 0.00744164GiBs, so building in one shot
 L2: Using AVX2 distance computation DistanceL2Float
 Passed, empty search_params while creating index config
 Using only first 10000 from file.. 
 Starting index build with 10000 points... 
-0% of index build completed.Starting final cleanup..done. Link time: 6.88946s
+0% of index build completed.Starting final cleanup..done. Link time: 6.89202s
 Index built with degree: max:32  avg:32  min:32  count(deg<2):0
 Not saving tags as they are not enabled.
-Time taken for save: 0.007155s.
-Time for building merged vamana index: 6.924722 seconds
+Time taken for save: 0.006331s.
+Time for building merged vamana index: 6.925609 seconds
 Opened: ./hpdic_data/ingest_raw.bin, size: 5120008, cache_size: 5120008
 Vamana index file size=1320024
 Opened: ./hpdic_data/ingest_index_disk.index, cache_size: 67108864
@@ -113,18 +120,18 @@ bin: #pts = 9, #dims = 1, size = 80B
 Finished writing bin.
 Output disk index file written to ./hpdic_data/ingest_index_disk.index
 Finished writing 6832128B
-Time for generating disk layout: 0.054364 seconds
+Time for generating disk layout: 0.063883 seconds
 Opened: ./hpdic_data/ingest_raw.bin, size: 5120008, cache_size: 5120008
 Loading base ./hpdic_data/ingest_raw.bin. #points: 10000. #dim: 128.
-Wrote 988 points to sample file: ./hpdic_data/ingest_index_sample_data.bin
-Indexing time: 8.83323
+Wrote 974 points to sample file: ./hpdic_data/ingest_index_sample_data.bin
+Indexing time: 8.70775
 [Agent Ingest] Success! Created index: ./hpdic_data/ingest_index
 
 --- Parallel Execution Complete ---
 
- [Aggregator Agent] Performing audit (Model: llama4:maverick)...
+ [Aggregator Agent] Performing audit (Model: llama3.2:1b)...
    Ingest Agent: [ACCEPTED] IngestAgent: Binary Execution Success
    Query Agent:  [ACCEPTED] QueryAgent: Binary Execution Success
 
-The pipeline successfully executed both the Ingest Agent and Query Agent binaries, indicating that data ingestion and querying processes were carried out without issues.
+The pipeline has successfully ingested two agents, with both incurring binary execution successes.
 cc@ram-3tb:~/DiskANN/agents$ 

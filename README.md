@@ -33,7 +33,9 @@ make -j
 ```
 
 ## Agentic execution
-This is what's happening in the multi-agent setup of LLM serving, where multiple agents are running concurrently to handle different tasks such as data ingestion and query processing. The HPDIC MOD introduces a new agent called `agent_AdaDisk.py` that dynamically adjusts the search parameters based on the runtime variance of the search queries and possible concurrent ingestion.
+This is what's happening in the multi-agent setup of LLM serving, where multiple agents are running concurrently to handle different tasks such as data ingestion and query processing. 
+- The HPDIC MOD introduces a new agent called `agent_AdaDisk.py` that dynamically adjusts the search parameters based on the runtime variance of the search queries and possible concurrent ingestion.
+- The following examples were tested with a tiny LLM *llama3.2:1b* and a production LLM *llama4:maverick*; example outputs can be found in `agents/results/`.
 ```bash
 # You should read DiskANN/agents/INSTALL.md for instructions on how to install the agents. The following illustrates a simple example of how to run two workers, one for data ingestion and one for query processing, in a distributed agentic manner:
 cd agents
