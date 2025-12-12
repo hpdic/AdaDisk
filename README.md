@@ -1,12 +1,21 @@
-# HPDIC MOD
+# [HPDIC MOD] AdaDisk: A Distributed Agentic System for Adaptive Ingestion-Query Scheduling of DiskANN RAG in LLM Serving
 
-## Motivation: Eliminating the RAG Bottleneck in LLM Serving
-In modern Retrieval-Augmented Generation (RAG) pipelines, vector search is a critical blocking operation that directly impacts the **Time-to-First-Token (TTFT)**. Standard DiskANN uses static search parameters, creating a significant "Long-Tail Latency" problem that degrades the user experience in LLM serving.
+## Motivation: Resolving the Freshness-Latency Dilemma in Production RAG and LLM Serving
+In production Retrieval-Augmented Generation (RAG) environments, the system faces a fundamental conflict: the need for **Knowledge Freshness** (continuous data ingestion) versus the demand for **Serving Low-Latency** (real-time query retrieval).
 
-* **The Problem:** Non-uniform query hardness leads to unpredictable latency spikes.
-    * **Latency Spikes:** Hard queries (outliers) cause high P99 latency, causing the LLM to "hang" while waiting for context.
-    * **Resource Contention:** Easy queries consume unnecessary I/O bandwidth, starving concurrent requests and reducing overall serving throughput.
-* **The HPDIC Solution:** This modification implements **Instance-Optimal Adaptive Scheduling**. By dynamically adjusting I/O budgets based on runtime search variance, we stabilize the tail latency. This ensures that the vector database keeps up with the GPU's inference speed, providing a smooth, low-jitter experience for downstream LLM applications.
+Standard monolithic vector search pipelines (e.g., vanilla DiskANN) couple these workloads tightly. High-throughput indexing jobs often monopolize I/O bandwidth and CPU resources, causing severe **Resource Contention**. This leads to:
+1.  **TTFT Spikes:** The Time-to-First-Token for LLM generation degrades significantly as the database locks up during updates.
+2.  **Stale Knowledge:** To avoid latency penalties, operators often pause updates during peak hours, serving outdated information to users.
+
+## The AdaDisk Solution: Distributed Agentic Orchestration
+**AdaDisk** reimagines the vector storage layer as a **Distributed Agentic System**, decoupling the RAG lifecycle into autonomous, asynchronous workflows:
+
+* **Decoupled Architecture:** 
+    * **Ingest Agents (Producers):** Handle data validation and index construction in the background/near-line, ensuring data integrity without blocking the read path.
+    * **Query Agents (Consumers):** Dedicated to serving real-time inference requests with strict latency SLAs, isolating them from write-heavy operations.
+    
+* **LLM-Driven Control Plane:**
+    Unlike rigid cron jobs or static scripts, AdaDisk employs lightweight **Small Language Models (SLMs)** as the system's control plane. These agents autonomously validate inputs, verify system readiness, and make adaptive scheduling decisions (e.g., back-pressure handling), ensuring the database remains robust under fluctuating RAG workloads.
 
 ## Compilation
 The original DiskANN didn't work for AMD CPUs due to the use of some Intel-specific optimizations.
@@ -23,7 +32,24 @@ cd build
 make -j
 ```
 
-## Run example programs
+## Agentic execution
+This is what's happening in the multi-agent setup of LLM serving, where multiple agents are running concurrently to handle different tasks such as data ingestion and query processing. The HPDIC MOD introduces a new agent called `agent_adaDisk.py` that dynamically adjusts the search parameters based on the runtime variance of the search queries and possible concurrent ingestion.
+```bash
+# You should read DiskANN/agents/INSTALL.md for instructions on how to install the agents. The following illustrates a simple example of how to run two workers, one for data ingestion and one for query processing, in a distributed agentic manner:
+cd agents
+mkdir build
+cd build
+cmake ..
+make -j
+# Make sure each agent is working correctly by itself.
+./agent_ingest
+./agent_query
+cd ..
+# Run multiple agents:s
+python agent_adaDisk.py
+```
+
+## Run singular DiskANN programs with CPP
 If you prefer cmake, do the regular things; otherwise you can test it by directly compiling the examples:
 ```bash
 cd examples
