@@ -34,6 +34,9 @@ def ingest_agent_process(name, binary_path, output_queue):
     print(f" [Agent {name}] Started (PID: {os.getpid()})")
     client = OpenAI(base_url=OLLAMA_API_URL, api_key="ollama")
     
+## TODO: The following should be changed to a loop to handle continuous data ingestion.
+## The ingestion requests should not compete with the query agent.
+
     prompt = f"""Task: Check if binary path is valid.
 Binary Path: "{binary_path}"
 
@@ -65,6 +68,9 @@ def query_agent_process(name, binary_path, output_queue):
     print(f" [Agent {name}] Started (PID: {os.getpid()})")
     client = OpenAI(base_url=OLLAMA_API_URL, api_key="ollama")
     
+## TODO: The following should be changed to a loop to handle continuous data queries.
+## The query requests should be handled with the highest priority and lowest possible latency.
+
     prompt = f"""Task: Check if binary path is valid.
 Binary Path: "{binary_path}"
 
