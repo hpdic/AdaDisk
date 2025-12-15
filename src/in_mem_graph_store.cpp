@@ -33,11 +33,10 @@ const std::vector<location_t> &InMemGraphStore::get_neighbours(const location_t 
 
 void InMemGraphStore::add_neighbour(const location_t i, location_t neighbour_id)
 {
-    _graph[i].emplace_back(neighbour_id);
-    if (_max_observed_degree < _graph[i].size())
-    {
-        _max_observed_degree = (uint32_t)(_graph[i].size());
-    }
+    auto &neighbours = _graph[i];
+    neighbours.push_back(neighbour_id);
+    uint32_t curr_degree = (uint32_t)neighbours.size();
+    if (curr_degree > _max_observed_degree) _max_observed_degree = curr_degree;
 }
 
 void InMemGraphStore::clear_neighbours(const location_t i)
