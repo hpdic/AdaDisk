@@ -41,7 +41,10 @@ typedef int FileHandle;
 
 // custom types (for readability)
 typedef tsl::robin_set<std::string> label_set;
-typedef std::string path;
+
+// TODO HPDIC This is extremely dangerous: "path" is propogated throughout the entire codebase.
+// TODO HPDIC Also, the declaration of "path" in the following should mostly be "const std::string &path" to avoid unnecessary copying.
+typedef std::string path; 
 
 // structs for returning multiple items from a function
 typedef std::tuple<std::vector<label_set>, tsl::robin_map<std::string, uint32_t>, tsl::robin_set<std::string>>
@@ -61,6 +64,7 @@ template <typename LabelT>
 DISKANN_DLLEXPORT std::tuple<std::vector<std::vector<LabelT>>, tsl::robin_set<LabelT>> parse_formatted_label_file(
     path label_file);
 
+// TODO HPDIC Why is this function not templated? And why mix path and std::string?
 DISKANN_DLLEXPORT parse_label_file_return_values parse_label_file(path label_data_path, std::string universal_label);
 
 template <typename T>
@@ -97,7 +101,7 @@ inline tsl::robin_map<std::string, std::vector<uint32_t>> generate_label_specifi
     if (number_of_points != point_ids_to_labels.size())
     {
         std::cerr << "Error: number of points in labels file and data file differ." << std::endl;
-        throw;
+        throw; // TODO HPDIC This is a bad practice. Use exceptions instead.
     }
 
     tsl::robin_map<std::string, iovec *> label_to_iovec_map;
@@ -107,6 +111,7 @@ inline tsl::robin_map<std::string, std::vector<uint32_t>> generate_label_specifi
     // setup iovec list for each label
     for (const auto &lbl : all_labels)
     {
+        // TODO HPDIC malloc, really? Why not this?: auto label_iovecs = std::make_unique<iovec[]>(curr_num_pts); label_to_iovec_map[lbl] = label_iovecs.get();
         iovec *label_iovecs = (iovec *)malloc(labels_to_number_of_points[lbl] * sizeof(iovec));
         if (label_iovecs == nullptr)
         {
@@ -190,7 +195,7 @@ inline tsl::robin_map<std::string, std::vector<uint32_t>> generate_label_specifi
 
 inline std::vector<uint32_t> loadTags(const std::string &tags_file, const std::string &base_file)
 {
-    const bool tags_enabled = tags_file.empty() ? false : true;
+    const bool tags_enabled = tags_file.size() > 0;
     std::vector<uint32_t> location_to_tag;
     if (tags_enabled)
     {
