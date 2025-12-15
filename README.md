@@ -51,6 +51,14 @@ cd ..
 python agent_AdaDisk.py # --model llama4:maverick
 ```
 
+## VS Code
+```bash
+cd build
+cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 ..
+# Then update .vscode/c_cpp_properties.json to include the following:
+#             "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+```
+
 ## Run singular DiskANN programs with CPP
 If you prefer *cmake*, do the regular things (e.g., `mkdir build; cd build; cmake ..; make -j;`); otherwise you can test it by directly compiling the examples:
 ```bash

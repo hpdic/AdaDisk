@@ -25,6 +25,7 @@
 #include "quantized_distance.h"
 #include "pq_data_store.h"
 
+// TODO HPDIC: This is dangerous; these globals should be in a namespace.
 #define OVERHEAD_FACTOR 1.1
 #define EXPAND_IF_FULL 0
 #define DEFAULT_MAXC 750
