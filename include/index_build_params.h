@@ -8,6 +8,7 @@ namespace diskann
 {
 struct IndexFilterParams
 {
+  // TODO HPDIC: I don't understand why we use public fields here, but we use a builder pattern to ensure that they can be initialized only through a strictly defined interface. I think we should use private fields and provide getters (probably not setters) methods instead.
   public:
     std::string save_path_prefix;
     std::string label_file;
@@ -32,7 +33,7 @@ class IndexFilterParamsBuilder
 
     IndexFilterParamsBuilder &with_save_path_prefix(const std::string &save_path_prefix)
     {
-        if (save_path_prefix.empty() || save_path_prefix == "")
+        if (save_path_prefix.empty())
             throw ANNException("Error: save_path_prefix can't be empty", -1);
         this->_save_path_prefix = save_path_prefix;
         return *this;
