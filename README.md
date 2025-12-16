@@ -1,4 +1,4 @@
-# [HPDIC MOD] AdaDisk: A Distributed Agentic System for Adaptive Ingestion-Query Scheduling of DiskANN RAG in LLM Serving
+# [HPDIC MOD] AdaDisk: A Distributed Agentic System for Adaptive Ingestion-Query Scheduling of DiskANN (https://github.com/microsoft/DiskANN) RAG in LLM Serving
 
 ## Motivation: Resolving the Freshness-Latency Dilemma in Production RAG and LLM Serving
 In production Retrieval-Augmented Generation (RAG) environments, the system faces a fundamental conflict: the need for **Knowledge Freshness** (continuous data ingestion) versus the demand for **Serving Low-Latency** (real-time query retrieval).
