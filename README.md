@@ -34,7 +34,7 @@ make -j
 
 ## Quick start
 ```bash
-bash scripts/run_build_disk_index.sh
+bash scripts/hpdic/run_build_disk_index.sh
 ```
 
 ## Agentic execution
