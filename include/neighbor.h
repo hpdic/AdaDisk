@@ -133,7 +133,7 @@ class NeighborPriorityQueue
         return _data[i];
     }
 
-    Neighbor operator[](size_t i) const
+    const Neighbor &operator[](size_t i) const
     {
         return _data[i];
     }
