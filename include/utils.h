@@ -29,6 +29,7 @@ typedef int FileHandle;
 #include "types.h"
 #include "tag_uint128.h"
 #include <any>
+#include <xmmintrin.h>
 
 #ifdef EXEC_ENV_OLS
 #include "content_buf.h"
@@ -193,8 +194,11 @@ inline void convert_labels_string_to_int(const std::string &inFileName, const st
         std::vector<uint32_t> lbls;
         while (getline(new_iss, token, ','))
         {
-            token.erase(std::remove(token.begin(), token.end(), '\n'), token.end());
-            token.erase(std::remove(token.begin(), token.end(), '\r'), token.end());
+            // token.erase(std::remove(token.begin(), token.end(), '\n'), token.end());
+            // token.erase(std::remove(token.begin(), token.end(), '\r'), token.end());
+            token.erase(std::remove_if(token.begin(), token.end(),
+                                       [](char c) { return c == '\r' || c == '\n'; }),
+                        token.end());
             if (string_int_map.find(token) == string_int_map.end())
             {
                 uint32_t nextId = (uint32_t)string_int_map.size() + 1;
@@ -657,7 +661,7 @@ inline void load_bin(MemoryMappedFiles &files, const std::string &bin_file, std:
 }
 #endif
 
-inline void copy_file(std::string in_file, std::string out_file)
+inline void copy_file(const std::string &in_file, const std::string &out_file)
 {
     std::ifstream source(in_file, std::ios::binary);
     std::ofstream dest(out_file, std::ios::binary);
@@ -1127,7 +1131,7 @@ inline std::vector<std::string> read_file_to_vector_of_strings(const std::string
     return result;
 }
 
-inline void clean_up_artifacts(tsl::robin_set<std::string> paths_to_clean, tsl::robin_set<std::string> path_suffixes)
+inline void clean_up_artifacts(const tsl::robin_set<std::string> &paths_to_clean, const tsl::robin_set<std::string> &path_suffixes)
 {
     try
     {
