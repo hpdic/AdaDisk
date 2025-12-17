@@ -1,6 +1,16 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT license.
 
+/**
+ * @file build_disk_index.cpp
+ * @brief Command-line tool to build a disk-based index.
+ * @details This tool is used to create an index that can be stored on disk and used for efficient
+ * search on large datasets. It supports various data types and distance functions, and can be
+ * configured to optimize for different use cases.
+ * 
+ * Update 2025-12-16: update string initialization from {} to =.
+ */
+
 #include <omp.h>
 #include <boost/program_options.hpp>
 
@@ -16,7 +26,7 @@ namespace po = boost::program_options;
 
 int main(int argc, char **argv)
 {
-    std::cout << "\n ===== HPDIC MOD ===== \n" << std::endl;
+    std::cout << "\n[HPDIC MOD: " << __DATE__ << ", " << __TIME__ << "]\n" << std::endl;
     
     std::string data_type, dist_fn, data_path, index_path_prefix, codebook_prefix, label_file, universal_label,
         label_type;
@@ -25,8 +35,11 @@ int main(int argc, char **argv)
     bool append_reorder_data = false;
     bool use_opq = false;
 
-    po::options_description desc{
-        program_options_utils::make_program_description("build_disk_index", "Build a disk-based index.")};
+    po::options_description desc = program_options_utils::make_program_description(
+        "build_disk_index", 
+        "Build a disk-based index."
+    );
+
     try
     {
         desc.add_options()("help,h", "Print information on arguments");
