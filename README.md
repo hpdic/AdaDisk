@@ -34,6 +34,8 @@ make -j
 
 ## Quick start
 ```bash
+cd ~/DiskANN # or cd ~/AdaDisk
+make -j -C build
 bash scripts/hpdic/run_build_disk_index.sh
 ```
 
