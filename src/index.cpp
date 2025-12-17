@@ -1285,6 +1285,18 @@ void Index<T, TagT, LabelT>::inter_insert(uint32_t n, std::vector<uint32_t> &pru
 
 template <typename T, typename TagT, typename LabelT> void Index<T, TagT, LabelT>::link()
 {
+    // ================= [HPDIC MODIFICATION MARKER] =================
+    // TODO: HPDIC algorithms（Initial Graph, Refine, Prune）start here
+    // ---------------------------------------------------------------
+    diskann::cout << std::endl;
+    diskann::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
+    diskann::cout << ">>> [HPDIC] SUCCESS: You have reached the CORE logic! <<" << std::endl;
+    diskann::cout << ">>> Function: Index::link()                           <<" << std::endl;
+    diskann::cout << ">>> Status:   Ready for theoretical modifications     <<" << std::endl;
+    diskann::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
+    diskann::cout << std::endl;
+    // ===============================================================
+
     uint32_t num_threads = _indexingThreads;
     if (num_threads != 0)
         omp_set_num_threads(num_threads);

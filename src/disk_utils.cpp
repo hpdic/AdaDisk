@@ -1149,9 +1149,7 @@ int build_disk_index(const char *dataFilePath, const char *indexFilePath, const 
     if (param_list.size() > 5)
     {
         disk_pq_dims = atoi(param_list[5].c_str());
-        use_disk_pq = true;
-        if (disk_pq_dims == 0)
-            use_disk_pq = false;
+        if (disk_pq_dims) use_disk_pq = true;
     }
 
     bool reorder_data = false;
@@ -1344,9 +1342,13 @@ int build_disk_index(const char *dataFilePath, const char *indexFilePath, const 
     diskann::cout << timer.elapsed_seconds_for_step("generating disk layout") << std::endl;
 
     double ten_percent_points = std::ceil(points_num * 0.1);
-    double num_sample_points =
-        ten_percent_points > MAX_SAMPLE_POINTS_FOR_WARMUP ? MAX_SAMPLE_POINTS_FOR_WARMUP : ten_percent_points;
-    double sample_sampling_rate = num_sample_points / points_num;
+    size_t num_sample_points = std::min(
+        static_cast<size_t>(ten_percent_points), 
+        MAX_SAMPLE_POINTS_FOR_WARMUP
+    );    
+    // double num_sample_points =
+    //     ten_percent_points > MAX_SAMPLE_POINTS_FOR_WARMUP ? MAX_SAMPLE_POINTS_FOR_WARMUP : ten_percent_points;
+    double sample_sampling_rate = (double)num_sample_points / points_num;
     gen_random_slice<T>(data_file_to_use.c_str(), sample_base_prefix, sample_sampling_rate);
     if (use_filters)
     {
