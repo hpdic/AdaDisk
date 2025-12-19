@@ -1,0 +1,108 @@
+%%%%%%%% ICML 2026 SUBMISSION FILE %%%%%%%%%%%%%%%%%
+
+\documentclass{article}
+
+% Recommended, but optional, packages for figures and better typesetting:
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{booktabs} % for professional tables
+
+% hyperref makes hyperlinks in the resulting PDF.
+\usepackage{hyperref}
+
+% Attempt to make hyperref and algorithmic work together better:
+\newcommand{\theHalgorithm}{\arabic{algorithm}}
+
+% Use the following line for the initial blind version submitted for review:
+\usepackage[preprint]{icml2026}
+
+% If accepted, instead use the following line for the camera-ready submission:
+% \usepackage[accepted]{icml2026}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{amsthm}
+
+% if you use cleveref..
+\usepackage[capitalize,noabbrev]{cleveref}
+
+\newcommand{\don}[1]{\textcolor{blue}{[Dongfang: #1]}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% THEOREMS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{assumption}[theorem]{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\usepackage[textsize=tiny]{todonotes}
+
+\icmltitlerunning{Manifold-Consistent Graph Indexing}
+
+\begin{document}
+
+\twocolumn[
+\icmltitle{Manifold-Consistent Graph Indexing: Overcoming the Euclidean-Geodesic Mismatch via Local Intrinsic Dimensionality}
+
+\begin{icmlauthorlist}
+% \icmlauthor{Anonymous Author}{equal}
+\icmlauthor{Dongfang Zhao}{uw}
+\end{icmlauthorlist}
+
+\icmlaffiliation{uw}{University of Washington}
+% \icmlaffiliation{equal}{Anonymous Institution}
+
+% \icmlcorrespondingauthor{Anonymous Author}{anon@example.com}
+\icmlcorrespondingauthor{Dongfang Zhao}{dzhao@uw.edu}
+
+\icmlkeywords{Approximate Nearest Neighbor Search, Graph Indexing, Retrieval-Augmented Generation, High-Dimensional Data}
+
+\vskip 0.3in
+]
+
+\printAffiliationsAndNotice{} 
+
+\begin{abstract}
+Retrieval-augmented generation (RAG) and approximate nearest neighbor (ANN) search have been critical components of modern large language model (LLM) serving services as they enable efficient and effective retrieval of relevant information from large-scale datasets. 
+However, state-of-the-art methods are mostly based on graph indexing techniques that are agnostic to the intrinsic geometry of the data, and thus often perform poorly in high-dimensional spaces due to a Euclidean-Geodesic mismatch.
+To that end, we propose a new graph indexing method called Manifold-Consistent Graph Indexing (MCGI).
+The key idea of MCGI is to leverage the local intrinsic dimensionality of the data to construct a graph that is consistent with the underlying manifold structure, thereby reducing the mismatch and improving performance.
+Our theoretical analysis shows that MCGI achieves improved approximation guarantees comparing to existing methods, such as HNSW and DiskANN.
+We also report experimental results demonstrating that MCGI outperforms existing methods in various benchmarks and real-world applications.
+\end{abstract}
+
+\section{Introduction}
+\section{Related Work}
+
+\section{Methodology} \label{method}
+
+\subsection{Notations and Definitions}
+
+\begin{definition}[Local Intrinsic Dimensionality]~\cite{DBLP:conf/sisap/Houle17}
+\label{def:lid}\don{TODO}
+    Let $\mathcal{X}$ be a domain equipped with a distance measure $d: \mathcal{X} \times \mathcal{X} \to \mathbb{R}^+$. For a reference point $x \in \mathcal{X}$, let $F_x(r) = \mathbb{P}(d(x, Y) \le r)$ denote the cumulative distribution function (CDF) of the distance between $x$ and a random variable $Y$ drawn from the underlying data distribution. 
+    The Local Intrinsic Dimensionality (LID) of $x$, denoted as $\text{ID}(x)$, is defined as the intrinsic growth rate of the probability measure within the neighborhood of $x$:
+    \begin{equation}
+        \text{ID}(x) \triangleq \lim_{r \to 0} \frac{r \cdot F'_x(r)}{F_x(r)} = \lim_{r \to 0} \frac{d \ln F_x(r)}{d \ln r}
+    \end{equation}
+    provided the limit exists and $F_x(r)$ is continuously differentiable for $r > 0$.
+\end{definition}
+
+\section{Evaluation}
+\section{Conclusion}
+
+
+\nocite{*}
+\bibliography{ref}
+\bibliographystyle{icml2026}
+
+\end{document}
