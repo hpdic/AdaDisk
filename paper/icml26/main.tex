@@ -139,19 +139,19 @@ Conversely, regions with high LID typically exhibit significant curvature, noise
 
 Let $u \in V$ be a node in the graph, and $\widehat{\text{LID}}(u)$ be its estimated local intrinsic dimensionality. We define the pruning parameter $\alpha(u)$ as:
 \begin{equation}
-    \alpha(u) \triangleq \Phi( \widehat{\text{LID}}(u) )
+    \alpha(u) \triangleq \Phi( \widehat{\text{LID}}(u) ).
 \end{equation}
 The function $\Phi: \mathbb{R}^+ \to [\alpha_{\min}, \alpha_{\max}]$ is designed to satisfy the following geometric intuition: in regions with high LID, the graph should enforce a stricter connectivity constraint (smaller $\alpha$) to avoid short-circuiting the manifold; conversely, in low-LID regions, the constraint can be relaxed (larger $\alpha$).
 
 To ensure the mapping is robust across datasets with varying complexity scales, we employ Z-score normalization based on the empirical distribution of the LID estimates. We first compute the normalized score $z(u)$:
 \begin{equation}
-    z(u) = \frac{\widehat{\text{LID}}(u) - \mu_{\widehat{\text{LID}}}}{\sigma_{\widehat{\text{LID}}}}
+    z(u) = \frac{\widehat{\text{LID}}(u) - \mu_{\widehat{\text{LID}}}}{\sigma_{\widehat{\text{LID}}}},
 \end{equation}
 where $\mu_{\widehat{\text{LID}}}$ and $\sigma_{\widehat{\text{LID}}}$ denote the mean and standard deviation of the set of estimated LID values $\{ \widehat{\text{LID}}(v) \mid v \in V \}$ computed across the entire graph.
 
 We then formulate $\Phi$ using a logistic function to smoothly map the Z-score to the operational range $[\alpha_{\min}, \alpha_{\max}]$:
 \begin{equation}
-    \Phi(\widehat{\text{LID}}(u)) = \alpha_{\min} + \frac{\alpha_{\max} - \alpha_{\min}}{1 + \exp(z(u))}
+    \Phi(\widehat{\text{LID}}(u)) = \alpha_{\min} + \frac{\alpha_{\max} - \alpha_{\min}}{1 + \exp(z(u))}.
 \end{equation}
 We set $\alpha_{\min}=1.0$ and $\alpha_{\max}=1.5$ following standard practices in graph indexing~\cite{jayaram2019diskann}. 
 This formulation ensures that nodes with average complexity ($z(u) \approx 0$) are assigned $\alpha \approx 1.25$, while nodes with significantly higher complexity ($z(u) > 0$) are penalized with a stricter $\alpha$ approaching the limit of 1.0.
@@ -207,28 +207,28 @@ This confirms that the pruning parameter $\alpha$ strictly decreases as the loca
 \begin{proposition}[Boundedness]
 The pruning parameter $\alpha(u)$ derived from the mapping function is strictly bounded within the prescribed operational interval. For any node $u$ with a finite LID estimate:
 \begin{equation}
-    \alpha_{\min} < \alpha(u) < \alpha_{\max}
+    \alpha_{\min} < \alpha(u) < \alpha_{\max}.
 \end{equation}
 \end{proposition}
 
 \begin{proof}
 Let $S(u)$ denote the logistic component of the mapping function:
 \begin{equation}
-    S(u) = \frac{1}{1 + \exp(z(u))}
+    S(u) = \frac{1}{1 + \exp(z(u))}.
 \end{equation}
 For any finite input $\widehat{\text{LID}}(u)$, the Z-score $z(u)$ is finite. The exponential function maps the real line to the positive real line, i.e., $\exp(z(u)) \in (0, \infty)$.
 Consequently, the denominator lies in the interval $(1, \infty)$. Taking the reciprocal yields the bounds for the logistic component:
 \begin{equation}
-    0 < S(u) < 1
+    0 < S(u) < 1.
 \end{equation}
 Substituting $S(u)$ back into the definition of $\Phi$:
 \begin{equation}
-    \alpha(u) = \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) \cdot S(u)
+    \alpha(u) = \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) \cdot S(u).
 \end{equation}
 Since $(\alpha_{\max} - \alpha_{\min}) > 0$, we can apply the inequality boundaries:
 \begin{align}
-    \alpha(u) &> \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) \cdot 0 = \alpha_{\min} \\
-    \alpha(u) &< \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) \cdot 1 = \alpha_{\max}
+    \alpha(u) &> \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) \cdot 0 = \alpha_{\min}, \\
+    \alpha(u) &< \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) \cdot 1 = \alpha_{\max}.
 \end{align}
 This proves that the topology is strictly confined. 
 The pruning behavior never exceeds the relaxation upper limit ($\alpha_{\max}$) and never becomes stricter than the lower limit ($\alpha_{\min}$), ensuring graph connectivity and preventing degree explosion.
