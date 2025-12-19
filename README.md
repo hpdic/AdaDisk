@@ -17,6 +17,9 @@ Standard monolithic vector search pipelines (e.g., vanilla DiskANN) couple these
 * **LLM-Driven Control Plane:**
     Unlike rigid cron jobs or static scripts, AdaDisk employs lightweight **Small Language Models (SLMs)** as the system's control plane. These agents autonomously validate inputs, verify system readiness, and make adaptive scheduling decisions (e.g., back-pressure handling), ensuring the database remains robust under fluctuating RAG workloads.
 
+## Technical Reports
+[MCGI: Manifold-Consistent Graph Indexing](paper/icml26/main.pdf)
+
 ## Compilation
 The original DiskANN didn't work for AMD CPUs due to the use of some Intel-specific optimizations.
 We have modified the build scripts to allow compilation on AMD CPUs by replacing Intel MKL with OpenBLAS.
