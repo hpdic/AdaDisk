@@ -58,7 +58,7 @@
 \icmlauthor{Dongfang Zhao}{uw}
 \end{icmlauthorlist}
 
-\icmlaffiliation{uw}{University of Washington}
+\icmlaffiliation{uw}{University of Washington, Tacoma School of Engineering \& Technology and Paul G. Allen School of Computer Science \& Engineering}
 % \icmlaffiliation{equal}{Anonymous Institution}
 
 % \icmlcorrespondingauthor{Anonymous Author}{anon@example.com}
@@ -72,10 +72,10 @@
 \printAffiliationsAndNotice{} 
 
 \begin{abstract}
-Retrieval-augmented generation (RAG) and approximate nearest neighbor (ANN) search have been critical components of modern large language model (LLM) serving services as they enable efficient and effective retrieval of relevant information from large-scale datasets. 
+Retrieval-augmented generation (RAG) and approximate nearest neighbor (ANN) search have been critical components of modern large language model (LLM) serving services as they enable efficient and effective retrieval of relevant information to reduce LLM's hallucination. 
 However, state-of-the-art methods are mostly based on graph indexing techniques that are agnostic to the intrinsic geometry of the data, and thus often perform poorly in high-dimensional spaces due to a Euclidean-Geodesic mismatch.
 To that end, we propose a new graph indexing method called Manifold-Consistent Graph Indexing (MCGI).
-The key idea of MCGI is to leverage the local intrinsic dimensionality of the data to construct a graph that is consistent with the underlying manifold structure, thereby reducing the mismatch and improving performance.
+The key idea of MCGI is to leverage the local intrinsic dimensionality (LID) of the data to construct a graph that is consistent with the underlying manifold structure, thereby reducing the mismatch and improving performance.
 Our theoretical analysis shows that MCGI achieves improved approximation guarantees comparing to existing methods, such as HNSW and DiskANN.
 We also report experimental results demonstrating that MCGI outperforms existing methods in various benchmarks and real-world applications.
 \end{abstract}
@@ -88,15 +88,35 @@ We also report experimental results demonstrating that MCGI outperforms existing
 \subsection{Notations and Definitions}
 
 \begin{definition}[Local Intrinsic Dimensionality]~\cite{DBLP:conf/sisap/Houle17}
-\label{def:lid}\don{TODO}
+\label{def:lid}
     Let $\mathcal{X}$ be a domain equipped with a distance measure $d: \mathcal{X} \times \mathcal{X} \to \mathbb{R}^+$. For a reference point $x \in \mathcal{X}$, let $F_x(r) = \mathbb{P}(d(x, Y) \le r)$ denote the cumulative distribution function (CDF) of the distance between $x$ and a random variable $Y$ drawn from the underlying data distribution. 
     The Local Intrinsic Dimensionality (LID) of $x$, denoted as $\text{ID}(x)$, is defined as the intrinsic growth rate of the probability measure within the neighborhood of $x$:
-    \begin{equation}
-        \text{ID}(x) \triangleq \lim_{r \to 0} \frac{r \cdot F'_x(r)}{F_x(r)} = \lim_{r \to 0} \frac{d \ln F_x(r)}{d \ln r}
+    \begin{equation}\label{eq:pid}
+        \text{ID}(x) \triangleq \lim_{r \to 0} \frac{r \cdot F'_x(r)}{F_x(r)} = \lim_{r \to 0} \frac{d \ln F_x(r)}{d \ln r},
     \end{equation}
     provided the limit exists and $F_x(r)$ is continuously differentiable for $r > 0$.
 \end{definition}
 
+\begin{remark}[Institution of LID]
+    The definition of LID can be understood as a measure of the multiplicative growth rate of the volume of a ball centered at $x$ with radius $r$ as $r$ approaches 0.
+    Let $D$ denote the dimensionality of the ambient space.
+    If the data lies on a local $D$-dimensional manifold, then the CDF around an infinitely small neighborhood of $x$ satisfies:
+    \begin{equation}\label{eq:Fx}
+        F_x(r) \approx C \cdot r^D,
+    \end{equation}
+    where $C$ is a constant.
+    Thus, the following holds:
+    \begin{equation}\label{eq:FxD}
+        F'_x(r) \approx C \cdot D \cdot r^{D-1}.
+    \end{equation}
+    Combining equations~\eqref{eq:Fx} and~\eqref{eq:FxD}, we get:
+    \begin{equation}
+        D \approx \frac{F'_x(r)}{F_x(r)} \cdot r,
+    \end{equation}
+    thus Eq.~\eqref{eq:pid}.
+\end{remark}
+
+\don{TODO: Maximum Likelihood Estimation of LID}
 \section{Evaluation}
 \section{Conclusion}
 
