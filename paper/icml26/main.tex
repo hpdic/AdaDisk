@@ -85,9 +85,11 @@ We also report experimental results demonstrating that MCGI outperforms existing
 
 \section{Methodology} \label{method}
 
-\subsection{Notations and Definitions}
+\subsection{Definitions}
 
-\begin{definition}[Local Intrinsic Dimensionality]~\cite{DBLP:conf/sisap/Houle17}
+We start by introducing the notions of Local Intrinsic Dimensionality (LID) in the words of analysis recently proposed by Houle~\cite{DBLP:conf/sisap/Houle17}.
+
+\begin{definition}[Local Intrinsic Dimensionality]
 \label{def:lid}
     Let $\mathcal{X}$ be a domain equipped with a distance measure $d: \mathcal{X} \times \mathcal{X} \to \mathbb{R}^+$. For a reference point $x \in \mathcal{X}$, let $F_x(r) = \mathbb{P}(d(x, Y) \le r)$ denote the cumulative distribution function (CDF) of the distance between $x$ and a random variable $Y$ drawn from the underlying data distribution. 
     The Local Intrinsic Dimensionality (LID) of $x$, denoted as $\text{ID}(x)$, is defined as the intrinsic growth rate of the probability measure within the neighborhood of $x$:
@@ -116,7 +118,125 @@ We also report experimental results demonstrating that MCGI outperforms existing
     thus Eq.~\eqref{eq:pid}.
 \end{remark}
 
-\don{TODO: Maximum Likelihood Estimation of LID}
+While Eq.~\refeq{def:lid} provides an intuitive closed-form formula for intrinsic dimensionality, in practice we usually do not have access to the true CDF $F_x(r)$.
+Luckily, we can estimate LID from a finite sample of distances from $x$ to its neighbors using Maximum Likelihood Estimation (MLE) as proposed by~\cite{NIPS2004_74934548}.
+According to~\cite{10.1145/2783258.2783405}, LID can be estimated as follows.
+\begin{definition}[LID Maximum Likelihood Estimator]
+\label{def:lid_mle}
+Given a reference point $x$ and its $k$-nearest neighbors determined by the distance measure $d$, let $r_i = d(x, v_i)$ denote the distance to the $i$-th nearest neighbor, sorted such that $r_1 \le \dots \le r_k$. 
+Following the formulation in~\cite{10.1145/2783258.2783405}, which adapts the Hill estimator for intrinsic dimensionality, the LID at $x$ is estimated as:
+\begin{equation}
+    \widehat{\text{LID}}(x) = - \left( \frac{1}{k} \sum_{i=1}^{k} \ln \frac{r_i}{r_k} \right)^{-1}.
+\end{equation}
+\end{definition}
+
+\subsection{Mapping Function}
+\label{subsec:mapping}
+
+The primary goal of Manifold-Consistent Graph Indexing is that the graph topology should adapt to the local geometric complexity. 
+In regions where the Local Intrinsic Dimensionality (LID) is low, the data manifold approximates a flat Euclidean subspace. In such isotropic regions, the Euclidean metric is a reliable proxy for geodesic distance, allowing for aggressive edge pruning (larger $\alpha$) to permit long-range ``highway'' connections without risking semantic shortcuts.
+Conversely, regions with high LID typically exhibit significant curvature, noise, or singularity. Here, the Euclidean distance often violates the manifold geodesic structure. To preserve topological fidelity, the indexing algorithm must adopt a conservative pruning strategy (smaller $\alpha$), thereby forcing the search to take smaller, safer steps along the manifold surface.
+
+Let $u \in V$ be a node in the graph, and $\widehat{\text{LID}}(u)$ be its estimated local intrinsic dimensionality. We define the pruning parameter $\alpha(u)$ as:
+\begin{equation}
+    \alpha(u) \triangleq \Phi( \widehat{\text{LID}}(u) )
+\end{equation}
+The function $\Phi: \mathbb{R}^+ \to [\alpha_{\min}, \alpha_{\max}]$ is designed to satisfy the following geometric intuition: in regions with high LID, the graph should enforce a stricter connectivity constraint (smaller $\alpha$) to avoid short-circuiting the manifold; conversely, in low-LID regions, the constraint can be relaxed (larger $\alpha$).
+
+To ensure the mapping is robust across datasets with varying complexity scales, we employ Z-score normalization based on the empirical distribution of the LID estimates. We first compute the normalized score $z(u)$:
+\begin{equation}
+    z(u) = \frac{\widehat{\text{LID}}(u) - \mu_{\widehat{\text{LID}}}}{\sigma_{\widehat{\text{LID}}}}
+\end{equation}
+where $\mu_{\widehat{\text{LID}}}$ and $\sigma_{\widehat{\text{LID}}}$ denote the mean and standard deviation of the set of estimated LID values $\{ \widehat{\text{LID}}(v) \mid v \in V \}$ computed across the entire graph.
+
+We then formulate $\Phi$ using a logistic function to smoothly map the Z-score to the operational range $[\alpha_{\min}, \alpha_{\max}]$:
+\begin{equation}
+    \Phi(\widehat{\text{LID}}(u)) = \alpha_{\min} + \frac{\alpha_{\max} - \alpha_{\min}}{1 + \exp(z(u))}
+\end{equation}
+We set $\alpha_{\min}=1.0$ and $\alpha_{\max}=1.5$ following standard practices in graph indexing~\cite{jayaram2019diskann}. 
+This formulation ensures that nodes with average complexity ($z(u) \approx 0$) are assigned $\alpha \approx 1.25$, while nodes with significantly higher complexity ($z(u) > 0$) are penalized with a stricter $\alpha$ approaching the limit of 1.0.
+
+The mapping function $\Phi$ satisfies the following geometric properties essential for stable graph construction: Monotonicity and Boundedness.
+
+\begin{proposition}[Monotonicity]
+The mapping function $\Phi$ is strictly decreasing with respect to the estimated local intrinsic dimensionality. Formally, given that the standard deviation of the LID estimates $\sigma_{\widehat{\text{LID}}} > 0$ and the pruning range $\alpha_{\max} > \alpha_{\min}$, the derivative satisfies:
+\begin{equation}
+    \frac{d \Phi}{d \widehat{\text{LID}}(u)} < 0.
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Let $L = \widehat{\text{LID}}(u)$ be the independent variable. We define the normalized Z-score $z$ as a function of $L$:
+\begin{equation}
+    z(L) = \frac{L - \mu_{\widehat{\text{LID}}}}{\sigma_{\widehat{\text{LID}}}}.
+\end{equation}
+The mapping function is defined as:
+\begin{equation}
+    \Phi(L) = \alpha_{\min} + \frac{C}{1 + \exp(z(L))},
+\end{equation}
+where $C = \alpha_{\max} - \alpha_{\min}$. Since we strictly set $\alpha_{\max} = 1.5$ and $\alpha_{\min} = 1.0$, it follows that $C > 0$.
+To determine the sign of the gradient, we apply the chain rule:
+\begin{equation}
+    \frac{d \Phi}{d L} = \frac{d \Phi}{d z} \cdot \frac{d z}{d L}.
+\end{equation}
+First, we differentiate the Z-score term with respect to $L$:
+\begin{equation}
+    \frac{d z}{d L} = \frac{1}{\sigma_{\widehat{\text{LID}}}}.
+\end{equation}
+Next, we differentiate the logistic component $\Phi$ with respect to $z$:
+\begin{align}
+    \frac{d \Phi}{d z} &= \frac{d}{d z} \left( \alpha_{\min} + C (1 + e^z)^{-1} \right) \\
+    &= C \cdot (-1) \cdot (1 + e^z)^{-2} \cdot \frac{d}{d z}(1 + e^z) \\
+    &= - C \cdot \frac{e^z}{(1 + e^z)^2}.
+\end{align}
+Combining these terms yields the full derivative:
+\begin{equation}
+    \frac{d \Phi}{d L} = - \frac{C}{\sigma_{\widehat{\text{LID}}}} \cdot \frac{e^z}{(1 + e^z)^2}.
+\end{equation}
+We analyze the sign of each component:
+\begin{itemize}
+    \item The operational range constant $C > 0$.
+    \item The standard deviation $\sigma_{\widehat{\text{LID}}} > 0$, assuming the dataset exhibits non-zero geometric variance.
+    \item The exponential function $e^z > 0$ for all $z \in \mathbb{R}$.
+    \item The denominator $(1 + e^z)^2 > 0$.
+\end{itemize}
+Therefore, the term $\frac{C}{\sigma_{\widehat{\text{LID}}}} \frac{e^z}{(1 + e^z)^2}$ is strictly positive. The leading negative sign guarantees that $\frac{d \Phi}{d L} < 0$.
+This confirms that the pruning parameter $\alpha$ strictly decreases as the local geometric complexity increases, thereby enforcing a more conservative graph topology in high-LID regions.
+\end{proof}
+
+\begin{proposition}[Boundedness]
+The pruning parameter $\alpha(u)$ derived from the mapping function is strictly bounded within the prescribed operational interval. For any node $u$ with a finite LID estimate:
+\begin{equation}
+    \alpha_{\min} < \alpha(u) < \alpha_{\max}
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Let $S(u)$ denote the logistic component of the mapping function:
+\begin{equation}
+    S(u) = \frac{1}{1 + \exp(z(u))}
+\end{equation}
+For any finite input $\widehat{\text{LID}}(u)$, the Z-score $z(u)$ is finite. The exponential function maps the real line to the positive real line, i.e., $\exp(z(u)) \in (0, \infty)$.
+Consequently, the denominator lies in the interval $(1, \infty)$. Taking the reciprocal yields the bounds for the logistic component:
+\begin{equation}
+    0 < S(u) < 1
+\end{equation}
+Substituting $S(u)$ back into the definition of $\Phi$:
+\begin{equation}
+    \alpha(u) = \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) \cdot S(u)
+\end{equation}
+Since $(\alpha_{\max} - \alpha_{\min}) > 0$, we can apply the inequality boundaries:
+\begin{align}
+    \alpha(u) &> \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) \cdot 0 = \alpha_{\min} \\
+    \alpha(u) &< \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) \cdot 1 = \alpha_{\max}
+\end{align}
+This proves that the topology is strictly confined. 
+The pruning behavior never exceeds the relaxation upper limit ($\alpha_{\max}$) and never becomes stricter than the lower limit ($\alpha_{\min}$), ensuring graph connectivity and preventing degree explosion.
+\end{proof}
+
+\subsection{Adaptive Pruning Criteria}
+\don{TODO}
+
 \section{Evaluation}
 \section{Conclusion}
 
