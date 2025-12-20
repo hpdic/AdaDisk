@@ -1169,7 +1169,15 @@ template <typename T, typename TagT, typename LabelT>
 void Index<T, TagT, LabelT>::prune_neighbors(const uint32_t location, std::vector<Neighbor> &pool,
                                              std::vector<uint32_t> &pruned_list, InMemQueryScratch<T> *scratch)
 {
-    prune_neighbors(location, pool, _indexingRange, _indexingMaxC, _indexingAlpha, pruned_list, scratch);
+    // prune_neighbors(location, pool, _indexingRange, _indexingMaxC, _indexingAlpha, pruned_list, scratch);
+    
+    // [MCGI MOD] Dynamic Alpha Injection
+    float current_alpha = _indexingAlpha;
+    if (diskann::IsMCGIEnabled())
+    {
+        current_alpha = diskann::GetGlobalMCGIAlpha(location);
+    }
+    prune_neighbors(location, pool, _indexingRange, _indexingMaxC, current_alpha, pruned_list, scratch);
 }
 
 template <typename T, typename TagT, typename LabelT>

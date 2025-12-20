@@ -25,5 +25,6 @@ float GetGlobalMCGIAlpha(unsigned node_id);
 // 3. 清理/释放 (可选)
 void FreeMCGIContext();
 
+bool IsMCGIEnabled();
 // void BuildMCGIIndex(const std::string& data_path, ...);
 } // namespace diskann
