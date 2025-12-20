@@ -234,8 +234,92 @@ This proves that the topology is strictly confined.
 The pruning behavior never exceeds the relaxation upper limit ($\alpha_{\max}$) and never becomes stricter than the lower limit ($\alpha_{\min}$), ensuring graph connectivity and preventing degree explosion.
 \end{proof}
 
-\subsection{Adaptive Pruning Criteria}
-\don{TODO}
+\subsection{Algorithm}
+\label{subsec:algorithm}
+
+The MCGI algorithm (Algorithm~\ref{alg:mcgi}) alters the standard graph refinement pipeline by introducing a geometric calibration phase. Unlike static indexing methods that apply a uniform connectivity rule, MCGI executes in two distinct stages to ensure the topology respects the manifold structure.
+
+\begin{algorithm}[tb]
+   \caption{Manifold-Consistent Graph Indexing (MCGI)}
+   \label{alg:mcgi}
+\begin{algorithmic}
+   \STATE Input: Dataset $X$, Max Degree $R$, Beam Width $L$
+   \STATE Output: Optimized Graph $G$
+   
+   \STATE \COMMENT{Phase 1: Geometric Calibration}
+   \STATE $\mathcal{L} \leftarrow \text{ParallelEstimateLID}(X)$
+   \STATE $\mu \leftarrow \text{Mean}(\mathcal{L})$
+   \STATE $\sigma \leftarrow \text{StdDev}(\mathcal{L})$
+
+   \FOR{each node $u \in V$ in parallel}
+       \STATE $z_u \leftarrow (\mathcal{L}[u] - \mu) / \sigma$
+       \STATE $\alpha_u \leftarrow \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) / (1 + \exp(z_u))$
+   \ENDFOR
+   
+   \STATE \COMMENT{Phase 2: Topology Refinement}
+   \STATE $G \leftarrow \text{RandomGraph}(X, R)$
+   
+   \FOR{$iter \leftarrow 1$ to $MaxIter$}
+       \FOR{each node $u \in G$ in parallel}
+           \STATE $\mathcal{C} \leftarrow \text{GreedySearch}(u, G, L)$
+           \STATE $\mathcal{N}_{new} \leftarrow \emptyset$
+           
+           \FOR{$v \in \text{SortByDistance}(\mathcal{C} \cup \mathcal{N}(u))$}
+               \STATE $pruned \leftarrow \text{False}$
+               \FOR{$n \in \mathcal{N}_{new}$}
+                   \IF{$\alpha_u \cdot d(n, v) \le d(u, v)$}
+                       \STATE $pruned \leftarrow \text{True}$; break
+                   \ENDIF
+               \ENDFOR
+               \IF{not $pruned$ \AND $|\mathcal{N}_{new}| < R$}
+                   \STATE $\mathcal{N}_{new}.\text{add}(v)$
+               \ENDIF
+           \ENDFOR
+           \STATE $\mathcal{N}(u) \leftarrow \mathcal{N}_{new}$
+       \ENDFOR
+   \ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Phase 1: Geometric Calibration.}
+Before modifying the graph topology, the system first performs a global analysis of the dataset geometry. We estimate the LID for every point and aggregate the population statistics ($\mu, \sigma$) defined in Section~\ref{subsec:mapping}. 
+This phase ``freezes'' the geometric profile of the dataset. By pre-computing these statistics, we decouple the complexity estimation from the graph update loop, ensuring that the mapping function $\Phi$ remains stable and computationally efficient during the intensive edge-selection process.
+
+\paragraph{Phase 2: Manifold-Consistent Refinement.}
+The index construction follows an iterative refinement strategy. 
+Let $\mathcal{N}(u)$ denote the set of neighbors for node $u$ in the graph $G$. 
+In each iteration, the algorithm dynamically updates $\mathcal{N}(u)$ by:
+\begin{enumerate}
+    \item Queries the pre-computed geometric profile to determine the node-specific constraint $\alpha(u)$.
+    \item Explores the graph to identify a candidate pool $\mathcal{C}$.
+    \item Filters connections using the dynamic occlusion criterion. 
+\end{enumerate}
+
+\subsection{Theoretical Analysis}
+\label{subsec:analysis}
+
+We analyze the proposed method regarding its computational overhead and topological guarantees.
+
+\paragraph{Computational Complexity.}
+
+The MCGI construction adds a pre-processing step (Phase 1) but maintains the same asymptotic complexity as standard graph construction algorithms (Phase 2).
+\begin{itemize}
+    \item \textit{Calibration Overhead:} The LID estimation requires a $k$-nearest neighbor search for a subset of points. Assuming a sample size of $N$ and a fixed reference set size, this operation is bounded by $O(N \log N)$. The subsequent Z-score calculation and $\alpha$ mapping are linear scan operations, $O(N)$.
+    \item \textit{Construction Cost:} The core refinement loop (Algorithm 1, Phase 2) has a complexity of $O(T \cdot N \cdot R \cdot \log L)$, where $T$ is the number of iterations and $R$ is the degree bound. The node-specific parameter $\alpha(u)$ is accessed via a constant-time lookup $O(1)$ during the edge pruning check.
+\end{itemize}
+Since the calibration is a non-iterative, one-time operation, it does not alter the asymptotic complexity class of the indexing pipeline. 
+The total time complexity remains dominated by the iterative distance computations required for edge selection, ensuring that the method scales linearly with $N$ similar to baseline iterative algorithms.
+
+\paragraph{Connectivity Preservation.}
+A primary concern with dynamic pruning is whether strict constraints fragment the graph into disconnected components.
+To address this, we observe that the strictest constraint applied by our algorithm (where $\alpha(u) \to 1.0$) corresponds to the definition of the Relative Neighborhood Graph (RNG).
+It has been theoretically established that the RNG is a supergraph of the Euclidean Minimum Spanning Tree (EMST) for any set of points in general position~\cite{TOUSSAINT1980261}.  
+Since the EMST is connected, the RNG is necessarily connected.
+In our method, the pruning parameter satisfies $\alpha(u) \ge 1.0$ for all $u$. Let $E_{MCGI}$ be the edge set produced by our algorithm and $E_{RNG}$ be the edge set of the exact RNG. The condition implies:
+\begin{equation}
+    E_{RNG} \subseteq E_{MCGI}.
+\end{equation}
+Thus, provided that the greedy search sufficiently explores the candidate space, the resulting topology retains the connectivity guarantees of the RNG, ensuring that every node remains reachable from the entry point.
 
 \section{Evaluation}
 \section{Conclusion}
