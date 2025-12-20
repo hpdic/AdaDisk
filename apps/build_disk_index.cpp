@@ -27,7 +27,14 @@ namespace po = boost::program_options;
 int main(int argc, char **argv)
 {
     std::cout << "\n[HPDIC MOD: " << __DATE__ << ", " << __TIME__ << "]\n" << std::endl;
-    
+
+    // [HPDIC MOD: MCGI START]
+    bool use_mcgi = false;
+    std::string lid_path;
+    float alpha_min = 1.0f;
+    float alpha_max = 1.5f;
+    // [HPDIC MOD: MCGI END]
+
     std::string data_type, dist_fn, data_path, index_path_prefix, codebook_prefix, label_file, universal_label,
         label_type;
     uint32_t num_threads, R, L, disk_PQ, build_PQ, QD, Lf, filter_threshold;
@@ -95,6 +102,17 @@ int main(int argc, char **argv)
         optional_configs.add_options()("label_type", po::value<std::string>(&label_type)->default_value("uint"),
                                        program_options_utils::LABEL_TYPE_DESCRIPTION);
 
+        // [HPDIC MOD: MCGI START]
+        optional_configs.add_options()("use_mcgi", po::bool_switch()->default_value(false),
+                                       "Enable Manifold-Consistent Graph Indexing (MCGI).");
+        optional_configs.add_options()("lid_path", po::value<std::string>(&lid_path)->default_value(""),
+                                       "Path to pre-computed LID file (required if use_mcgi is true).");
+        optional_configs.add_options()("alpha_min", po::value<float>(&alpha_min)->default_value(1.0f),
+                                       "MCGI: Minimum alpha (strictest pruning).");
+        optional_configs.add_options()("alpha_max", po::value<float>(&alpha_max)->default_value(1.5f),
+                                       "MCGI: Maximum alpha (relaxed pruning).");
+        // [HPDIC MOD: MCGI END]
+
         // Merge required and optional parameters
         desc.add(required_configs).add(optional_configs);
 
@@ -110,6 +128,20 @@ int main(int argc, char **argv)
             append_reorder_data = true;
         if (vm["use_opq"].as<bool>())
             use_opq = true;
+
+        // [HPDIC MOD: MCGI START]
+        if (vm["use_mcgi"].as<bool>())
+        {
+            use_mcgi = true;
+            if (lid_path.empty())
+            {
+                std::cerr << "Error: --lid_path is required when --use_mcgi is enabled." << std::endl;
+                return -1;
+            }
+            std::cout << "[MCGI] Enabled. LID Path: " << lid_path << ", Alpha Range: [" << alpha_min << ", "
+                      << alpha_max << "]" << std::endl;
+        }
+        // [HPDIC MOD: MCGI END]
     }
     catch (const std::exception &ex)
     {
@@ -159,14 +191,32 @@ int main(int argc, char **argv)
     {
         auto call_build = [&](auto t, bool use_u16_label) {
             using T = decltype(t);
-            if (use_u16_label)
-                return diskann::build_disk_index<T, uint16_t>(
-                    data_path.c_str(), index_path_prefix.c_str(), params.c_str(), metric, use_opq, codebook_prefix,
-                    use_filters, label_file, universal_label, filter_threshold, Lf);
+
+            if (use_mcgi)
+            {
+                if (use_u16_label)
+                    return diskann::build_disk_index<T, uint16_t>(
+                        data_path.c_str(), index_path_prefix.c_str(), params.c_str(), metric, use_opq, codebook_prefix,
+                        use_filters, label_file, universal_label, filter_threshold, Lf, lid_path.c_str(), alpha_min,
+                        alpha_max); // 这里的传参要注意类型匹配
+                else
+                    return diskann::build_disk_index<T>(data_path.c_str(), index_path_prefix.c_str(), params.c_str(),
+                                                        metric, use_opq, codebook_prefix, use_filters, label_file,
+                                                        universal_label, filter_threshold, Lf, lid_path.c_str(),
+                                                        alpha_min, alpha_max);
+            }
             else
-                return diskann::build_disk_index<T>(data_path.c_str(), index_path_prefix.c_str(), params.c_str(),
-                                                    metric, use_opq, codebook_prefix, use_filters, label_file,
-                                                    universal_label, filter_threshold, Lf);
+            {
+
+                if (use_u16_label)
+                    return diskann::build_disk_index<T, uint16_t>(
+                        data_path.c_str(), index_path_prefix.c_str(), params.c_str(), metric, use_opq, codebook_prefix,
+                        use_filters, label_file, universal_label, filter_threshold, Lf);
+                else
+                    return diskann::build_disk_index<T>(data_path.c_str(), index_path_prefix.c_str(), params.c_str(),
+                                                        metric, use_opq, codebook_prefix, use_filters, label_file,
+                                                        universal_label, filter_threshold, Lf);
+            }
         };
 
         bool use_custom = (label_file != "" && label_type == "ushort");

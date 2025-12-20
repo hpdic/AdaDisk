@@ -113,4 +113,6 @@ template class natural_number_map<uint32_t, uint32_t>;
 template class natural_number_map<uint32_t, int64_t>;
 template class natural_number_map<uint32_t, uint64_t>;
 template class natural_number_map<uint32_t, tag_uint128>;
+// [MCGI FIX] 解决 Index<..., uint16_t> 内部成员的链接错误
+template class diskann::natural_number_map<uint32_t, uint16_t>;
 } // namespace diskann

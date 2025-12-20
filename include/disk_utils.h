@@ -30,6 +30,7 @@ typedef int FileHandle;
 
 #include "utils.h"
 #include "windows_customizations.h"
+#include "hpdic_mcgi.h"
 
 namespace diskann
 {
@@ -99,6 +100,15 @@ DISKANN_DLLEXPORT int build_disk_index(
     const std::string &label_file = std::string(""), // default is empty string for no label_file
     const std::string &universal_label = "", const uint32_t filter_threshold = 0,
     const uint32_t Lf = 0); // default is empty string for no universal label
+
+// [MCGI ADD] overloaded version with MCGI parameters
+template <typename T, typename TagT = uint32_t>
+int build_disk_index(const char *dataFilePath, const char *indexFilePathPrefix, const char *indexBuildParameters,
+                     Metric metric, bool use_opq, const std::string &codebook_prefix, bool use_filters,
+                     const std::string &label_file, const std::string &universal_label, const uint32_t filter_threshold,
+                     const uint32_t Lf,
+                     // new parameters for MCGI
+                     const std::string &lid_file_path, float alpha_min, float alpha_max);
 
 template <typename T>
 DISKANN_DLLEXPORT void create_disk_layout(const std::string base_file, const std::string mem_index_file,

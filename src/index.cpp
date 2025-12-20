@@ -3511,4 +3511,11 @@ template DISKANN_DLLEXPORT std::pair<uint32_t, uint32_t> Index<int8_t, uint32_t,
     uint32_t>(const int8_t *query, const uint16_t &filter_label, const size_t K, const uint32_t L, uint32_t *indices,
               float *distances);
 
+// [MCGI FIX] 强制编译器生成 uint16_t 版本的 Index 实现
+// 加在 namespace diskann 结束之前，或者文件最后
+
+template class diskann::Index<float, uint16_t>;
+template class diskann::Index<int8_t, uint16_t>;
+template class diskann::Index<uint8_t, uint16_t>;
+
 } // namespace diskann
