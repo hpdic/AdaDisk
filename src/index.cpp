@@ -22,6 +22,7 @@
 #endif
 
 #include "index.h"
+#include "hpdic_mcgi.h"
 
 #define MAX_POINTS_FOR_USING_BITSET 10000000
 
@@ -1296,6 +1297,7 @@ template <typename T, typename TagT, typename LabelT> void Index<T, TagT, LabelT
     diskann::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" << std::endl;
     diskann::cout << std::endl;
     // ===============================================================
+    diskann::RunMCGIHelloWorld();
 
     uint32_t num_threads = _indexingThreads;
     if (num_threads != 0)
