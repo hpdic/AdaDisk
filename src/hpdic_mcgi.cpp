@@ -57,43 +57,73 @@ bool LoadLIDBinary(const std::string& path, std::vector<float>& lid_values) {
 
 void InitMCGIContext(const std::string &lid_path, float alpha_min, float alpha_max)
 {
-    if (lid_path.empty()) return;
+    if (lid_path.empty())
+        return;
 
     std::cout << "[MCGI] Initializing Global Context..." << std::endl;
     std::cout << "[MCGI] Param Alpha Range: [" << alpha_min << ", " << alpha_max << "]" << std::endl;
 
     std::vector<float> lid_values;
-    if (!LoadLIDBinary(lid_path, lid_values)) {
+    if (!LoadLIDBinary(lid_path, lid_values))
+    {
         std::cerr << "[MCGI Error] Failed to load LID file. MCGI disabled." << std::endl;
         return;
     }
 
-    // 1. 找到 LID 的最大最小值用于归一化
-    float min_lid = 1e30f, max_lid = -1e30f;
-    for (float v : lid_values) {
-        if (v < min_lid) min_lid = v;
-        if (v > max_lid) max_lid = v;
-    }
+    // ================= [MCGI ALGO] Sigmoid Mapping Strategy =================
 
-    // 避免除以零
-    if (std::abs(max_lid - min_lid) < 1e-6) max_lid = min_lid + 1.0f;
+    // 1. 计算均值 (Mean)
+    double sum = 0.0;
+    for (float v : lid_values)
+        sum += v;
+    double mean = sum / lid_values.size();
 
-    // 2. 计算 Alpha 表
-    // 逻辑：LID 越大（越难），Alpha 应该越大（增加搜索广度）
-    // 公式：alpha = alpha_min + (normalized_lid) * (alpha_max - alpha_min)
+    // 2. 计算标准差 (StdDev)
+    double sq_sum = 0.0;
+    for (float v : lid_values)
+        sq_sum += (v - mean) * (v - mean);
+    double std_dev = std::sqrt(sq_sum / lid_values.size());
+
+    // 防止标准差过小导致除以零（极罕见情况）
+    if (std_dev < 1e-6)
+        std_dev = 1.0;
+
+    std::cout << "[MCGI] LID Stats -> Mean: " << mean << ", StdDev: " << std_dev << std::endl;
+
+    // 3. 生成 Alpha 表 (使用 Sigmoid 函数)
+    // 公式: alpha = min + (max - min) * Sigmoid( (lid - mean) / std_dev )
     g_mcgi_ctx.alpha_table.resize(lid_values.size());
-    
-    for (size_t i = 0; i < lid_values.size(); ++i) {
-        float normalized = (lid_values[i] - min_lid) / (max_lid - min_lid);
-        
-        // 简单的线性映射 (你可以换成 Sigmoid 或其他非线性映射)
-        float alpha = alpha_min + normalized * (alpha_max - alpha_min);
-        
+
+    // 控制 Sigmoid 的陡峭程度，k 越大，在均值附近的突变越剧烈
+    // k=1.0 是标准正态分布的平滑度
+    const double k = 1.0;
+
+    for (size_t i = 0; i < lid_values.size(); ++i)
+    {
+        // Z-score: 将数据中心化到 0
+        double z_score = (lid_values[i] - mean) / std_dev;
+
+        // Sigmoid: 映射到 (0, 1)
+        double sigmoid_val = 1.0 / (1.0 + std::exp(-k * z_score));
+
+        // 映射到目标区间 [alpha_min, alpha_max]
+        float alpha = alpha_min + (float)(sigmoid_val * (alpha_max - alpha_min));
+
         g_mcgi_ctx.alpha_table[i] = alpha;
     }
+    // ========================================================================
 
     g_mcgi_ctx.enabled = true;
     std::cout << "[MCGI] Global Context Ready. Table Size: " << g_mcgi_ctx.alpha_table.size() << std::endl;
+
+    // 打印几个样本看看效果
+    if (lid_values.size() > 5)
+    {
+        std::cout << "[MCGI Debug] Sample Alphas (First 5): ";
+        for (int i = 0; i < 5; ++i)
+            std::cout << g_mcgi_ctx.alpha_table[i] << " ";
+        std::cout << std::endl;
+    }
 }
 
 float GetGlobalMCGIAlpha(unsigned node_id)

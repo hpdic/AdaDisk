@@ -39,7 +39,14 @@ make -j
 ```bash
 cd ~/DiskANN # or cd ~/AdaDisk
 make -j -C build
-bash scripts/hpdic/run_build_disk_index.sh
+
+# Vanilla DiskANN index build
+bash scripts/hpdic/run_build_disk_index.sh 
+
+# MCGI index build
+python scripts/hpdic/gen_data.py
+python scripts/hpdic/compute_lid.py
+bash scripts/hpdic/run_mcgi_sigmoid.sh
 ```
 
 ## Agentic execution
