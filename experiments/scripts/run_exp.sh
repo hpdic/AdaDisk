@@ -16,10 +16,10 @@ elif [ "$DATASET" == "gist" ]; then
     ALPHA_MAX="1.5"
 elif [ "$DATASET" == "glove" ]; then
     # === GloVe 配置 ===
-    R=64
+    R=32
     L=100
     ALPHA_MIN="1.0"
-    ALPHA_MAX="1.8"
+    ALPHA_MAX="1.1"
 else
     echo "Error: Unknown dataset: $DATASET"
     exit 1
@@ -66,16 +66,22 @@ fi
 
 # 2. 运行 Baseline
 echo "=== Building Baseline ==="
-"$BUILDER" \
-    --data_type float --dist_fn l2 \
-    --data_path "$BASE_BIN" \
-    --index_path_prefix "$RES_DIR/baseline/idx" \
-    -R $R -L $L -B 0.1 -M 1.0 -T 16 > "$RES_DIR/baseline/build.log" 2>&1
+# 检查关键的索引文件是否存在，如果存在则跳过
+if [ -f "$RES_DIR/baseline/idx_disk.index" ]; then
+    echo "Baseline index already exists at $RES_DIR/baseline/. Skipping build."
+else
+    "$BUILDER" \
+        --data_type float --dist_fn l2 \
+        --data_path "$BASE_BIN" \
+        --index_path_prefix "$RES_DIR/baseline/idx" \
+        -R $R -L $L -B 0.1 -M 1.0 -T 16 > "$RES_DIR/baseline/build.log" 2>&1
 
-if [ $? -ne 0 ]; then
-    echo "Error: Baseline Build Failed. Check log:"
-    tail -n 5 "$RES_DIR/baseline/build.log"
-    exit 1
+    if [ $? -ne 0 ]; then
+        echo "Error: Baseline Build Failed. Check log:"
+        tail -n 5 "$RES_DIR/baseline/build.log"
+        exit 1
+    fi
+    echo "Baseline build complete."
 fi
 
 # 3. 运行 MCGI
@@ -110,13 +116,13 @@ run_search() {
     OUT_DIR=$3
     echo "--- $NAME ---"
     printf "%-5s %-10s %-10s %-10s\n" "L" "QPS" "Lat(us)" "Recall"
-    for SL in 10 20 40 80 100; do
+    for SL in 50 100 150 200; do
         LOG="$OUT_DIR/search_L${SL}.log"
         "$SEARCHER" \
             --data_type float --dist_fn l2 \
             --index_path_prefix "$PREFIX" \
             --query_file "$QUERY_BIN" --gt_file "$GT_BIN" \
-            -K 10 -L $SL --result_path "$OUT_DIR/res" --num_threads 1 > "$LOG" 2>&1
+            -K 10 -L $SL --result_path "$OUT_DIR/res" --num_threads 32 > "$LOG" 2>&1
         
         # 提取结果
         LINE=$(grep -A 1 "========================" "$LOG" | tail -n 1)

@@ -8,12 +8,12 @@ python3 experiments/scripts/get_glove.py
 python3 experiments/scripts/get_data.py
 
 # calculate LID
-OPENBLAS_NUM_THREADS=8 python3 experiments/scripts/calc_lid.py experiments/data/glove/glove_base.bin
+OPENBLAS_NUM_THREADS=32 python3 experiments/scripts/calc_lid.py experiments/data/glove/glove_base.bin
 OPENBLAS_NUM_THREADS=8 python3 experiments/scripts/calc_lid.py experiments/data/sift/sift_base.bin
 OPENBLAS_NUM_THREADS=8 python3 experiments/scripts/calc_lid.py experiments/data/gist/gist_base.bin
 
 # run GloVe
-bash experiments/scripts/run_exp.sh glove
+OPENBLAS_NUM_THREADS=32 bash experiments/scripts/run_exp.sh glove
 
 # run SIFT
 bash experiments/scripts/run_exp.sh sift

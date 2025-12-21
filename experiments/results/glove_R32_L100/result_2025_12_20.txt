@@ -1,0 +1,25 @@
+cc@ram-3tb:~/DiskANN$ OPENBLAS_NUM_THREADS=32 bash experiments/scripts/run_exp.sh glove
+==========================================================
+Running Experiment on glove
+Output Dir: /home/cc/DiskANN/experiments/results/glove_R32_L100
+==========================================================
+=== Building Baseline ===
+Baseline build complete.
+=== Building MCGI ===
+=== Syncing PQ Files ===
+=== Benchmarking ===
+--- Baseline ---
+L     QPS        Lat(us)    Recall    
+50    2036.01    14539.17   75.77     
+100   1003.03    29895.16   82.63     
+150   859.01     35055.38   85.72     
+200   658.52     46000.83   87.73     
+
+--- MCGI ---
+L     QPS        Lat(us)    Recall    
+50    2002.52    14692.85   75.31     
+100   1197.83    24719.25   82.38     
+150   859.55     35091.72   85.52     
+200   658.33     46128.20   87.52     
+
+=== Experiment Complete ===

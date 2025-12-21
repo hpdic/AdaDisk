@@ -1065,6 +1065,22 @@ void Index<T, TagT, LabelT>::search_for_point_and_prune(int location, uint32_t L
 
     prune_neighbors(location, pool, pruned_list, scratch);
 
+    if (pruned_list.empty())
+    {
+        // 在此函数中，搜索到的候选节点信息存储在 pool 中
+        if (!pool.empty())
+        {
+            // pool 是 std::vector<Neighbor>，Neighbor 对象有 id 属性
+            // 我们保留距离最近的那个邻居 (pool 已经在上面 sort 过了)
+            pruned_list.push_back(pool[0].id);
+        }
+        else
+        {
+            // 极端情况下连向导航入口点
+            pruned_list.push_back(this->_start);
+        }
+    }
+
     assert(!pruned_list.empty());
     assert(_graph_store->get_total_points() == _max_points + _num_frozen_pts);
 }
