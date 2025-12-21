@@ -47,6 +47,10 @@ bash scripts/hpdic/run_build_disk_index.sh
 python scripts/hpdic/gen_data.py
 python scripts/hpdic/compute_lid.py
 bash scripts/hpdic/run_mcgi_sigmoid.sh
+
+# Simple search test
+python scripts/hpdic/gen_query_gt.py
+bash scripts/hpdic/run_ab_test.sh
 ```
 
 ## Agentic execution

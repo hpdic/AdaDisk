@@ -1473,6 +1473,44 @@ int build_disk_index(const char *dataFilePath, const char *indexFilePathPrefix, 
         index.save(std::string(indexFilePathPrefix).c_str(), false);
     }
 
+    // ================= [HPDIC FIX START] =================
+    // 补全缺失的 Disk Layout 生成逻辑
+    // 这一步是将内存中的图结构转换成 SSD 友好的 Flash 索引格式
+    // =====================================================
+
+    std::cout << "[HPDIC] Generating Disk Layout..." << std::endl;
+
+    std::string mem_index_path = std::string(indexFilePathPrefix); // index.save 默认行为
+    std::string disk_index_path = std::string(indexFilePathPrefix) + "_disk.index";
+    std::string data_file_to_use = std::string(dataFilePath);
+
+    // 如果启用了 reorder_data (append_reorder_data=true)，数据文件可能变了，这里简化处理，
+    // 假设在 AB Test 中我们通常不开启 reorder 或者由脚本处理好了。
+
+    if (disk_PQ > 0)
+    {
+        // 如果使用了 Disk PQ压缩
+        std::string disk_pq_compressed_vectors_path =
+            std::string(indexFilePathPrefix) + "_disk.index_pq_compressed.bin";
+        if (append_reorder_data)
+        {
+            diskann::create_disk_layout<uint8_t>(disk_pq_compressed_vectors_path, mem_index_path, disk_index_path,
+                                                 data_file_to_use);
+        }
+        else
+        {
+            diskann::create_disk_layout<uint8_t>(disk_pq_compressed_vectors_path, mem_index_path, disk_index_path);
+        }
+    }
+    else
+    {
+        // 标准 Float 索引 (我们在 AB Test 中主要用这个)
+        diskann::create_disk_layout<T>(data_file_to_use, mem_index_path, disk_index_path);
+    }
+
+    std::cout << "[HPDIC] Disk Layout generated at: " << disk_index_path << std::endl;
+    // ================= [HPDIC FIX END] =================
+
     return 0;
 }
 
