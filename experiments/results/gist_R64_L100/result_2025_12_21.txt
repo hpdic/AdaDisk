@@ -1,0 +1,25 @@
+cc@ram-3tb:~/DiskANN$ OPENBLAS_NUM_THREADS=32 bash experiments/scripts/run_exp.sh gist
+==========================================================
+Running Experiment on gist
+Output Dir: /home/cc/DiskANN/experiments/results/gist_R64_L100
+==========================================================
+=== Building Baseline ===
+Baseline build complete.
+=== Building MCGI ===
+=== Syncing PQ Files ===
+=== Benchmarking ===
+--- Baseline ---
+L     QPS        Lat(us)    Recall    
+50    1560.15    16870.85   81.89     
+100   873.59     31641.53   91.98     
+150   617.65     46755.36   95.59     
+200   453.27     63371.26   97.12     
+
+--- MCGI ---
+L     QPS        Lat(us)    Recall    
+50    787.28     38599.75   81.66     
+100   632.97     47735.88   91.89     
+150   520.01     58091.26   95.44     
+200   415.35     72664.49   97.10     
+
+=== Experiment Complete ===
