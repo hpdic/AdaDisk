@@ -1,0 +1,27 @@
+cc@ram-3tb:~/DiskANN$ bash experiments/scripts/run_exp.sh glove
+==========================================================
+Running Experiment on glove
+Output Dir: /home/cc/DiskANN/experiments/results/glove_R64_L100
+==========================================================
+=== Building Baseline ===
+=== Building MCGI ===
+=== Syncing PQ Files ===
+=== Benchmarking ===
+--- Baseline ---
+L     QPS        Lat(us)    Recall    
+10    153.12     5326.97    56.28     
+20    145.94     5934.91    71.61     
+40    112.95     7787.16    80.75     
+80    39.62      21440.85   87.19     
+100   33.47      26035.20   88.77     
+
+--- MCGI ---
+L     QPS        Lat(us)    Recall    
+10    157.67     5145.96    56.16     
+20    167.21     5285.01    71.49     
+40    69.12      12348.92   80.75     
+80    39.76      21540.66   87.02     
+100   33.19      26307.19   88.65     
+
+=== Experiment Complete ===
+cc@ram-3tb:~/DiskANN$ 
