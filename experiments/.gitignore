@@ -1,0 +1,7 @@
+data/
+bin/
+*.bin
+*.log
+*.index
+*.data
+idx
