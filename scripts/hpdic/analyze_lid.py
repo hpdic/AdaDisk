@@ -2,6 +2,8 @@ import numpy as np
 import sys
 import os
 
+## TODO: extend/modify this script to guide the hyperparameter selection, e.g., alpha min/max, R, L, etc.
+
 def get_stats(file_path):
     if not os.path.exists(file_path):
         return None

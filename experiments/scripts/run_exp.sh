@@ -10,10 +10,10 @@ if [ "$DATASET" == "sift" ]; then
     ALPHA_MIN="1.0"
     ALPHA_MAX="1.5"
 elif [ "$DATASET" == "gist" ]; then
-    R=64    
+    R=32    
     L=100
-    ALPHA_MIN="1.0"
-    ALPHA_MAX="1.5"
+    ALPHA_MIN="1.1"
+    ALPHA_MAX="1.2"
 elif [ "$DATASET" == "glove" ]; then
     # === GloVe 配置 ===
     R=32
