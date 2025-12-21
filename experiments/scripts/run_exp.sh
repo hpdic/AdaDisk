@@ -16,10 +16,10 @@ elif [ "$DATASET" == "gist" ]; then
     ALPHA_MAX="1.5"
 elif [ "$DATASET" == "glove" ]; then
     # === GloVe 配置 ===
-    R=32
-    L=50
+    R=64
+    L=100
     ALPHA_MIN="1.0"
-    ALPHA_MAX="1.5"
+    ALPHA_MAX="1.8"
 else
     echo "Error: Unknown dataset: $DATASET"
     exit 1
