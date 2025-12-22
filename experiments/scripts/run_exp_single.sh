@@ -1,35 +1,24 @@
 #!/bin/bash
 
-# ================= 动态配置区 =================
-# 用法: bash run_exp.sh [sift | gist | glove]
-DATASET="${1:-sift}" 
+# 获取数据集名称 (默认 sift)
+DATASET="${1:-sift}"
 
-if [ "$DATASET" == "sift" ]; then
-    R=32
-    L=50
-    ALPHA_MIN="1.0"
-    ALPHA_MAX="1.5"
-elif [ "$DATASET" == "gist" ]; then
-    R=32    
-    L=100
-    ALPHA_MIN="1.1"
-    ALPHA_MAX="1.2"
-elif [ "$DATASET" == "glove" ]; then
-    # === GloVe 配置 ===
-    R=32
-    L=100
-    ALPHA_MIN="1.0"
-    ALPHA_MAX="1.1"
-else
-    echo "Error: Unknown dataset: $DATASET"
-    exit 1
-fi
+# ==========================================
+# 1. 动态参数配置 (优先读取环境变量)
+# ==========================================
+R="${R:-32}"
+L="${L:-50}"
+ALPHA_MIN="${ALPHA_MIN:-1.0}"
+ALPHA_MAX="${ALPHA_MAX:-1.2}"
+THREADS="${THREADS:-32}"
 
-# ================= 路径自动计算 =================
+# ==========================================
+# 2. 路径自动计算 (完全复刻 run_exp.sh)
+# ==========================================
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 EXP_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# 使用 experiments/bin 下的程序
+# 使用 experiments/bin 下的 HPDIC MOD 程序
 BUILDER="${EXP_ROOT}/bin/build_disk_index"
 SEARCHER="${EXP_ROOT}/bin/search_disk_index"
 
@@ -40,36 +29,35 @@ LID_BIN="${DATA_DIR}/${DATASET}_lid.bin"
 QUERY_BIN="${DATA_DIR}/${DATASET}_query.bin"
 GT_BIN="${DATA_DIR}/${DATASET}_gt.bin"
 
-# 结果路径
-RES_DIR="${EXP_ROOT}/results/${DATASET}_R${R}_L${L}"
+# ==========================================
+# 3. 定义独立输出目录 (Grid Search 专用)
+# ==========================================
+# 结果路径包含 Alpha 值，防止覆盖
+RES_DIR="${EXP_ROOT}/results/${DATASET}_R${R}_L${L}_min${ALPHA_MIN}_max${ALPHA_MAX}"
 mkdir -p "$RES_DIR/baseline"
 mkdir -p "$RES_DIR/mcgi"
 
 echo "=========================================================="
-echo "Running Experiment on ${DATASET}"
+echo "Grid Search Task: ${DATASET}"
+echo "Params: R=$R, L=$L, Alpha=[$ALPHA_MIN, $ALPHA_MAX]"
 echo "Output Dir: ${RES_DIR}"
 echo "=========================================================="
 
-# 1. 检查数据
+# 检查数据是否存在
 if [ ! -f "$BASE_BIN" ]; then
     echo "Error: Base data missing at $BASE_BIN"
-    echo "Please run get_data.py or get_glove.py first."
     exit 1
 fi
 
-# 自动计算 LID
-if [ ! -f "$LID_BIN" ]; then
-    echo "Warning: LID missing. Computing automatically..."
-    OPENBLAS_NUM_THREADS=1 python3 "${SCRIPT_DIR}/calc_lid.py" "$BASE_BIN"
-    if [ ! -f "$LID_BIN" ]; then echo "Error: LID calculation failed."; exit 1; fi
-fi
+# ==========================================
+# 4. 运行 Baseline (如果有公用 Baseline 可跳过，这里为稳妥起见每次检查)
+# ==========================================
+BASELINE_IDX="$RES_DIR/baseline/idx_disk.index"
 
-# 2. 运行 Baseline
-echo "=== Building Baseline ==="
-# 检查关键的索引文件是否存在，如果存在则跳过
-if [ -f "$RES_DIR/baseline/idx_disk.index" ]; then
-    echo "Baseline index already exists at $RES_DIR/baseline/. Skipping build."
+if [ -f "$BASELINE_IDX" ]; then
+    echo "Baseline index exists. Skipping build."
 else
+    echo "=== Building Baseline ==="
     "$BUILDER" \
         --data_type float --dist_fn l2 \
         --data_path "$BASE_BIN" \
@@ -77,15 +65,17 @@ else
         -R $R -L $L -B 0.1 -M 1.0 -T 16 > "$RES_DIR/baseline/build.log" 2>&1
 
     if [ $? -ne 0 ]; then
-        echo "Error: Baseline Build Failed. Check log:"
-        tail -n 5 "$RES_DIR/baseline/build.log"
+        echo "Error: Baseline Build Failed."
         exit 1
     fi
-    echo "Baseline build complete."
 fi
 
-# 3. 运行 MCGI
+# ==========================================
+# 5. 运行 MCGI
+# ==========================================
+MCGI_IDX="$RES_DIR/mcgi/idx_disk.index"
 echo "=== Building MCGI ==="
+
 "$BUILDER" \
     --data_type float --dist_fn l2 \
     --data_path "$BASE_BIN" \
@@ -97,19 +87,23 @@ echo "=== Building MCGI ==="
     > "$RES_DIR/mcgi/build.log" 2>&1
 
 if [ $? -ne 0 ]; then
-    echo "Error: MCGI Build Failed. Check log:"
+    echo "Error: MCGI Build Failed."
     tail -n 5 "$RES_DIR/mcgi/build.log"
     exit 1
 fi
 
-# 4. 同步 PQ 文件 (Search 需要)
-echo "=== Syncing PQ Files ==="
+# ==========================================
+# 6. 同步 PQ 文件
+# ==========================================
 cp "$RES_DIR/baseline/idx_pq_pivots.bin" "$RES_DIR/mcgi/idx_pq_pivots.bin"
 cp "$RES_DIR/baseline/idx_pq_compressed.bin" "$RES_DIR/mcgi/idx_pq_compressed.bin"
 
-# 5. 搜索对比
+# ==========================================
+# 7. 搜索对比 (输出 QPS)
+# ==========================================
 echo "=== Benchmarking ==="
 
+# 这里的逻辑稍微简化，直接输出到标准输出，由 full_scan.sh 捕获
 run_search() {
     PREFIX=$1
     NAME=$2
@@ -130,9 +124,7 @@ run_search() {
         LAT=$(echo $LINE | awk '{print $4}')
         REC=$(echo $LINE | awk '{print $9}')
         
-        # 防止 grep 为空
-        if [ -z "$QPS" ]; then QPS="?"; fi
-        
+        if [ -z "$QPS" ]; then QPS="FAIL"; fi
         printf "%-5s %-10s %-10s %-10s\n" "$SL" "$QPS" "$LAT" "$REC"
     done
     echo ""
