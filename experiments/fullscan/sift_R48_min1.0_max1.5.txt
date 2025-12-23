@@ -1,0 +1,23 @@
+==========================================================
+Grid Search Task: sift
+Params: R=48, L=100, Alpha=[1.0, 1.5]
+Output Dir: /home/cc/DiskANN/experiments/results/sift_R48_L100_min1.0_max1.5
+==========================================================
+=== Building Baseline ===
+=== Building MCGI ===
+=== Benchmarking ===
+--- Baseline ---
+L     QPS        Lat(us)    Recall    
+50    2259.73    13025.42   98.37     
+100   1122.88    26973.63   99.58     
+150   877.31     34243.86   99.80     
+200   683.80     44545.56   99.88     
+
+--- MCGI ---
+L     QPS        Lat(us)    Recall    
+50    2249.72    12981.91   98.18     
+100   1270.31    23595.01   99.52     
+150   863.93     34759.34   99.78     
+200   660.51     45978.92   99.87     
+
+=== Experiment Complete ===
