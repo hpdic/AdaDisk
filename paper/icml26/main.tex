@@ -377,10 +377,14 @@ To provide a comprehensive analysis of graph topology effects, we compare three 
     \item \textbf{MCGI (Ours):} Our proposed method that dynamically adapts $\alpha$ based on the Local Intrinsic Dimensionality (LID) of each node.
 \end{itemize}
 
-\paragraph{Implementation Details.}
+\paragraph{Implementation and Hardware Environment.}
 We implemented MCGI by extending the official C++ codebase of DiskANN.
-All methods are compiled with GCC 9.4 using \texttt{-O3} optimization and utilize the same AVX2 SIMD distance kernels to ensure fair comparison.
-Experiments are conducted on a single thread to isolate algorithmic efficiency from parallelization overhead.
+All methods were compiled using GCC on Ubuntu 24.04 LTS (Linux kernel 6.8.0), with \texttt{-O3} optimization enabled.
+To ensure a fair comparison and isolate algorithmic efficiency from multi-threading overhead, all latency and throughput measurements reported in the ablation studies were conducted on a single thread.
+The experiments were performed on a high-performance computing server equipped with quad-socket Intel Xeon Platinum 8276 CPUs (Cascade Lake architecture).
+The system features a total of 112 physical cores (224 logical threads) running at a base frequency of 2.20 GHz, with a robust 154 MiB L3 cache.
+To eliminate memory bottlenecks during graph construction and index serving, the server is provisioned with 2.9 TB of DDR4 ECC memory.
+For disk-based retrieval scenarios, the indices were stored on enterprise-grade KIOXIA PM5-V Series SAS SSDs (Model KPM5XVUG960G) to ensure stable I/O latency.
 
 \subsection{Performance Comparison}
 \label{subsec:performance}
