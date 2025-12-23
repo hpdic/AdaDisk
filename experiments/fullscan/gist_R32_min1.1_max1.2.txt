@@ -1,0 +1,6 @@
+==========================================================
+Grid Search Task: gist
+Params: R=32, L=100, Alpha=[1.1, 1.2]
+Output Dir: /home/cc/DiskANN/experiments/results/gist_R32_L100_min1.1_max1.2
+==========================================================
+=== Building Baseline ===
