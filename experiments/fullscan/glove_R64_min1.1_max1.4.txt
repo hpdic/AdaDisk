@@ -1,0 +1,23 @@
+==========================================================
+Grid Search Task: glove
+Params: R=64, L=100, Alpha=[1.1, 1.4]
+Output Dir: /home/cc/DiskANN/experiments/results/glove_R64_L100_min1.1_max1.4
+==========================================================
+=== Building Baseline ===
+=== Building MCGI ===
+=== Benchmarking ===
+--- Baseline ---
+L     QPS        Lat(us)    Recall    
+50    1990.71    14210.06   83.95     
+100   995.85     29511.08   89.33     
+150   818.81     35557.70   91.83     
+200   605.92     48759.07   93.35     
+
+--- MCGI ---
+L     QPS        Lat(us)    Recall    
+50    2128.91    13399.79   83.66     
+100   1117.84    25886.05   89.16     
+150   808.96     35985.91   91.63     
+200   631.76     46929.95   93.18     
+
+=== Experiment Complete ===
