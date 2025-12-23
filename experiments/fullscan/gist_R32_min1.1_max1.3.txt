@@ -4,3 +4,20 @@ Params: R=32, L=100, Alpha=[1.1, 1.3]
 Output Dir: /home/cc/DiskANN/experiments/results/gist_R32_L100_min1.1_max1.3
 ==========================================================
 === Building Baseline ===
+=== Building MCGI ===
+=== Benchmarking ===
+--- Baseline ---
+L     QPS        Lat(us)    Recall    
+50    329.74     93143.74   74.54     
+100   238.01     130688.03  85.77     
+150   972.77     28946.30   90.72     
+200   722.71     39639.93   93.40     
+
+--- MCGI ---
+L     QPS        Lat(us)    Recall    
+50    2194.22    11735.87   74.23     
+100   1332.82    20807.91   85.83     
+150   890.72     31339.76   90.58     
+200   709.20     40455.23   93.09     
+
+=== Experiment Complete ===
