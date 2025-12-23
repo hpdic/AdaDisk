@@ -1,0 +1,23 @@
+==========================================================
+Grid Search Task: gist
+Params: R=32, L=100, Alpha=[1.0, 1.7]
+Output Dir: /home/cc/DiskANN/experiments/results/gist_R32_L100_min1.0_max1.7
+==========================================================
+=== Building Baseline ===
+=== Building MCGI ===
+=== Benchmarking ===
+--- Baseline ---
+L     QPS        Lat(us)    Recall    
+50    2537.22    10164.21   74.62     
+100   150.08     208162.31  86.15     
+150   921.41     30294.77   90.95     
+200   719.62     39753.79   93.39     
+
+--- MCGI ---
+L     QPS        Lat(us)    Recall    
+50    2113.15    12145.18   74.43     
+100   1312.27    21014.94   86.09     
+150   894.05     31359.35   90.77     
+200   699.91     40744.73   93.21     
+
+=== Experiment Complete ===
