@@ -33,7 +33,7 @@ def print_table(files):
     print("-" * len(header))
 
 if __name__ == "__main__":
-    base_path = "/home/cc/DiskANN/experiments/data"
+    base_path = "/home/cc/AdaDisk/experiments/data"
     files_to_analyze = {
         "SIFT1M": f"{base_path}/sift/sift_lid.bin",
         "GloVe1M": f"{base_path}/glove/glove_lid.bin",

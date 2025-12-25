@@ -6,7 +6,7 @@
     cd ~/AdaDisk
     sudo apt-get update
     sudo apt-get install libopenblas-dev liblapacke-dev
-    pip install numpy scikit-learn h5py tqdm
+    pip install numpy scikit-learn h5py tqdm requests
     mkdir -p build && cd build
     cmake ..
     make -j
@@ -20,6 +20,7 @@
     python scripts/hpdic/gen_query_gt.py
     bash scripts/hpdic/run_ab_test.sh
   ```
+  If everything looks fine, follow `experiments/scripts/readme.md`
 ## Motivation: Resolving the Freshness-Latency Dilemma in Production RAG and LLM Serving
 In production Retrieval-Augmented Generation (RAG) environments, the system faces a fundamental conflict: the need for **Knowledge Freshness** (continuous data ingestion) versus the demand for **Serving Low-Latency** (real-time query retrieval).
 

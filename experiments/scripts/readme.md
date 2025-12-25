@@ -1,5 +1,5 @@
 ```bash
-cd ~/DiskANN
+cd ~/AdaDisk
 
 # download glove (0.48 GB, 100 Dim)
 python3 experiments/scripts/get_glove.py
@@ -11,6 +11,9 @@ python3 experiments/scripts/get_data.py
 OPENBLAS_NUM_THREADS=32 python3 experiments/scripts/calc_lid.py experiments/data/glove/glove_base.bin
 OPENBLAS_NUM_THREADS=32 python3 experiments/scripts/calc_lid.py experiments/data/sift/sift_base.bin
 OPENBLAS_NUM_THREADS=32 python3 experiments/scripts/calc_lid.py experiments/data/gist/gist_base.bin
+
+# analysize LID
+python3 experiments/scripts/analyze_lid.py
 
 # run GloVe
 OPENBLAS_NUM_THREADS=32 bash experiments/scripts/run_exp.sh glove
