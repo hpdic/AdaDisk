@@ -5,3 +5,22 @@ Shared Baseline: /home/cc/AdaDisk/experiments/results/sift_R32_L100_baseline_sha
 Current MCGI:    /home/cc/AdaDisk/experiments/results/sift_R32_L100_min1.0_max1.1
 ==========================================================
 === [Cache Miss] Building Shared Baseline ===
+=== Building MCGI ===
+=== Benchmarking ===
+--- Baseline ---
+L     QPS        Lat(us)    Recall    
+50    1289.37    23323.67   97.02     
+100   706.65     43682.51   99.10     
+150   414.66     75335.44   99.56     
+200   382.52     81021.77   99.74     
+
+--- MCGI ---
+L     QPS        Lat(us)    Recall    
+50    1300.29    23157.75   95.97     
+100   715.18     43166.00   98.69     
+150   491.80     63261.26   99.37     
+200   373.83     82979.48   99.63     
+
+=== Experiment Complete ===
+=== Cleaning up large index files ===
+Cleanup done. Large binaries removed.
