@@ -19,8 +19,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 EXP_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # 使用 experiments/bin 下的 HPDIC MOD 程序
-BUILDER="${EXP_ROOT}/bin/build_disk_index"
-SEARCHER="${EXP_ROOT}/bin/search_disk_index"
+BUILDER="${EXP_ROOT}/../build/apps/build_disk_index"
+SEARCHER="${EXP_ROOT}/../build/apps/search_disk_index"
 
 # 数据路径
 DATA_DIR="${EXP_ROOT}/data/${DATASET}"
