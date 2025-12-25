@@ -1,5 +1,25 @@
 # [HPDIC MOD] AdaDisk: A Distributed Agentic System for Adaptive Ingestion-Query Scheduling of DiskANN (https://github.com/microsoft/DiskANN) RAG in LLM Serving
 
+## Update December 24, 2025
+* Deployed AdaDisk on Intel CPUs
+  ```bash
+    cd ~/AdaDisk
+    sudo apt-get update
+    sudo apt-get install libopenblas-dev liblapacke-dev
+    pip install numpy scikit-learn h5py tqdm
+    mkdir -p build && cd build
+    cmake ..
+    make -j
+    cd ..
+    echo 'export MKL_THREADING_LAYER=GNU' >> ~/.bashrc
+    source ~/.bashrc
+    python scripts/hpdic/gen_data.py
+    bash scripts/hpdic/run_build_disk_index.sh 
+    python scripts/hpdic/compute_lid.py
+    bash scripts/hpdic/run_mcgi_sigmoid.sh
+    python scripts/hpdic/gen_query_gt.py
+    bash scripts/hpdic/run_ab_test.sh
+  ```
 ## Motivation: Resolving the Freshness-Latency Dilemma in Production RAG and LLM Serving
 In production Retrieval-Augmented Generation (RAG) environments, the system faces a fundamental conflict: the need for **Knowledge Freshness** (continuous data ingestion) versus the demand for **Serving Low-Latency** (real-time query retrieval).
 
@@ -42,10 +62,10 @@ cd ~/DiskANN # or cd ~/AdaDisk
 make -j -C build
 
 # Vanilla DiskANN index build
+python scripts/hpdic/gen_data.py
 bash scripts/hpdic/run_build_disk_index.sh 
 
 # MCGI index build
-python scripts/hpdic/gen_data.py
 python scripts/hpdic/compute_lid.py
 bash scripts/hpdic/run_mcgi_sigmoid.sh
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ================= 配置区 =================
-DISKANN_HOME="/home/cc/DiskANN"
+DISKANN_HOME="/home/cc/AdaDisk"
 BUILDER_BIN="${DISKANN_HOME}/build/apps/build_disk_index"
 SEARCH_BIN="${DISKANN_HOME}/build/apps/search_disk_index"
 

@@ -5,7 +5,7 @@
 # ==========================================
 
 # DiskANN 安装路径 (请确认路径是否正确)
-DISKANN_HOME="/home/cc/DiskANN"
+DISKANN_HOME="/home/cc/AdaDisk"
 BUILDER_BIN="${DISKANN_HOME}/build/apps/build_disk_index"
 
 # 脚本与数据路径

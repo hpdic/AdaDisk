@@ -19,6 +19,8 @@
 #include "timer.h"
 #include "tsl/robin_set.h"
 
+extern "C" void openblas_set_num_threads(int);
+
 namespace diskann
 {
 
