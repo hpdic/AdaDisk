@@ -1,0 +1,8 @@
+==========================================================
+Grid Search Task: gist
+Params: R=32, L=100, Alpha=[1.1, 1.5]
+Shared Baseline: /home/cc/AdaDisk/experiments/results/gist_R32_L100_baseline_shared
+Current MCGI:    /home/cc/AdaDisk/experiments/results/gist_R32_L100_min1.1_max1.5
+==========================================================
+=== [Cache Hit] Baseline index found. Skipping build. ===
+=== Building MCGI ===
