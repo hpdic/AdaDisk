@@ -23,4 +23,7 @@ OPENBLAS_NUM_THREADS=32 bash experiments/scripts/run_exp.sh sift
 
 # run GIST
 OPENBLAS_NUM_THREADS=32 bash experiments/scripts/run_exp.sh gist
+
+# run full scan
+OPENBLAS_NUM_THREADS=32 bash experiments/scripts/full_scan.sh
 ```
