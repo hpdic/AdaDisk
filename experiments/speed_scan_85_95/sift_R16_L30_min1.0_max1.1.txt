@@ -1,0 +1,13 @@
+==========================================================
+Grid Search Task: sift
+Params: R=16, L=30, Alpha=[1.0, 1.1]
+Shared Baseline: /home/cc/AdaDisk/experiments/results/sift_R16_L30_baseline_shared
+Current MCGI:    /home/cc/AdaDisk/experiments/results/sift_R16_L30_min1.0_max1.1
+==========================================================
+=== [Cache Miss] Building Shared Baseline ===
+=== Building MCGI ===
+=== Benchmarking ===
+--- Baseline ---
+L     QPS        Lat(us)    Recall    
+50    1202.63    25228.40   87.01     
+100   559.40     55729.65   93.41     

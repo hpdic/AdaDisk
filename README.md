@@ -19,6 +19,8 @@
     bash scripts/hpdic/run_mcgi_sigmoid.sh
     python scripts/hpdic/gen_query_gt.py
     bash scripts/hpdic/run_ab_test.sh
+    bash experiments/scripts/full_scan.sh
+    bash experiments/scripts/scan_patch.sh
   ```
   If everything looks fine, follow `experiments/scripts/readme.md`
 ## Motivation: Resolving the Freshness-Latency Dilemma in Production RAG and LLM Serving
