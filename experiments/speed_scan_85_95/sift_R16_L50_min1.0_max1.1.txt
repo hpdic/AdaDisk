@@ -1,0 +1,26 @@
+==========================================================
+Grid Search Task: sift
+Params: R=16, L=50, Alpha=[1.0, 1.1]
+Shared Baseline: /home/cc/AdaDisk/experiments/results/sift_R16_L50_baseline_shared
+Current MCGI:    /home/cc/AdaDisk/experiments/results/sift_R16_L50_min1.0_max1.1
+==========================================================
+=== [Cache Miss] Building Shared Baseline ===
+=== Building MCGI ===
+=== Benchmarking ===
+--- Baseline ---
+L     QPS        Lat(us)    Recall    
+50    1199.28    25306.48   89.25     
+100   563.76     55262.98   94.90     
+150   489.17     63853.81   96.91     
+200   374.16     83895.02   97.91     
+
+--- MCGI ---
+L     QPS        Lat(us)    Recall    
+50    1240.76    24421.61   88.02     
+100   705.08     43906.76   94.21     
+150   489.31     63846.65   96.46     
+200   374.15     83899.76   97.60     
+
+=== Experiment Complete ===
+=== Cleaning up large index files ===
+Cleanup done. Large binaries removed.
