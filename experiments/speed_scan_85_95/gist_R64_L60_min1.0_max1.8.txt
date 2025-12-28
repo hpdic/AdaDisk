@@ -6,3 +6,21 @@ Current MCGI:    /home/cc/AdaDisk/experiments/results/gist_R64_L60_min1.0_max1.8
 ==========================================================
 === [Cache Hit] Baseline index found. Skipping build. ===
 === Building MCGI ===
+=== Benchmarking ===
+--- Baseline ---
+L     QPS        Lat(us)    Recall    
+50    548.82     51678.25   80.62     
+100   89.44      346752.51  90.62     
+150   60.86      510461.37  94.61     
+200   58.29      540659.19  96.55     
+
+--- MCGI ---
+L     QPS        Lat(us)    Recall    
+50    176.69     173679.27  79.85     
+100   131.23     234249.68  90.10     
+150   101.46     304201.79  94.13     
+200   81.82      376538.95  96.19     
+
+=== Experiment Complete ===
+=== Cleaning up large index files ===
+Cleanup done. Large binaries removed.

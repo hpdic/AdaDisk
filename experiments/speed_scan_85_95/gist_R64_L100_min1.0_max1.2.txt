@@ -1,0 +1,26 @@
+==========================================================
+Grid Search Task: gist
+Params: R=64, L=100, Alpha=[1.0, 1.2]
+Shared Baseline: /home/cc/AdaDisk/experiments/results/gist_R64_L100_baseline_shared
+Current MCGI:    /home/cc/AdaDisk/experiments/results/gist_R64_L100_min1.0_max1.2
+==========================================================
+=== [Cache Hit] Baseline index found. Skipping build. ===
+=== Building MCGI ===
+=== Benchmarking ===
+--- Baseline ---
+L     QPS        Lat(us)    Recall    
+50    348.40     86247.32   82.15     
+100   97.24      319546.60  91.96     
+150   64.41      483106.31  95.29     
+200   64.57      487315.71  96.92     
+
+--- MCGI ---
+L     QPS        Lat(us)    Recall    
+50    155.83     199242.09  80.56     
+100   124.78     247515.40  90.71     
+150   95.81      322001.85  94.79     
+200   80.52      381714.51  96.50     
+
+=== Experiment Complete ===
+=== Cleaning up large index files ===
+Cleanup done. Large binaries removed.

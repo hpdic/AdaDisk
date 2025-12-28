@@ -1,0 +1,26 @@
+==========================================================
+Grid Search Task: glove
+Params: R=32, L=120, Alpha=[1.0, 1.5]
+Shared Baseline: /home/cc/AdaDisk/experiments/results/glove_R32_L120_baseline_shared
+Current MCGI:    /home/cc/AdaDisk/experiments/results/glove_R32_L120_min1.0_max1.5
+==========================================================
+=== [Cache Hit] Baseline index found. Skipping build. ===
+=== Building MCGI ===
+=== Benchmarking ===
+--- Baseline ---
+L     QPS        Lat(us)    Recall    
+50    1190.93    25454.40   76.03     
+100   547.97     56153.46   82.89     
+150   475.52     64737.46   86.12     
+200   365.22     84544.67   88.11     
+
+--- MCGI ---
+L     QPS        Lat(us)    Recall    
+50    733.50     42264.78   75.95     
+100   544.89     56500.39   82.89     
+150   477.97     64420.39   85.99     
+200   367.20     84237.94   87.96     
+
+=== Experiment Complete ===
+=== Cleaning up large index files ===
+Cleanup done. Large binaries removed.
