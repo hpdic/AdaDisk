@@ -32,4 +32,6 @@ OPENBLAS_NUM_THREADS=32 bash experiments/scripts/scan_patch.sh
 
 # Faiss baseline
 pip install faiss-cpu numpy
+cd ~/AdaDisk/experiments/scripts/
+python3 run_faiss_disk_baseline.py --dataset sift
 ```

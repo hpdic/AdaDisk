@@ -1,0 +1,101 @@
+python3 run_faiss_disk_baseline.py --dataset sift
+=== Running Baseline for Dataset: SIFT ===
+Loading /home/cc/AdaDisk/experiments/data/sift/sift_base.fvecs...
+Loading /home/cc/AdaDisk/experiments/data/sift/sift_query.fvecs...
+Loading /home/cc/AdaDisk/experiments/data/sift/sift_groundtruth.ivecs...
+
+--- Building Index in RAM first (Safer) ---
+Training quantizer with 100000 vectors...
+WARNING clustering 100000 points to 4096 centroids: please provide at least 159744 training points
+Training done in 55.49s
+Adding vectors to index...
+Adding done in 54.42s
+Saving populated index to /home/cc/AdaDisk/experiments/data/sift/sift_ivf_on_disk.index...
+
+--- Loading Index in Disk Mode (mmap) ---
+Index loaded. Total vectors: 1000000
+
+=== Benchmark Result: SIFT ===
+nprobe     | Recall@1   | Recall@10  | QPS        | Latency(ms)    
+---------------------------------------------------------------------------
+1          | 0.3336     | 0.3352     | 39298.60   | 0.0254         
+5          | 0.6792     | 0.6841     | 32159.41   | 0.0311         
+10         | 0.8054     | 0.8116     | 25147.70   | 0.0398         
+20         | 0.8977     | 0.9052     | 20716.98   | 0.0483         
+40         | 0.9547     | 0.9627     | 15420.86   | 0.0648         
+50         | 0.9656     | 0.9737     | 13319.42   | 0.0751         
+80         | 0.9802     | 0.9885     | 10400.18   | 0.0962         
+100        | 0.9842     | 0.9925     | 8989.78    | 0.1112         
+200        | 0.9905     | 0.9990     | 5028.91    | 0.1989         
+---------------------------------------------------------------------------
+(venv) cc@fhe:~/AdaDisk/experiments/scripts$ 
+
+(venv) cc@fhe:~/AdaDisk/experiments/scripts$ python3 run_faiss_disk_baseline.py --dataset gist
+=== Running Baseline for Dataset: GIST ===
+Loading /home/cc/AdaDisk/experiments/data/gist/gist_base.fvecs...
+Loading /home/cc/AdaDisk/experiments/data/gist/gist_query.fvecs...
+Loading /home/cc/AdaDisk/experiments/data/gist/gist_groundtruth.ivecs...
+
+--- Building Index in RAM first (Safer) ---
+Training quantizer with 100000 vectors...
+WARNING clustering 100000 points to 4096 centroids: please provide at least 159744 training points
+Training done in 383.94s
+Adding vectors to index...
+Adding done in 378.88s
+Saving populated index to /home/cc/AdaDisk/experiments/data/gist/gist_ivf_on_disk.index...
+
+--- Loading Index in Disk Mode (mmap) ---
+Index loaded. Total vectors: 1000000
+
+=== Benchmark Result: GIST ===
+nprobe     | Recall@1   | Recall@10  | QPS        | Latency(ms)    
+---------------------------------------------------------------------------
+1          | 0.2290     | 0.2320     | 9606.30    | 0.1041         
+5          | 0.5080     | 0.5130     | 3212.13    | 0.3113         
+10         | 0.6350     | 0.6400     | 2314.19    | 0.4321         
+20         | 0.7710     | 0.7760     | 1559.38    | 0.6413         
+40         | 0.8770     | 0.8830     | 1040.15    | 0.9614         
+50         | 0.9020     | 0.9080     | 778.61     | 1.2843         
+80         | 0.9530     | 0.9590     | 590.47     | 1.6936         
+100        | 0.9680     | 0.9740     | 575.64     | 1.7372         
+200        | 0.9870     | 0.9930     | 327.89     | 3.0498         
+300        | 0.9930     | 0.9990     | 206.40     | 4.8450         
+400        | 0.9940     | 1.0000     | 153.19     | 6.5278         
+---------------------------------------------------------------------------
+(venv) cc@fhe:~/AdaDisk/experiments/scripts$ 
+
+python3 run_faiss_disk_baseline.py --dataset glove
+=== Running Baseline for Dataset: GLOVE ===
+[Smart Search] Auto-resolved base -> glove_base.bin
+[Smart Search] Auto-resolved query -> glove_query.bin
+[Smart Search] Auto-resolved gt -> glove_gt.bin
+Loading BIN file: /home/cc/AdaDisk/experiments/data/glove/glove_base.bin...
+Loading BIN file: /home/cc/AdaDisk/experiments/data/glove/glove_query.bin...
+Loading BIN file: /home/cc/AdaDisk/experiments/data/glove/glove_gt.bin...
+Data Loaded: Base=(1183514, 100), Query=(10000, 100), GT=(10000, 100)
+Normalizing vectors (L2) for Cosine Similarity...
+
+--- Building Index in RAM first ---
+Training quantizer with 160000 vectors...
+Training done in 66.95s
+Adding vectors to index...
+Adding done in 50.73s
+Saving index to /home/cc/AdaDisk/experiments/data/glove/glove_ivf_on_disk.index...
+
+--- Loading Index in Disk Mode (mmap) ---
+Index loaded. Total vectors: 1183514
+
+=== Benchmark Result: GLOVE ===
+nprobe     | Recall@1   | Recall@10  | QPS        | Latency(ms)    
+---------------------------------------------------------------------------
+1          | 0.3663     | 0.3663     | 36566.33   | 0.0273         
+5          | 0.6305     | 0.6305     | 28001.13   | 0.0357         
+10         | 0.7156     | 0.7156     | 25861.04   | 0.0387         
+20         | 0.7866     | 0.7866     | 21835.69   | 0.0458         
+40         | 0.8491     | 0.8491     | 17174.28   | 0.0582         
+50         | 0.8659     | 0.8659     | 15700.46   | 0.0637         
+80         | 0.9006     | 0.9006     | 11267.62   | 0.0887         
+100        | 0.9139     | 0.9139     | 9375.49    | 0.1067         
+200        | 0.9499     | 0.9499     | 5644.29    | 0.1772         
+---------------------------------------------------------------------------
+(venv) cc@fhe:~/AdaDisk/experiments/scripts$ 
