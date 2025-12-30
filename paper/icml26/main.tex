@@ -109,16 +109,35 @@ In this paper, we propose Manifold-Consistent Graph Indexing (MCGI), a novel dis
 \section{Related Work}
 \label{sec:related_work}
 
-We review the literature relevant to our work, categorizing it into graph-based ANNS, high-dimensional indexing, and intrinsic dimensionality analysis.
+We review the literature relevant to our work, categorizing it into vector indexing paradigms, high-dimensional indexing, and intrinsic dimensionality analysis.
 
-\paragraph{Graph-based ANNS.}
-Graph-based indices currently dominate the ANNS landscape due to their superior recall-latency trade-offs. The Hierarchical Navigable Small World (HNSW) graph utilizes a multi-layer structure to enable logarithmic scaling, but its high memory footprint limits its applicability to billion-scale datasets. To support larger scales, disk-based approaches have been developed. DiskANN (Vamana) relaxes the graph sparsity constraints to maximize the coverage of local neighborhoods, allowing the index to reside on SSDs while caching a compressed representation in DRAM. While highly effective for data with moderate dimensionality (e.g., 100 to 128), these methods rely on a static search list size, which becomes a bottleneck when processing non-uniform, high-dimensional data distributions.
+\paragraph{Vector Indexing Paradigms.}
+While traditional sparse retrieval methods like BM25~\cite{robertson2009probabilistic} rely on lexical matching, the surge of neural networks has shifted the focus to dense vector retrieval.
+In the memory-resident regime, graph-based indices, particularly Hierarchical Navigable Small World (HNSW)~\cite{malkov2018efficient}, have established state-of-the-art performance by enabling logarithmic complexity scaling.
+However, the high memory consumption of HNSW poses challenges for billion-scale datasets.
+To mitigate this, disk-based approaches have emerged. 
+DiskANN (Vamana)~\cite{subramanya2019diskann} adapts the graph topology for SSDs by relaxing sparsity constraints to maximize neighborhood coverage.
+Concurrently, methods like SPANN~\cite{chen2021spann} argue against pure graph traversal on disk due to random I/O latency, advocating instead for an inverted index (IVF) structure combined with centroid-based routing.
+Despite their differences, both DiskANN and SPANN, as well as their predecessors like NSG~\cite{fu2019nsg}, are predominantly evaluated on standard benchmarks such as SIFT and DEEP with moderate dimensionality (96 to 128). 
+They largely rely on static routing parameters or centroid layouts that do not explicitly account for the local intrinsic dimensionality. 
+In contrast, MCGI distinguishes itself by abandoning static routing configurations in favor of a geometry-aware strategy. By dynamically modulating the search budget based on estimated LID, our method aligns the graph traversal with the underlying manifold structure, thereby overcoming the efficiency bottlenecks that hinder rigid indexing schemes in high-dimensional spaces.
 
 \paragraph{High-Dimensional Indexing.}
-Prior to the dominance of graph methods, tree-based and hashing-based approaches were widely explored. Structures such as KD-trees and R-trees partition the space hierarchically but suffer severely from the curse of dimensionality, degrading to linear scan performance when the dimension exceeds 20. Locality-Sensitive Hashing (LSH) offers theoretical guarantees and sub-linear search time. However, to achieve high recall in practice, LSH requires maintaining a large number of hash tables, resulting in excessive storage overhead and random I/O patterns that are unfriendly to storage devices. MCGI differs from these approaches by retaining the efficiency of graph traversal while addressing the dimensional sensitivity that plagues traditional partitioning methods.
+Early approaches relied on space-partitioning trees. 
+The KD-tree~\cite{bentley1975multidimensional} divides the space using axis-aligned hyperplanes, while the R-tree~\cite{guttman1984r} utilizes hierarchical bounding rectangles. 
+However, these strict partitioning schemes suffer from the curse of dimensionality, typically degrading to linear scan performance when the dimension exceeds 20. 
+To address this, approximate methods like Locality-Sensitive Hashing (LSH)~\cite{indyk1998approximate, datar2004locality} were introduced, offering sub-linear search time guarantees. 
+Yet, achieving high recall with LSH often requires maintaining significant redundancy via multiple hash tables, resulting in excessive storage overhead.
+Another line of work involves subspace quantization, exemplified by Product Quantization (PQ)~\cite{jegou2011product} and Optimized PQ (OPQ)~\cite{ge2013optimized}, which decompose high-dimensional vectors into lower-dimensional subspaces for compression. 
+Additionally, randomized structures like RP-Trees~\cite{dasgupta2008random} attempt to adapt to the data geometry via random projections. 
+MCGI differs from these approaches by retaining the connectivity benefits of graph traversal while avoiding the aggressive quantization loss or the storage redundancy of hashing methods.
 
 \paragraph{Intrinsic Dimensionality.}
-The concept of intrinsic dimensionality has long been studied to characterize the complexity of datasets. Theoretical works have introduced measures such as the expansion dimension and the doubling dimension to bound the complexity of nearest neighbor search. Karger and Ruhl proposed the KR-dimension to analyze search algorithms in growth-restricted metrics. More recently, practical estimators for Local Intrinsic Dimensionality (LID) have been developed, typically based on the distribution of distances to the k-nearest neighbors. While these measures have been used for query performance prediction or outlier detection, they have rarely been integrated directly into the core routing mechanism of graph indices. MCGI leverages these theoretical tools to actively guide the index construction and search process.
+Theoretical analysis of nearest neighbor search often relies on characterizing the intrinsic difficulty of the dataset. 
+Fundamental concepts such as the doubling dimension~\cite{gupta2003bounded} and expansion dimension~\cite{karger2002finding} provide asymptotic bounds on search complexity in growth-restricted metrics. 
+Bridging theory and practice, Levina and Bickel~\cite{NIPS2004_74934548} introduced maximum likelihood estimators for Local Intrinsic Dimensionality (LID), enabling robust estimation on real-world data. 
+While subsequent works have utilized LID for tasks such as query hardness prediction~\cite{he2012difficulty} or detecting adversarial examples~\cite{ma2018characterizing}, these applications are typically passive, utilizing LID primarily for post-hoc analysis or pre-query estimation without altering the underlying index structure. 
+MCGI diverges from this paradigm by employing LID as an active control signal. By dynamically modulating the graph traversal parameters based on local geometry, our method transforms LID from a descriptive metric into a prescriptive mechanism for efficient routing.
 
 \section{Methodology} \label{method}
 
@@ -194,7 +213,7 @@ We employ the logistic function over a linear mapping to exploit its saturation 
 LID estimates often exhibit heavy-tailed distributions with extreme outliers. 
 A linear mapping would be hypersensitive to these outliers, skewing the $\alpha$ values for the majority of the data. 
 The logistic function acts as a robust soft-thresholding mechanism: it reduces the variance in the high-LID and low-LID tails (saturating towards $\alpha_{\min}$ and $\alpha_{\max}$, respectively) while maintaining sensitivity in the transition region around the population mean.
-We set $\alpha_{\min}=1.0$ and $\alpha_{\max}=1.5$ following standard practices in graph indexing~\cite{jayaram2019diskann}. 
+We set $\alpha_{\min}=1.0$ and $\alpha_{\max}=1.5$ following standard practices in graph indexing~\cite{subramanya2019diskann}. 
 This formulation ensures that nodes with average complexity ($z(u) \approx 0$) are assigned $\alpha \approx 1.25$, while nodes with significantly higher complexity ($z(u) > 0$) are penalized with a stricter $\alpha$ approaching the limit of 1.0.
 
 The mapping function $\Phi$ satisfies the following geometric properties essential for stable graph construction: Monotonicity and Boundedness.
@@ -525,26 +544,26 @@ The search list size parameter, $L$, controls the trade-off between search quali
 Figure~\ref{fig:operational_efficiency}(b) details the query latency (in milliseconds) across different recall levels. While QPS reflects throughput, latency is critical for online services. The results show that \ours{} maintains lower latency, particularly in the high-recall regime. The logarithmic scale highlights that for difficult queries, \ours{} significantly reduces the computational overhead by minimizing unnecessary disk I/O.
 
 
-\section{Discussion}
-\label{sec:discussion}
+% \section{Discussion}
+% \label{sec:discussion}
 
-While MCGI demonstrates superior performance on static, high-dimensional datasets, several aspects warrant further discussion regarding its practical deployment and limitations.
+% While MCGI demonstrates superior performance on static, high-dimensional datasets, several aspects warrant further discussion regarding its practical deployment and limitations.
 
-\paragraph{Preprocessing Overhead vs. Query Efficiency.}
-MCGI introduces an additional LID estimation step during index construction. As analyzed in Section~\ref{subsec:complexity}, this incurs a one-time computational cost. In write-heavy scenarios (e.g., real-time streaming ingestion), this overhead might be non-negligible. However, for Retrieval-Augmented Generation (RAG) workloads, which are typically "Write-Once-Read-Many" (WORM), amortizing the construction cost over millions of queries makes this trade-off highly favorable. The significant reduction in operational latency and disk I/O justifies the upfront investment in geometry-aware calibration.
+% \paragraph{Preprocessing Overhead vs. Query Efficiency.}
+% MCGI introduces an additional LID estimation step during index construction. As analyzed in Section~\ref{subsec:complexity}, this incurs a one-time computational cost. In write-heavy scenarios (e.g., real-time streaming ingestion), this overhead might be non-negligible. However, for Retrieval-Augmented Generation (RAG) workloads, which are typically "Write-Once-Read-Many" (WORM), amortizing the construction cost over millions of queries makes this trade-off highly favorable. The significant reduction in operational latency and disk I/O justifies the upfront investment in geometry-aware calibration.
 
-\paragraph{Adaptability to Dynamic Distributions.}
-Our current implementation assumes that the intrinsic dimensionality of the dataset is relatively stable. In scenarios with significant distribution shifts (e.g., concept drift in user preference embeddings), the pre-calculated LID estimates might become stale. A promising direction for future work is to develop an incremental LID update mechanism that locally re-calibrates the index structure as new data points are inserted, ensuring that the routing strategy remains manifold-consistent over time.
+% \paragraph{Adaptability to Dynamic Distributions.}
+% Our current implementation assumes that the intrinsic dimensionality of the dataset is relatively stable. In scenarios with significant distribution shifts (e.g., concept drift in user preference embeddings), the pre-calculated LID estimates might become stale. A promising direction for future work is to develop an incremental LID update mechanism that locally re-calibrates the index structure as new data points are inserted, ensuring that the routing strategy remains manifold-consistent over time.
 
-\paragraph{Energy Efficiency and Green AI.}
-Beyond latency and throughput, MCGI contributes to energy-efficient computing. By pruning unnecessary disk reads via LID-aware routing, the system reduces the I/O operations per query. Since SSD I/O and data movement are significant consumers of energy in large-scale retrieval clusters, MCGI aligns with the growing emphasis on "Green AI," offering a sustainable solution for billion-scale vector search.
+% \paragraph{Energy Efficiency and Green AI.}
+% Beyond latency and throughput, MCGI contributes to energy-efficient computing. By pruning unnecessary disk reads via LID-aware routing, the system reduces the I/O operations per query. Since SSD I/O and data movement are significant consumers of energy in large-scale retrieval clusters, MCGI aligns with the growing emphasis on "Green AI," offering a sustainable solution for billion-scale vector search.
 
 \section{Conclusion}
 \label{sec:conclusion}
 
 In this paper, we presented Manifold-Consistent Graph Indexing (MCGI), a geometry-aware solution designed to address the Euclidean-Geodesic mismatch in high-dimensional vector search. By explicitly integrating Local Intrinsic Dimensionality (LID) into both the graph construction and search phases, MCGI dynamically adapts its routing strategy to the underlying manifold structure. We provided theoretical analysis proving that our method preserves the topological connectivity of the Relative Neighborhood Graph while optimizing the search complexity based on local curvature. Empirically, MCGI demonstrates significant performance gains on high-dimensional benchmarks, achieving a 5.8 times throughput improvement on GIST1M compared to state-of-the-art disk-based indices, without incurring performance regression on standard lower-dimensional datasets.
 
-\nocite{*}
+% \nocite{*}
 \bibliography{ref}
 \bibliographystyle{icml2026}
 
