@@ -321,7 +321,7 @@ The MCGI algorithm (Algorithm~\ref{alg:mcgi}) alters the standard graph refineme
    \STATE Input: Dataset $X$, Max Degree $R$, Beam Width $L$
    \STATE Output: Optimized Graph $G$
    
-   \STATE \COMMENT{Phase 1: Geometric Calibration}
+   \STATE // Phase 1: Geometric Calibration
    \STATE $\mathcal{L} \leftarrow \text{ParallelEstimateLID}(X)$
    \STATE $\mu \leftarrow \text{Mean}(\mathcal{L})$
    \STATE $\sigma \leftarrow \text{StdDev}(\mathcal{L})$
@@ -331,7 +331,7 @@ The MCGI algorithm (Algorithm~\ref{alg:mcgi}) alters the standard graph refineme
        \STATE $\alpha_u \leftarrow \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) / (1 + \exp(z_u))$
    \ENDFOR
    
-   \STATE \COMMENT{Phase 2: Topology Refinement}
+   \STATE // Phase 2: Topology Refinement
    \STATE $G \leftarrow \text{RandomGraph}(X, R)$
    
    \FOR{$iter \leftarrow 1$ to $MaxIter$}
@@ -399,7 +399,7 @@ Consequently, to maintain a high probability of successful routing (Recall $\app
 \end{proof}
 
 \noindent\textbf{Justification for Adaptive $L$.} 
-Lemma~\ref{lemma:complexity} implies that a static $L$ leads to a performance mismatch: it is wasteful for "flat" regions (low LID) and insufficient for "curved" regions (high LID). 
+Lemma~\ref{lemma:complexity} implies that a static $L$ leads to a performance mismatch: it is wasteful for flat regions (low LID) and insufficient for curved regions (high LID). 
 \ours{} addresses this by dynamically modulating the beam width $L(q)$ to match the local geometric complexity:
 \begin{equation}
     L(q) \propto \exp\left( \lambda \cdot \text{LID}(q) \right)
@@ -445,11 +445,12 @@ In this section, we evaluate the performance of \ours{} against state-of-the-art
 \label{subsec:implementation}
 
 We implemented MCGI on top of the official C++ codebase of DiskANN~\cite{subramanya2019diskann}. 
-Our implmentation is open-sourced at \url{https://github.com/hpdic/AdaDisk}.
 The implementation involved approximately 1,500 lines of code modifications, primarily focusing on the index construction pipeline and the SSD-resident search kernel. 
 To ensure fair comparison and production-level efficiency, we integrated the Maximum Likelihood Estimator (MLE) for LID directly into the graph building process. 
 The core distance computations were optimized using AVX-512 SIMD instructions to maximize hardware utilization. 
 All latency-critical components, including the dynamic candidate list management and the LID-aware routing logic, were implemented in C++ to avoid the overhead of high-level language interpreters. 
+
+\ours{} implementation is open-sourced as a subproject of AdaDisk: \url{https://github.com/hpdic/AdaDisk}.
 
 \subsection{Experimental Setup}
 \label{subsec:setup}
@@ -477,11 +478,7 @@ We adhere to the standard evaluation protocol for ANN search. We measure Recall@
 
 \subsection{Performance on High-Dimensional Data (RQ1)}
 
-The primary advantage of MCGI lies in its robust handling of high-dimensional spaces where traditional disk-based graph indices typically degrade. Figure~\ref{fig:main_results}(a) illustrates the Recall-QPS trade-off on the GIST1M (960-dim) dataset.
-
-As expected, the memory-proxy baseline, Faiss (IVF), exhibits high throughput. It is crucial to interpret this result correctly. Faiss relies on sequentially scanning inverted lists. This access pattern allows the operating system to aggressively prefetch data and cache the index in DRAM, essentially turning the experiment into an in-memory benchmark. Consequently, Faiss represents the performance roofline, indicating the theoretical upper bound if the system had infinite memory.
-
-In contrast, graph-based indices like DiskANN and MCGI must perform random node lookups. This pattern defeats OS caching and forces actual SSD latency. Under these harsh random I/O constraints, the baseline DiskANN struggles, achieving only roughly 64 QPS at 95\% recall. However, MCGI dramatically alters this landscape. By optimizing the routing path to follow the data manifold, MCGI achieves 375 QPS. This represents a 5.8$\times$ speedup over DiskANN. More importantly, it demonstrates that MCGI can drive disk-resident graph search to performance levels that begin to rival in-memory sequential scanners, a feat previously considered unattainable for random-access indices.
+The primary advantage of MCGI lies in its robust handling of high-dimensional spaces where traditional disk-based graph indices typically degrade. Figure~\ref{fig:gist} illustrates the Recall-QPS trade-off on the GIST1M (960-dim) dataset.
 
 \begin{figure*}[t]
     \centering
@@ -506,13 +503,13 @@ In contrast, graph-based indices like DiskANN and MCGI must perform random node 
     \label{fig:main_results}
 \end{figure*}
 
+As expected, the memory-proxy baseline, Faiss (IVF), exhibits high throughput. It is crucial to interpret this result correctly. Faiss relies on sequentially scanning inverted lists. This access pattern allows the operating system to aggressively prefetch data and cache the index in DRAM, essentially turning the experiment into an in-memory benchmark. Consequently, Faiss represents the performance roofline, indicating the theoretical upper bound if the system had infinite memory.
+
+In contrast, graph-based indices like DiskANN and MCGI must perform random node lookups. This pattern defeats OS caching and forces actual SSD latency. Under these harsh random I/O constraints, the baseline DiskANN struggles, achieving only roughly 64 QPS at 95\% recall. However, MCGI dramatically alters this landscape. By optimizing the routing path to follow the data manifold, MCGI achieves 375 QPS. This represents a 5.8$\times$ speedup over DiskANN. More importantly, it demonstrates that MCGI can drive disk-resident graph search to performance levels that begin to rival in-memory sequential scanners, a feat previously considered unattainable for random-access indices.
+
 \subsection{Efficiency in High-Recall Regimes (RQ2)}
 
 Real-world applications typically demand strict accuracy guarantees, such as Recall@10 being greater than or equal to 95\%. We analyze the performance stability of all methods under these constraints, as summarized in Table~\ref{tab:high_recall}.
-
-Faiss (IVF) maintains its lead as a roofline metric due to the cache-friendly nature of scanning large contiguous memory blocks. Its performance reflects the throughput of the underlying DRAM subsystem rather than SSD I/O efficiency. On the other hand, DiskANN represents the state-of-the-art for true disk-resident search but hits a bottleneck. At 95\% recall, it plateaus at 64.7 QPS. Its static routing strategy cannot navigate the sparse high-dimensional void without incurring excessive random disk reads, limiting its scalability.
-
-MCGI bridges this divide effectively. At 95\% recall, it delivers 375.1 QPS, outperforming the direct competitor DiskANN by nearly an order of magnitude. Even at the extreme 97\% recall level where search difficulty increases exponentially, MCGI sustains 83.8 QPS compared to DiskANN's 53.8 QPS. This confirms that MCGI effectively minimizes the I/O penalty of random access, pushing the capabilities of disk-based indexing closer to in-memory standards.
 
 \begin{table}[!t]
 \centering
@@ -531,11 +528,15 @@ MCGI (Ours) & 375.1 & 83.8 \\
 \end{tabular}
 \end{table}
 
+Faiss (IVF) maintains its lead as a roofline metric due to the cache-friendly nature of scanning large contiguous memory blocks. Its performance reflects the throughput of the underlying DRAM subsystem rather than SSD I/O efficiency. On the other hand, DiskANN represents the state-of-the-art for true disk-resident search but hits a bottleneck. At 95\% recall, it plateaus at 64.7 QPS. Its static routing strategy cannot navigate the sparse high-dimensional void without incurring excessive random disk reads, limiting its scalability.
+
+MCGI bridges this divide effectively. At 95\% recall, it delivers 375.1 QPS, outperforming the direct competitor DiskANN by nearly an order of magnitude. Even at the extreme 97\% recall level where search difficulty increases exponentially, MCGI sustains 83.8 QPS compared to DiskANN's 53.8 QPS. This confirms that MCGI reduces the I/O penalty of random access, pushing the capabilities of disk-based indexing closer to in-memory standards.
+
 \subsection{Generalizability on Standard Benchmarks (RQ3)}
 
 To ensure that our optimizations for high-dimensional manifolds do not negatively impact performance on standard tasks, we evaluate MCGI on the lower-dimensional SIFT1M and GloVe-100 datasets.
 
-Figure~\ref{fig:main_results}(b) and (c) present the results. On both datasets, MCGI achieves performance parity with DiskANN. For instance, on SIFT1M, the curves for MCGI and DiskANN are nearly identical, converging to approximately 720 QPS at 98\% recall. This indicates that our adaptive routing mechanism is robust. It correctly identifies the simpler geometry of low-dimensional data and reduces to standard greedy search, incurring no overhead. This makes MCGI a general-purpose solution that matches state-of-the-art performance on simple tasks while unlocking massive speedups on challenging workloads.
+Figures~\ref{fig:sift} and \ref{fig:glove} present the results. On both datasets, MCGI achieves performance parity with DiskANN. For instance, on SIFT1M, the curves for MCGI and DiskANN are nearly identical, converging to approximately 720 QPS at 98\% recall. This indicates that our adaptive routing mechanism is robust. It identifies the simpler geometry of low-dimensional data and reduces to standard greedy search, incurring no overhead. This makes MCGI a general-purpose solution that matches state-of-the-art performance on simple tasks while unlocking speedups on challenging workloads.
 
 \subsection{Operational Efficiency Analysis (RQ4)}
 \label{subsec:operational_efficiency}
@@ -543,22 +544,17 @@ Figure~\ref{fig:main_results}(b) and (c) present the results. On both datasets, 
 % To answer RQ4, we analyze the sensitivity of MCGI to the search hyperparameter $L$ and its impact on end-to-end query latency.
 
 \paragraph{Parameter Sensitivity.}
-The search list size parameter, $L$, controls the trade-off between search quality and computational cost. Figure~\ref{fig:operational_efficiency}(a) demonstrates the impact of $L$ on recall. MCGI converges to high recall ($\ge$ 95\%) with a significantly smaller $L$ compared to DiskANN. This indicates that our dimensionality-aware routing effectively prunes the search space, allowing the algorithm to locate nearest neighbors with fewer node inspections.
+The search list size parameter, $L$, governs the trade-off between search quality and computational cost. Figure~\ref{fig:sensitivity} illustrates the recall performance as a function of $L$. As observed, MCGI exhibits a recall trajectory that closely mirrors that of DiskANN, maintaining performance parity across the tested range. This parity is a critical validation of our approach. It demonstrates that our geometry-aware routing is robust: despite dynamically pruning the search space based on LID, MCGI retains the high recall capabilities of the baseline graph without degrading search quality. Consequently, MCGI achieves target accuracy levels using standard $L$ configurations, validating that our efficiency gains (shown in latency analysis) do not come at the cost of retrieval accuracy.
 
-\paragraph{Latency Analysis.}
-Figure~\ref{fig:operational_efficiency}(b) details the query latency across different recall levels. While QPS reflects throughput, latency is critical for online services. The results show that MCGI significantly reduces latency in the high-recall regime compared to DiskANN. By minimizing the number of random I/O operations required to escape local minima, MCGI ensures that tail latency remains bounded even for difficult queries in high-dimensional spaces.
-
-\begin{figure}[t]
+\begin{figure}[!t]
     \centering
-    % 左边的图
     \begin{subfigure}[b]{0.48\linewidth}
         \centering
         \includegraphics[width=\linewidth]{figures/appendix_L_sensitivity.pdf}
         \caption{Sensitivity}
         \label{fig:sensitivity}
     \end{subfigure}
-    \hfill % 把两个图撑到两边
-    % 右边的图
+    \hfill 
     \begin{subfigure}[b]{0.48\linewidth}
         \centering
         \includegraphics[width=\linewidth]{figures/appendix_latency.pdf}
@@ -570,28 +566,19 @@ Figure~\ref{fig:operational_efficiency}(b) details the query latency across diff
     \label{fig:operational_efficiency}
 \end{figure}
 
+\paragraph{Latency Analysis.}
+Figure~\ref{fig:latency} details the query latency across different recall levels. While QPS reflects throughput, latency is critical for online services. The results show that MCGI significantly reduces latency in the high-recall regime compared to DiskANN. By minimizing the number of random I/O operations required to escape local minima, MCGI ensures that tail latency remains bounded even for difficult queries in high-dimensional spaces.
 
-% \section{Discussion}
-% \label{sec:discussion}
-
-% While MCGI demonstrates superior performance on static, high-dimensional datasets, several aspects warrant further discussion regarding its practical deployment and limitations.
-
-% \paragraph{Preprocessing Overhead vs. Query Efficiency.}
-% MCGI introduces an additional LID estimation step during index construction. As analyzed in Section~\ref{subsec:complexity}, this incurs a one-time computational cost. In write-heavy scenarios (e.g., real-time streaming ingestion), this overhead might be non-negligible. However, for Retrieval-Augmented Generation (RAG) workloads, which are typically "Write-Once-Read-Many" (WORM), amortizing the construction cost over millions of queries makes this trade-off highly favorable. The significant reduction in operational latency and disk I/O justifies the upfront investment in geometry-aware calibration.
-
-% \paragraph{Adaptability to Dynamic Distributions.}
-% Our current implementation assumes that the intrinsic dimensionality of the dataset is relatively stable. In scenarios with significant distribution shifts (e.g., concept drift in user preference embeddings), the pre-calculated LID estimates might become stale. A promising direction for future work is to develop an incremental LID update mechanism that locally re-calibrates the index structure as new data points are inserted, ensuring that the routing strategy remains manifold-consistent over time.
-
-% \paragraph{Energy Efficiency and Green AI.}
-% Beyond latency and throughput, MCGI contributes to energy-efficient computing. By pruning unnecessary disk reads via LID-aware routing, the system reduces the I/O operations per query. Since SSD I/O and data movement are significant consumers of energy in large-scale retrieval clusters, MCGI aligns with the growing emphasis on "Green AI," offering a sustainable solution for billion-scale vector search.
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-In this paper, we presented Manifold-Consistent Graph Indexing (MCGI), a geometry-aware solution designed to address the Euclidean-Geodesic mismatch in high-dimensional vector search. By explicitly integrating Local Intrinsic Dimensionality (LID) into both the graph construction and search phases, MCGI dynamically adapts its routing strategy to the underlying manifold structure. We provided theoretical analysis proving that our method preserves the topological connectivity of the Relative Neighborhood Graph while optimizing the search complexity based on local curvature. Empirically, MCGI demonstrates significant performance gains on high-dimensional benchmarks, achieving a 5.8 times throughput improvement on GIST1M compared to state-of-the-art disk-based indices, without incurring performance regression on standard lower-dimensional datasets.
+We introduced Manifold-Consistent Graph Indexing (MCGI) to resolve the Euclidean-Geodesic mismatch in high-dimensional vector search. By leveraging Local Intrinsic Dimensionality (LID), MCGI dynamically aligns graph routing with the underlying data manifold. Our theoretical analysis confirms that MCGI preserves topological connectivity equivalent to the Relative Neighborhood Graph. Empirically, MCGI achieves a 5.8$\times$ throughput improvement on GIST1M over state-of-the-art disk-based baselines while maintaining robust performance on standard benchmarks.
 
 % \nocite{*}
 \bibliography{ref}
 \bibliographystyle{icml2026}
+
+
 
 \end{document}
