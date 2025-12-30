@@ -438,5 +438,38 @@ Faiss (mmap) & 590.5 & 575.6 \\
 \bibliography{ref}
 \bibliographystyle{icml2026}
 
+\clearpage
+\appendix
+
+\section{Additional Experimental Results}
+\label{sec:appendix_exp}
+
+In this appendix, we provide supplementary analysis to further characterize the behavior of \ours{} on the high-dimensional GIST1M dataset.
+
+\subsection{Parameter Sensitivity}
+The search list size parameter, $L$, controls the trade-off between search quality and computational cost. Figure~\ref{fig:appendix_plots}(a) demonstrates the impact of $L$ on Recall@10. \ours{} converges to high recall ($\ge$ 95\%) with a significantly smaller $L$ compared to DiskANN. This indicates that our dimensionality-aware routing effectively prunes the search space, allowing the algorithm to locate nearest neighbors with fewer node inspections.
+
+\subsection{Latency Analysis}
+Figure~\ref{fig:appendix_plots}(b) details the query latency (in milliseconds) across different recall levels. While QPS reflects throughput, latency is critical for online services. The results show that \ours{} maintains lower latency, particularly in the high-recall regime. The logarithmic scale highlights that for difficult queries, \ours{} significantly reduces the computational overhead by minimizing unnecessary disk I/O.
+
+% --- 跨栏排版，显得内容丰富 ---
+\begin{figure*}[h]
+    \centering
+    % 左图
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{figures/appendix_L_sensitivity.pdf}
+        \caption{\textbf{Sensitivity:} Recall vs. List Size ($L$)}
+        \label{fig:appendix_L}
+    \end{subfigure}
+    \hfill
+    % 右图
+    \begin{subfigure}[b]{0.48\textwidth}
+        \includegraphics[width=\textwidth]{figures/appendix_latency.pdf}
+        \caption{\textbf{Latency:} Latency vs. Recall (Log Scale)}
+        \label{fig:appendix_latency}
+    \end{subfigure}
+    \caption{\textbf{Supplementary Analysis on GIST1M.} (a) \ours{} reaches high recall with a smaller search budget ($L$). (b) \ours{} achieves lower latency for the same recall target, validating its efficiency.}
+    \label{fig:appendix_plots}
+\end{figure*}
 
 \end{document}
