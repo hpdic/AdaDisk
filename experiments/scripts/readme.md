@@ -26,4 +26,10 @@ OPENBLAS_NUM_THREADS=32 bash experiments/scripts/run_exp.sh gist
 
 # run full scan
 OPENBLAS_NUM_THREADS=32 bash experiments/scripts/full_scan.sh
+
+# more specific scan
+OPENBLAS_NUM_THREADS=32 bash experiments/scripts/scan_patch.sh
+
+# Faiss baseline
+pip install faiss-cpu numpy
 ```
