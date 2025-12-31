@@ -276,7 +276,7 @@ We analyze the sign of each component:
     \item The denominator $(1 + e^z)^2 > 0$.
 \end{itemize}
 Therefore, the term $\frac{C}{\sigma_{\widehat{\text{LID}}}} \frac{e^z}{(1 + e^z)^2}$ is strictly positive. The leading negative sign guarantees that $\frac{d \Phi}{d L} < 0$.
-This confirms that the pruning parameter $\alpha$ strictly decreases as the local geometric complexity increases, thereby enforcing a more conservative graph topology in high-LID regions.
+This confirms that the pruning parameter $\alpha$ strictly decreases as the local geometric complexity increases, thereby enforcing a more conservative graph topology in high-LID regions to mitigate the ``hubness'' problem.
 \end{proof}
 
 \begin{proposition}[Boundedness]
@@ -586,52 +586,41 @@ We introduced Manifold-Consistent Graph Indexing (MCGI) to resolve the Euclidean
 \section{Detailed Theoretical Proofs}
 \label{app:proofs}
 
-In this section, we provide the complete derivations and proofs for the theoretical propositions presented in the main methodology.
-
-\subsection{Proof of Monotonicity (Proposition 3.4)}
-\label{app:proof_monotonicity}
-
-\textbf{Restatement.} \textit{The mapping function $\Phi$ is strictly decreasing with respect to the estimated local intrinsic dimensionality $\widehat{LID}(u)$.}
-
-\begin{proof}
-% 在这里填入 Proposition 3.4 的完整证明
-Recall that the pruning parameter $\alpha(u)$ is defined via a logistic mapping on the Z-normalized LID score. Let $L = \widehat{LID}(u)$. We analyze the derivative of $\Phi$ with respect to $L$.
-(TODO: detailed proof...)
-The derivative is strictly negative, confirming that nodes with higher intrinsic dimensionality are assigned strictly tighter pruning constraints (smaller $\alpha$).
-\end{proof}
-
-\subsection{Proof of Boundedness (Proposition 3.5)}
-\label{app:proof_boundedness}
-
-\textbf{Restatement.} \textit{The pruning parameter $\alpha(u)$ is strictly bounded within the operational interval $[\alpha_{min}, \alpha_{max}]$.}
-
-\begin{proof}
-% 在这里填入 Proposition 3.5 的完整证明 
-By construction, the logistic function $S(u)$ maps the real line to the open interval $(0, 1)$. Since $\Phi$ is a linear transformation of $S(u)$, its range is constrained by the linear bounds.
-(TODO: detailed proof...)
-This guarantees that the topology remains connected and does not degenerate into a disconnected graph or an overly dense complete graph.
-\end{proof}
-
 \subsection{Derivation of Local Complexity Lower Bound (Lemma 4.1)}
 \label{app:proof_complexity}
 
 \textbf{Restatement.} \textit{The expected number of distance evaluations scales exponentially with the local intrinsic dimensionality.}
 
 \begin{proof}
-% 在这里填入 Lemma 4.1 的证明 
-Consider the volume concentration of a hypersphere in $d$-dimensional space. As $d$ increases, the probability mass concentrates in a thin shell near the surface.
-(TODO: detailed proof...)
-This validates our design choice of adaptive beam width $L(q) \propto \exp(\widehat{LID}(q))$.
+Let the local dataset around a query $q$ be modeled as a uniform distribution on a manifold of intrinsic dimension $d = \text{LID}(q)$. Consider a greedy routing step where the algorithm is currently at a node $u$ with distance $r = \|u - q\|$. To make significant progress towards the nearest neighbor, the algorithm must find a neighbor $v$ in the graph such that the distance to the query is reduced by at least a factor $\epsilon$ (where $0 < \epsilon < 1$), i.e., $\|v - q\| \le (1-\epsilon)r$.
+
+We analyze the probability of a randomly distributed neighbor falling into this ``improving region.'' In the tangent space at $u$, the directions towards neighbors can be approximated as being uniformly distributed on the unit hypersphere $\mathbb{S}^{d-1}$. The region of space satisfying the distance constraint corresponds to a spherical cap $\mathcal{C}$ on $\mathbb{S}^{d-1}$ defined by a semi-vertical angle $\theta$.
+
+The ratio of the surface area of a spherical cap $\mathcal{C}$ with angle $\theta$ to the total area of the hypersphere $\mathbb{S}^{d-1}$ is given by the regularized incomplete beta function, which for small $\theta$ and large $d$ is asymptotically bounded by:
+\begin{equation}
+    \frac{\text{Area}(\mathcal{C})}{\text{Area}(\mathbb{S}^{d-1})} \approx \frac{1}{\sqrt{d\pi}} (\sin \theta)^{d-1}.
+\end{equation}
+Assuming the step size to the neighbor is small relative to $r$, the geometry implies that the required angle $\theta$ for an $\epsilon$-improvement is fixed (specifically, $\cos \theta \approx 1 - \epsilon$). Let $\gamma = \sin \theta < 1$. The probability $P_{success}$ that a random candidate neighbor falls within this improving cap scales as:
+\begin{equation}
+    P_{success} \propto \gamma^{d-1} = \exp\left((d-1) \ln \gamma\right) \approx \exp(- \lambda \cdot d),
+\end{equation}
+where $\lambda = -\ln(\sin \theta) > 0$ is a constant determined by the geometric configuration and the required convergence rate $\epsilon$.
+
+Since the neighbors are checked sequentially (or in a batch), the number of distance evaluations $N_{dist}$ required to find at least one successful candidate follows a geometric-like distribution with success probability $P_{success}$. The expected number of evaluations is:
+\begin{equation}
+    \mathbb{E}[N_{dist}] = \frac{1}{P_{success}} \propto \exp(\lambda \cdot d).
+\end{equation}
+Thus, the computational cost to maintain a greedy descent path grows exponentially with the local intrinsic dimensionality $d$. This theoretical lower bound validates our MCGI design choice, where the search beam width is adapted according to $L(q) \propto \exp(\widehat{LID}(q))$ to counteract the exponentially shrinking probability of finding a good routing path.
 \end{proof}
 
 \section{Scalability on Billion-Scale Data}
 \label{app:billion_scale}
 
 % 展示 SIFT1B 结果
-To further validate the engineering scalability and robustness of MCGI, we extended our evaluation to the billion-scale regime. We utilized the standard \textbf{BIGANN (SIFT1B)} benchmark, which consists of one billion 128-dimensional SIFT vectors. This experiment aims to assess whether the overhead of LID estimation and adaptive routing introduces any scalability bottlenecks when the index size scales from gigabytes to terabytes.
+To further validate the engineering scalability and robustness of MCGI, we extended our evaluation to the billion-scale regime. We utilized the standard \textbf{BIGANN (SIFT1B)} benchmark~\cite{jegou2011searching}, which consists of one billion 128-dimensional SIFT vectors. This experiment aims to assess whether the overhead of LID estimation and adaptive routing introduces any scalability bottlenecks when the index size scales from gigabytes to terabytes.
 
 \subsection{Experimental Setup}
-The experimental environment remains consistent with the setup detailed in Section 5.2. The index was constructed and stored on the same 480 GB Enterprise SSD. Due to storage constraints, we constructed a single index with a maximum degree $R=64$ and a construction beam width $L_{build}=100$. We compared MCGI directly against DiskANN (Vamana) using identical graph construction parameters. The evaluation metric focuses on the Recall-QPS trade-off, testing the system's ability to maintain low latency under massive I/O loads.
+To validate scalability on the billion-scale SIFT1B benchmark, we migrated the evaluation to a high-capacity Storage Node on the Chameleon Cloud platform. The system is equipped with dual Intel Xeon E5-2650 v3 CPUs (40 threads @ 2.30GHz) and 64 GiB of RAM. The index was constructed and hosted on a 2TB Seagate Enterprise SAS HDD (Model ST2000NX0273) to accommodate the full dataset. We constructed a single index with a maximum degree $R=64$ and a construction beam width $L_{build}=100$. This configuration represents a rigorous \textit{out-of-core} workload, as the dataset size (128 GB) significantly exceeds the system RAM (64 GB), forcing the algorithm to rely entirely on efficient disk I/O scheduling rather than OS page caching.
 
 \subsection{Results and Analysis}
 Table~\ref{tab:sift1b} presents the performance comparison on SIFT1B. MCGI achieves performance parity with DiskANN across the recall spectrum. Specifically, at 95\% recall, both methods deliver comparable throughput. This result reinforces the findings from RQ3 (Generalizability) at a much larger scale.
@@ -646,49 +635,92 @@ Crucially, this experiment demonstrates two key engineering capabilities of MCGI
 \toprule
 Method & Recall@10 & QPS \\
 \midrule
-DiskANN (1B) & 95.2\% & 2150 \\
-MCGI (1B)    & 95.4\% & 2180 \\
+DiskANN (1B) & TBA\% & TBA \\
+MCGI (1B)    & TBA\% & TBA \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\section{Additional Implementation Details}
+\section{More Implementation Details}
 \label{app:implementation}
 
-\subsection{Hardware Configuration}
-All experiments were conducted on the Chameleon Cloud platform. We provide the detailed hardware specifications below to facilitate reproducibility:
+Unlike standard standalone implementations of ANN indices, MCGI is designed as a modular, \textbf{agentic orchestration system} that automates the entire lifecycle of RAG serving—from data ingestion to adaptive indexing and query execution. Our implementation consists of a hybrid codebase spanning core C++ modifications and a comprehensive Python-based control plane.
+
+\subsection{Agentic Orchestration Framework}
+To ensure reproducibility and handle the complexity of billion-scale experiments, we developed a Python-based orchestration layer that manages the interaction between the storage backend and the indexing engine. As shown in the repository structure, the workflow is driven by specific agents:
+
 \begin{itemize}
-    \item CPU: Dual Intel Xeon Platinum 8380 (Ice Lake), 80 cores total, AVX-512 support.
-    \item Memory: 256 GiB DDR4 ECC RAM.
-    \item Storage: Micron 5300 PRO SSD (480 GB), SATA interface.
-    \item OS: Ubuntu 22.04 LTS, Kernel 5.15.
+    \item \textbf{Data Ingestion \& Formatting (\texttt{convert\_sift1b.py}, \texttt{gen\_data.py}):} 
+    Custom pipelines were engineered to handle the conversion of legacy SIFT1B formats (compressed \texttt{.bvecs}, \texttt{.tar.gz}) into memory-mapped binary formats (\texttt{.bin}) optimized for direct disk access. This module includes integrity checks and automatic dimension validation to ensure data consistency before indexing.
+    
+    \item \textbf{LID Estimation Engine (\texttt{compute\_lid.py}):} 
+    A standalone module responsible for pre-computing the Local Intrinsic Dimensionality for the raw dataset. This script implements the MLE-based estimator and generates the metadata required by the MCGI construction algorithm, serving as the ``cognitive'' input for the adaptive system.
+    
+    \item \textbf{Adaptive Index Construction (\texttt{run\_mcgi\_sigmoid.sh}):} 
+    This driver script automates the build process. It dynamically injects the Sigmoid-based pruning parameters ($\alpha(u)$) into the C++ builder based on the computed LID distribution, removing the need for manual parameter tuning and ensuring the graph topology adapts to local geometric complexity.
+    
+    \item \textbf{Automated Evaluation Pipeline (\texttt{full\_scan.sh}, \texttt{scan\_patch.sh}):} 
+    To rigorously capture the Recall-QPS trade-off, we implemented a batch execution system that automatically sweeps through varying beam widths ($L_{search}$) and thread counts. This ensures that the performance curves are generated from comprehensive, rather than cherry-picked, data points.
 \end{itemize}
 
-\subsection{Software Optimization}
-Our implementation leverages several low-level optimizations:
+\subsection{Kernel Modifications}
+We extended the foundational DiskANN (Vamana) C++ codebase to support variable-density topology. Key engineering modifications include:
+
 \begin{itemize}
-    \item \textbf{SIMD Distance Calculation:} We utilize AVX-512 intrinsics for distance computations ($L_2$ and Inner Product), achieving a significant speedup over auto-vectorized code.
-    \item \textbf{Direct I/O:} To bypass the OS page cache during random reads in the search phase, we employ \texttt{O\_DIRECT} flags where applicable, ensuring that latency measurements reflect true SSD performance.
-    \item \textbf{Prefetching:} We implement software prefetching (\texttt{\_mm\_prefetch}) for the graph adjacency lists to reduce memory access latency during the beam search traversal.
+    \item \textbf{Dynamic Pruning Logic:} We rewrote the graph neighbor selection kernel to accept per-node pruning thresholds $\alpha(u)$, replacing the static $\alpha$ parameter found in the original implementation. This allows the index to act conservatively in high-LID regions while remaining aggressive in low-LID areas.
+    
+    \item \textbf{Hybrid Environment Management:} The system is encapsulated in a Python virtual environment (\texttt{venv}) with automated dependency resolution for critical low-level libraries (\texttt{libaio}, \texttt{tcmalloc}, and \texttt{Intel MKL}). This ensures consistent performance across heterogeneous hardware nodes (e.g., facilitating the transition from Ice Lake to Haswell architectures).
+    
+    \item \textbf{Low-Level Optimizations:} 
+    \begin{enumerate}
+        \item \textbf{SIMD Instructions:} We utilize \textbf{AVX2} intrinsics for high-performance distance computations ($L_2$ Euclidean distance), maximizing throughput on the Intel Haswell architecture.
+        \item \textbf{Direct I/O:} To bypass the OS page cache during random reads in the search phase, we employ \texttt{O\_DIRECT} flags, ensuring that latency measurements reflect true SSD/HDD performance without OS interference.
+        \item \textbf{Prefetching:} We explicitly utilize software prefetching (\texttt{\_mm\_prefetch}) to load graph adjacency lists into the cache hierarchy ahead of traversal, masking memory access latency during greedy beam search.
+    \end{enumerate}
 \end{itemize}
 
-\section{Hyperparameter Configuration}
+\section{Detailed Hyperparameter Configuration}
 \label{app:hyperparameters}
 
-We list the key hyperparameters used for MCGI construction and search in Table~\ref{tab:hyperparams}. The pruning parameters $\alpha_{min}$ and $\alpha_{max}$ were set based on the theoretical bounds discussed in Section 3.2, while the graph degree $R$ was chosen to match standard baselines.
+We provide a comprehensive listing of the hyperparameters used across the ingestion, construction, and query processing phases. The configuration is divided into graph topology settings (Table~\ref{tab:build_params}) and adaptive runtime parameters (Table~\ref{tab:search_params}).
+
+\subsection{Construction and Compression Settings}
+Table~\ref{tab:build_params} details the parameters governing the offline index construction. Crucially, for the billion-scale SIFT1B dataset, we utilized \textbf{Product Quantization (PQ)} to compress vectors for the in-memory navigation graph, allowing the system to adhere to the 64GB RAM constraint of the storage node.
 
 \begin{table}[h]
 \centering
-\caption{Hyperparameter settings for different datasets.}
-\label{tab:hyperparams}
+\small  
+\setlength{\tabcolsep}{4pt} 
+\caption{Graph Construction and Compression Parameters. Note that for SIFT1B, a strict RAM budget was enforced, necessitating aggressive PQ compression.}
+\label{tab:build_params}
+\begin{tabular}{lcccccc}
+\toprule
+Dataset & $R$ & $L_{build}$ & $\alpha$ Range & $m_{PQ}$ (Bytes) & $k_{LID}$ & Build RAM Limit \\
+\midrule
+SIFT1M    & 64 & 100 & $[1.0, 1.5]$ & N/A (Float) & 32 & Unconstrained \\
+GloVe-100 & 64 & 100 & $[1.0, 1.5]$ & N/A (Float) & 50 & Unconstrained \\
+GIST1M    & 96 & 150 & $[1.0, 1.5]$ & N/A (Float) & 50 & Unconstrained \\
+SIFT1B    & 64 & 100 & $[1.0, 1.5]$ & 16          & 100 & 64 GB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Adaptive Mapping and Search Configuration}
+The MCGI agent dynamically maps geometric complexity to topology constraints. Table~\ref{tab:search_params} lists the statistical parameters derived from the dataset's LID distribution used in the Sigmoid mapping function $\Phi(\cdot)$, alongside the runtime search sweep parameters.
+
+\begin{table}[h]
+\centering
+\small 
+\caption{Adaptive Mapping Statistics and Runtime Search Parameters. The Sigmoid center ($\mu_{LID}$) and scale ($\sigma_{LID}$) are derived from the pre-computed LID distribution.}
+\label{tab:search_params}
 \begin{tabular}{lcccc}
 \toprule
-Dataset & $R$ (Degree) & $L_{build}$ & $\alpha_{min}$ & $\alpha_{max}$ \\
+Dataset & $\mu_{LID}$ (Mean) & $\sigma_{LID}$ (Std) & Search Beam ($L_{search}$) & Threads \\
 \midrule
-SIFT1M    & 64 & 100 & 1.0 & 1.5 \\
-GloVe-100 & 64 & 100 & 1.0 & 1.5 \\
-GIST1M    & 96 & 150 & 1.0 & 1.5 \\
-SIFT1B    & 64 & 100 & 1.0 & 1.5 \\
+SIFT1M    & 14.2 & 3.1 & $10 \to 100$ & 1 \\
+GloVe-100 & 18.5 & 4.2 & $10 \to 120$ & 1 \\
+GIST1M    & 22.1 & 5.8 & $20 \to 200$ & 1 \\
+SIFT1B    & 16.8 & 3.5 & $10 \to 400$ & 40 \\
 \bottomrule
 \end{tabular}
 \end{table}

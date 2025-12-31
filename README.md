@@ -1,11 +1,11 @@
 # [HPDIC MOD] AdaDisk: A Distributed Agentic System for Adaptive Ingestion-Query Scheduling of DiskANN (https://github.com/microsoft/DiskANN) RAG in LLM Serving
 
-## Update December 30, 2025
+## Update on December 30, 2025
 * Deployed AdaDisk on Intel CPUs
   ```bash
     cd ~/AdaDisk
     sudo apt-get update
-    sudo apt-get install libopenblas-dev liblapacke-dev cmake libboost-all-dev libaio-dev libgoogle-perftools-dev build-essential libunwind-dev -y
+    sudo apt-get install libopenblas-dev liblapacke-dev cmake libboost-all-dev libaio-dev libgoogle-perftools-dev build-essential libunwind-dev texlive-full latexmk -y
     python3 -m venv venv
     source venv/bin/activate
     pip install numpy scikit-learn h5py tqdm requests
@@ -21,6 +21,7 @@
     bash scripts/hpdic/run_mcgi_sigmoid.sh
     python scripts/hpdic/gen_query_gt.py
     bash scripts/hpdic/run_ab_test.sh
+    # The following adds no more "new" test cases, but will take a lot of time to finish (for experimental results of a research paper)
     bash experiments/scripts/full_scan.sh
     bash experiments/scripts/scan_patch.sh
   ```
