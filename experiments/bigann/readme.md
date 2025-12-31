@@ -18,4 +18,7 @@ tar -xvf bigann_gnd.tar.gz
 cp ~/AdaDisk/experiments/bigann/convert_sift1b.py ~/sift1b_data/.
 cd ~/sift1b_data
 python3 convert_sift1b.py
+chmod +x ~/AdaDisk/experiments/bigann/run_build_sift1b_baseline.sh
+cd ~/AdaDisk
+./experiments/bigann/run_build_sift1b_baseline.sh 2>&1 | tee build_sift1b.log
 ```
