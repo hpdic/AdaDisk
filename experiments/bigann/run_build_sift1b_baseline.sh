@@ -20,6 +20,7 @@ L=50            # ⬇️ 降级: 加速构建，先跑通再说
 B=200           # ⬆️ 升级: 机器有256G，给200G让它在内存里狂奔，减少写盘
 M=64            # ⬆️ 调整: 中间图度数，设为 64 保证质量不至于太差
 THREADS=64      # ⬆️ 调整: SATA SSD 写入瓶颈，64线程通常比160线程更稳
+PQ_BYTES=16     # 🔥【关键修改】: 将分片向量压缩到16字节，防止硬盘爆炸！
 
 # 3. 安全检查
 if [ ! -f "$RAW_DATA" ]; then
@@ -56,7 +57,8 @@ rm -f /home/cc/sift1b_data/indices/diskann_base_R32_L50*
     -L "$L" \
     -B "$B" \
     -M "$M" \
-    -T "$THREADS" 
+    -T "$THREADS" \
+    --build_PQ_bytes "$PQ_BYTES"
 
 if [ $? -eq 0 ]; then
     echo "✅ 构建成功！"

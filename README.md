@@ -10,7 +10,9 @@
     source venv/bin/activate
     pip install numpy scikit-learn h5py tqdm requests
     mkdir -p build && cd build
-    cmake ..
+    # for expermients:
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-march=native -O3" .. 
+    # for development and debug: cmake ..
     make -j
     cd ..
     echo 'export MKL_THREADING_LAYER=GNU' >> ~/.bashrc
