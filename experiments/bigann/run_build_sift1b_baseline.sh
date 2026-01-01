@@ -1,69 +1,86 @@
 #!/bin/bash
+set -e  # 遇到任何错误立刻停止，防止连锁反应
 
 # ==========================================
-# SIFT1B "Flash Run" Index Construction (SSD Optimized)
+# SIFT1B Index Construction (Refactored & Safe)
 # ==========================================
 
-# 1. 路径配置 (请确保这些路径都在 SSD 上!)
-# 假设 SSD 挂载在 /mnt/ssd 或类似位置，请根据实际情况修改
+# --- 1. 核心配置 (在这里修改，不用动下面) ---
 DISKANN_HOME="/home/cc/AdaDisk"
 BUILDER_BIN="${DISKANN_HOME}/build/apps/build_disk_index"
+RAW_DATA="/dev/shm/sift1b_base.bin"
+OUTPUT_DIR="/home/cc/sift1b_data/indices"
 
-# ⚠️ 注意: 输入数据和输出索引必须都在 SSD 上才能发挥速度
-# 如果 SSD 空间极度紧张，可以尝试把 RAW_DATA 放 HDD (如果读取速度能跟上)，但建议放 SSD
-RAW_DATA="/home/cc/sift1b_data/sift1b_base.bin" 
-INDEX_PREFIX="/home/cc/sift1b_data/indices/diskann_base_R32_L50"
+# 针对硬盘空间受限 + Paper Reasonable 的参数
+R_VAL=20           # 图的度数 (学术界常用区间底线，显著省空间)
+L_VAL=40           # 构建列表大小 (R * 2，保证构建质量)
+PQ_BYTES=16        # 压缩向量大小 (关键！防止中间文件膨胀)
 
-# 2. 关键参数 (针对 Ice Lake 256GB RAM + 480GB SSD)
-R=32            # ⬇️ 降级: 节省约 120GB 空间，确保不爆盘
-L=50            # ⬇️ 降级: 加速构建，先跑通再说
-B=200           # ⬆️ 升级: 机器有256G，给200G让它在内存里狂奔，减少写盘
-M=64            # ⬆️ 调整: 中间图度数，设为 64 保证质量不至于太差
-THREADS=64      # ⬆️ 调整: SATA SSD 写入瓶颈，64线程通常比160线程更稳
-PQ_BYTES=16     # 🔥【关键修改】: 将分片向量压缩到16字节，防止硬盘爆炸！
+# 内存控制
+BUILD_RAM_GB=100   # (-M) 构建过程最大内存，你有256G，给100G很安全
+SEARCH_RAM_GB=100  # (-B) 搜索/缓存预算，给足防止频繁IO
+THREADS=64         # 线程数
 
-# 3. 安全检查
+# --- 2. 动态生成路径 (解决手动改名的痛苦) ---
+# 文件名会自动变成: diskann_base_R20_L40
+INDEX_NAME="diskann_base_R${R_VAL}_L${L_VAL}"
+INDEX_PREFIX="${OUTPUT_DIR}/${INDEX_NAME}"
+
+# --- 3. 安全检查 ---
 if [ ! -f "$RAW_DATA" ]; then
-    echo "❌ 错误: 找不到数据文件 $RAW_DATA"
-    echo "请确认 SSD 上是否有数据，或者修改路径指向 HDD"
+    echo "❌ 致命错误: 找不到源数据文件: $RAW_DATA"
     exit 1
 fi
 
-# 4. 空间检查 (简单预估)
-# 索引估计大小: 128G(数据) + ~128G(图 R=32) ≈ 256GB
-# 加上输入数据 128GB，总共需要 ~384GB。480GB 硬盘应该剩 ~440GB 可用，够用。
+if [ ! -f "$BUILDER_BIN" ]; then
+    echo "❌ 致命错误: 找不到构建程序: $BUILDER_BIN"
+    exit 1
+fi
+
+mkdir -p "$OUTPUT_DIR"
+
+# --- 4. 自动清理战场 ---
+# ⚠️ 注意: 这里只清理 "当前参数" 对应的旧文件。
+# 如果你之前跑过 R32 的废文件，请手动删一次，或者取消下面注释行的注释
+# rm -f "${OUTPUT_DIR}/diskann_base_R32_L50*" 
 
 echo "----------------------------------------------------------------"
-echo "🚀 开始构建 SIFT1B 索引 (SSD Flash Mode)..."
-echo "📂 输入: $RAW_DATA"
-echo "💾 输出: $INDEX_PREFIX"
-echo "⚙️  参数: R=$R, L=$L, RAM=$B GB, M=$M, Threads=$THREADS"
-echo "⚠️  注意: 请监控磁盘剩余空间 (df -h)"
+echo "🚀 启动 DiskANN 构建任务"
+echo "----------------------------------------------------------------"
+echo "📂 源数据:  $RAW_DATA"
+echo "💾 输出前缀: $INDEX_PREFIX"
+echo "🔧 参数配置: R=${R_VAL}, L=${L_VAL}, PQ=${PQ_BYTES} bytes"
+echo "🧠 内存限制: Build=${BUILD_RAM_GB}G, Limit=${SEARCH_RAM_GB}G"
+echo "🧵 线程数:  $THREADS"
 echo "----------------------------------------------------------------"
 
-# 确保目录绝对存在
-mkdir -p /home/cc/sift1b_data/indices
+# 清理当前配置可能残留的旧文件，确保从零开始
+echo "🧹 清理同名旧文件 (如果存在)..."
+rm -f "${INDEX_PREFIX}"*
 
-# 清理之前的残留 (如果有)
-rm -f /home/cc/sift1b_data/indices/diskann_base_R32_L50*
+# --- 5. 执行构建 ---
+# start_time=$(date +%s)
 
-# 5. 执行构建 (uint8)
 "$BUILDER_BIN" \
     --data_type uint8 \
     --dist_fn l2 \
     --data_path "$RAW_DATA" \
     --index_path_prefix "$INDEX_PREFIX" \
-    -R "$R" \
-    -L "$L" \
-    -B "$B" \
-    -M "$M" \
+    -R "$R_VAL" \
+    -L "$L_VAL" \
+    -B "$SEARCH_RAM_GB" \
+    -M "$BUILD_RAM_GB" \
     -T "$THREADS" \
     --build_PQ_bytes "$PQ_BYTES"
 
+# --- 6. 结果反馈 ---
 if [ $? -eq 0 ]; then
-    echo "✅ 构建成功！"
+    echo "----------------------------------------------------------------"
+    echo "✅ 成功！构建完成。"
+    echo "📊 生成文件列表："
     ls -lh "${INDEX_PREFIX}"*
+    echo "----------------------------------------------------------------"
 else
-    echo "❌ 构建失败！"
+    echo "❌ 失败！构建程序非正常退出。"
     exit 1
 fi
