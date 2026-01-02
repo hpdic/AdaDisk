@@ -2,6 +2,8 @@
 
 ## Update on January 1, 2026, for CloudLab
 ```bash
+    git config --global user.name "Dongfang Zhao"
+    git config --global user.email "dzhao@uw.edu"
     sudo chown -R $(whoami): /hpdic
     rm -rf ~/hpdic
     ln -s /hpdic ~/hpdic    
