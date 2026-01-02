@@ -2,7 +2,7 @@
 
 ## Some hardware notes on billion-scale experiments
 * *CPU* The PQ procedure seems to be parallelizable with ~86 tasks because I observed almost always full CPU utilization on a 64-core machine while almost always 67% utilization on a 128-core machine. So, it's advisable to deploy this implementation on a 90+ core machine for best performance. When building the index, I saw all of 128 cores are working. So, having more cores is always better.
-* *Memory* For performance, I suggest we put all PQ input vectors in memory, which costs 16/32 GB memory if PQ_BYTES=16/32. You also want to have at least 10/20 GB for OS and other background processes. Then, you want to set the memory budget (this is a parameter you should set in the script `AdaDisk/experiments/bigann/run_build_sift1b_baseline.sh`) as (tot_mem - 26/52).  
+* *Memory* I suggest you budget 128 GB memory in here `AdaDisk/experiments/bigann/run_build_sift1b_baseline.sh`). If you budget less than 128 GB, PQ compression will kick into the distance computation, which could be faster but introduces some inaccuracies. Your system should also have 16-32 GB memory for the PQ files. The OS and other background processes may need another 10-15 GB memory. So, in total, I suggest you have at least 180 GB memory on the machine.  
 * *Disk* The most important thing is to make sure you have a large (e.g., 500 GB or 1 TB) high-performance NVMe SSD. But to be honest I didn't check how much slower the experience would run on these older devices like SATA SSDs or even HDDs.
 
 ## Update on January 1, 2026, for CloudLab
