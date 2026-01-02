@@ -16,9 +16,9 @@ python3 convert_sift1b.py
 
 tmux
 cp ~/hpdic/AdaDisk/experiments/bigann/convert_sift1b.py ~/hpdic/sift1b_data/.
-cd ~/hpdic/sift1b_data
 chmod +x ~/hpdic/AdaDisk/experiments/bigann/run_build_sift1b_baseline.sh
 cd ~/hpdic/AdaDisk
+# You should take a look at the parameters in the following script
 ./experiments/bigann/run_build_sift1b_baseline.sh 2>&1 | tee build_sift1b.log
 # ctrl+b d
 cd ~/hpdic/AdaDisk

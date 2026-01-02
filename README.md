@@ -6,7 +6,8 @@
     rm -rf ~/hpdic
     ln -s /hpdic ~/hpdic    
     df -h ~/hpdic
-    git clone git@github.com:hpdic/AdaDisk.git
+    cd ~/hpdic
+    yes | git clone git@github.com:hpdic/AdaDisk.git
     cd ~/hpdic/AdaDisk
     sudo apt-get update
     sudo apt-get install btop libopenblas-dev liblapacke-dev cmake libboost-all-dev libaio-dev libgoogle-perftools-dev build-essential libunwind-dev python3-pip python3-venv -y
