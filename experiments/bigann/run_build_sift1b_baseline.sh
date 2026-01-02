@@ -26,8 +26,8 @@ PQ_BYTES=16
 # --- 3. 内存与性能优化 ---
 # 物理内存 125G -> 预留 15G -> 预算 110G
 # 配合 6GB/s 的 NVMe，这基本就是全内存运行的速度
-RAM_BUDGET=110     
-THREADS=56         # CPU 满核 (C6620)
+RAM_BUDGET=160     
+THREADS=64         # CPU 满核 (C6620)
 
 # --- 4. 自动命名 ---
 INDEX_NAME="diskann_base_R${R_VAL}_L${L_VAL}_B${RAM_BUDGET}G"
