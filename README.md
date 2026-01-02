@@ -1,5 +1,10 @@
 # [HPDIC MOD] AdaDisk: A Distributed Agentic System for Adaptive Ingestion-Query Scheduling of DiskANN (https://github.com/microsoft/DiskANN) RAG in LLM Serving
 
+## Some random notes on billion-scale experiments
+* *Disk* The most important thing is to make sure you have a large (e.g., 1 TB) NVMe SSD. It's a pain to run on HDDs or SATA SSDs, or even small NVMes (e.g., 480 GB, it NEVER worked after many creative workarounds).
+* *CPU* This version of DiskANN/MCGI seems to be parallelizable with ~86 tasks because I observed almost always full CPU utilization on a 64-core machine while almost always 67% utilization on a 128-core machine. So, it's advisable to deploy this implementation on a 90+ core machine for best performance. You would see noticable performance degradation if you run it on, e.g., a 64-core machine; you do NOT want to saturate your CPU cores.
+* *Memory* I suggest we budget (tot_mem - 20) GB for DiskANN. So far I only see this affects the number of batches but how this affects the overall performance is still unclear to me.
+
 ## Update on January 1, 2026, for CloudLab
 ```bash
     git config --global user.name "Dongfang Zhao"
