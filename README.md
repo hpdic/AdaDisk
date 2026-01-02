@@ -1,5 +1,22 @@
 # [HPDIC MOD] AdaDisk: A Distributed Agentic System for Adaptive Ingestion-Query Scheduling of DiskANN (https://github.com/microsoft/DiskANN) RAG in LLM Serving
 
+## Update on January 1, 2026, for CloudLab
+```bash
+    cd ~/hpdic/AdaDisk
+    sudo apt-get update
+    sudo apt-get install libopenblas-dev liblapacke-dev cmake libboost-all-dev libaio-dev libgoogle-perftools-dev build-essential libunwind-dev python3-pip python3-venv -y
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install numpy scikit-learn h5py tqdm requests
+    mkdir -p build && cd build
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-march=native -O3" .. 
+    make -j
+    cd ..
+    echo 'export MKL_THREADING_LAYER=GNU' >> ~/.bashrc
+    source ~/.bashrc
+    # Then read AdaDisk/experiments/bigann/readme.md
+```
+
 ## Update on December 30, 2025
 * Deployed AdaDisk on Intel CPUs
   ```bash

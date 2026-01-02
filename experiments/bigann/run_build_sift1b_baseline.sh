@@ -1,65 +1,68 @@
 #!/bin/bash
-set -e  # 遇到任何错误立刻停止，防止连锁反应
+set -e  # 遇到错误立即停止
 
 # ==========================================
-# SIFT1B Index Construction (Refactored & Safe)
+# 适配 Node0 (125G RAM + NVMe) + HPDIC 路径
 # ==========================================
 
-# --- 1. 核心配置 (在这里修改，不用动下面) ---
-DISKANN_HOME="/home/cc/AdaDisk"
+# --- 1. 路径配置 (已修正 AdaDisk 位置) ---
+# 你的 AdaDisk 源码目录 (位于 ~/hpdic/AdaDisk)
+DISKANN_HOME="$HOME/hpdic/AdaDisk"
+
+# 编译好的程序路径 (通常在 build/apps 下)
 BUILDER_BIN="${DISKANN_HOME}/build/apps/build_disk_index"
-RAW_DATA="/dev/shm/sift1b_base.bin"
-OUTPUT_DIR="/home/cc/sift1b_data/indices"
 
-# 针对硬盘空间受限 + Paper Reasonable 的参数
-R_VAL=20           # 图的度数 (学术界常用区间底线，显著省空间)
-L_VAL=40           # 构建列表大小 (R * 2，保证构建质量)
-PQ_BYTES=16        # 压缩向量大小 (关键！防止中间文件膨胀)
+# 数据绝对路径
+RAW_DATA="$HOME/hpdic/sift1b_data/sift1b_base.bin"
 
-# 内存控制
-BUILD_RAM_GB=100   # (-M) 构建过程最大内存，你有256G，给100G很安全
-SEARCH_RAM_GB=100  # (-B) 搜索/缓存预算，给足防止频繁IO
-THREADS=64         # 线程数
+# 输出路径 (放在 NVMe 上速度最快)
+OUTPUT_DIR="$HOME/hpdic/sift1b_data/indices"
 
-# --- 2. 动态生成路径 (解决手动改名的痛苦) ---
-# 文件名会自动变成: diskann_base_R20_L40
-INDEX_NAME="diskann_base_R${R_VAL}_L${L_VAL}"
+# --- 2. 核心参数 (R32/L50 性价比最高) ---
+R_VAL=32           
+L_VAL=50           
+PQ_BYTES=16        
+
+# --- 3. 内存与性能优化 ---
+# 物理内存 125G -> 预留 15G -> 预算 110G
+# 配合 6GB/s 的 NVMe，这基本就是全内存运行的速度
+RAM_BUDGET=110     
+THREADS=56         # CPU 满核 (C6620)
+
+# --- 4. 自动命名 ---
+INDEX_NAME="diskann_base_R${R_VAL}_L${L_VAL}_B${RAM_BUDGET}G"
 INDEX_PREFIX="${OUTPUT_DIR}/${INDEX_NAME}"
 
-# --- 3. 安全检查 ---
+# --- 5. 安全检查 (防止路径写错) ---
 if [ ! -f "$RAW_DATA" ]; then
-    echo "❌ 致命错误: 找不到源数据文件: $RAW_DATA"
+    echo "❌ 找不到数据文件: $RAW_DATA"
     exit 1
 fi
 
 if [ ! -f "$BUILDER_BIN" ]; then
-    echo "❌ 致命错误: 找不到构建程序: $BUILDER_BIN"
+    echo "❌ 找不到构建程序: $BUILDER_BIN"
+    echo "   请检查编译目录是否正确，或者是否编译成功"
     exit 1
 fi
 
 mkdir -p "$OUTPUT_DIR"
 
-# --- 4. 自动清理战场 ---
-# ⚠️ 注意: 这里只清理 "当前参数" 对应的旧文件。
-# 如果你之前跑过 R32 的废文件，请手动删一次，或者取消下面注释行的注释
-# rm -f "${OUTPUT_DIR}/diskann_base_R32_L50*" 
-
+# --- 6. 执行 ---
 echo "----------------------------------------------------------------"
-echo "🚀 启动 DiskANN 构建任务"
+echo "🚀 [Node0 修正版] 启动 DiskANN 构建"
 echo "----------------------------------------------------------------"
-echo "📂 源数据:  $RAW_DATA"
-echo "💾 输出前缀: $INDEX_PREFIX"
-echo "🔧 参数配置: R=${R_VAL}, L=${L_VAL}, PQ=${PQ_BYTES} bytes"
-echo "🧠 内存限制: Build=${BUILD_RAM_GB}G, Limit=${SEARCH_RAM_GB}G"
-echo "🧵 线程数:  $THREADS"
+echo "📂 程序位置: $BUILDER_BIN"
+echo "📂 输入数据: $RAW_DATA"
+echo "💾 输出索引: $INDEX_PREFIX"
+echo "⚙️  算法参数: R=${R_VAL}, L=${L_VAL}"
+echo "🧠 内存预算: ${RAM_BUDGET} GB"
+echo "🧵 线程数量: $THREADS"
 echo "----------------------------------------------------------------"
 
-# 清理当前配置可能残留的旧文件，确保从零开始
-echo "🧹 清理同名旧文件 (如果存在)..."
+# 清理旧文件防止冲突
 rm -f "${INDEX_PREFIX}"*
 
-# --- 5. 执行构建 ---
-# start_time=$(date +%s)
+start_time=$(date +%s)
 
 "$BUILDER_BIN" \
     --data_type uint8 \
@@ -68,19 +71,15 @@ rm -f "${INDEX_PREFIX}"*
     --index_path_prefix "$INDEX_PREFIX" \
     -R "$R_VAL" \
     -L "$L_VAL" \
-    -B "$SEARCH_RAM_GB" \
-    -M "$BUILD_RAM_GB" \
+    -B "$RAM_BUDGET" \
+    -M "$RAM_BUDGET" \
     -T "$THREADS" \
     --build_PQ_bytes "$PQ_BYTES"
 
-# --- 6. 结果反馈 ---
-if [ $? -eq 0 ]; then
-    echo "----------------------------------------------------------------"
-    echo "✅ 成功！构建完成。"
-    echo "📊 生成文件列表："
-    ls -lh "${INDEX_PREFIX}"*
-    echo "----------------------------------------------------------------"
-else
-    echo "❌ 失败！构建程序非正常退出。"
-    exit 1
-fi
+end_time=$(date +%s)
+duration=$((end_time - start_time))
+
+echo "----------------------------------------------------------------"
+echo "✅ 构建完成！耗时: $(($duration / 60)) 分钟"
+echo "📊 索引文件位置: $OUTPUT_DIR"
+echo "----------------------------------------------------------------"
