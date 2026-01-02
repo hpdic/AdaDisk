@@ -20,7 +20,7 @@ L_VAL=50
 PQ_BYTES=16        
 
 # --- 3. 内存与性能优化 ---
-RAM_BUDGET=200      # the largest possible patch size is 199 GB
+RAM_BUDGET=180      # the largest possible patch size is 199 GB
 THREADS=128         # check htop
 
 # --- 4. 自动命名 ---
@@ -68,7 +68,8 @@ start_time=$(date +%s)
     -B "$RAM_BUDGET" \
     -M "$RAM_BUDGET" \
     -T "$THREADS" \
-    --build_PQ_bytes "$PQ_BYTES"
+    --build_PQ_bytes "$PQ_BYTES" \
+    --PQ_disk_bytes "$PQ_BYTES"
 
 end_time=$(date +%s)
 duration=$((end_time - start_time))
