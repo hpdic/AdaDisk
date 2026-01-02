@@ -2,9 +2,14 @@
 
 ## Update on January 1, 2026, for CloudLab
 ```bash
+    sudo chown -R $(whoami): /hpdic
+    rm -rf ~/hpdic
+    ln -s /hpdic ~/hpdic    
+    df -h ~/hpdic
+    git clone git@github.com:hpdic/AdaDisk.git
     cd ~/hpdic/AdaDisk
     sudo apt-get update
-    sudo apt-get install libopenblas-dev liblapacke-dev cmake libboost-all-dev libaio-dev libgoogle-perftools-dev build-essential libunwind-dev python3-pip python3-venv -y
+    sudo apt-get install btop libopenblas-dev liblapacke-dev cmake libboost-all-dev libaio-dev libgoogle-perftools-dev build-essential libunwind-dev python3-pip python3-venv -y
     python3 -m venv venv
     source venv/bin/activate
     pip install numpy scikit-learn h5py tqdm requests

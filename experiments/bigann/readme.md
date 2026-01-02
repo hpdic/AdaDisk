@@ -4,16 +4,14 @@
 mkdir -p ~/hpdic/sift1b_data
 cd ~/hpdic/sift1b_data
 
-nohup wget -c ftp://ftp.irisa.fr/local/texmex/corpus/bigann_base.bvecs.gz > download_base.log 2>&1 &
-
 wget -c ftp://ftp.irisa.fr/local/texmex/corpus/bigann_query.bvecs.gz
 wget -c ftp://ftp.irisa.fr/local/texmex/corpus/bigann_gnd.tar.gz
-
-gzip -d bigann_base.bvecs.gz
-
 gzip -d bigann_query.bvecs.gz
-
 tar -xvf bigann_gnd.tar.gz
+
+# The following will be very slow; consider scping it from another machine
+nohup wget -c ftp://ftp.irisa.fr/local/texmex/corpus/bigann_base.bvecs.gz > download_base.log 2>&1 &
+gzip -d bigann_base.bvecs.gz
 
 cp ~/hpdic/AdaDisk/experiments/bigann/convert_sift1b.py ~/hpdic/sift1b_data/.
 cd ~/hpdic/sift1b_data
