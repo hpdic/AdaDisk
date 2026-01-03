@@ -1,9 +1,35 @@
 # [HPDIC MOD] AdaDisk: A Distributed Agentic System for Adaptive Ingestion-Query Scheduling of DiskANN (https://github.com/microsoft/DiskANN) RAG in LLM Serving
 
 ## Some hardware notes on billion-scale experiments
+Here's what I suggest for running the billion-scale experiments on SIFT1B dataset: 80+ CPU cores, 256 GB+ memory (in which 150 GB is budgeted in the parameters; details see below), and 800+ GB NVMe SSD. Then you'll be able to have a full run of index building finished within ~10 hours if your system is relatively new. Detailed usage are as follows: 
 * *CPU* The PQ procedure seems to be parallelizable with ~86 tasks because I observed almost always full CPU utilization on a 64-core machine while almost always 67% utilization on a 128-core machine. So, it's advisable to deploy this implementation on a 90+ core machine for best performance. When building the index, I saw all of 128 cores are working. So, having more cores is always better.
-* *Memory* I suggest you budget 128 GB memory in here `AdaDisk/experiments/bigann/run_build_sift1b_baseline.sh`). If you budget less than 128 GB, PQ compression will kick into the distance computation, which could be faster but introduces some inaccuracies. Your system should also have 16-32 GB memory for the PQ files. The OS and other background processes may need another 10-15 GB memory. So, in total, I suggest you have at least 180 GB memory on the machine.  
-* *Disk* The most important thing is to make sure you have a large (e.g., 500 GB or 1 TB) high-performance NVMe SSD. But to be honest I didn't check how much slower the experience would run on these older devices like SATA SSDs or even HDDs.
+* *Memory* I suggest you budget at least 128 GB memory (I used 180 GB, but I think 150 GB should be fine) in here `AdaDisk/experiments/bigann/run_build_sift1b_baseline.sh`. If you budget less than 128 GB, PQ compression will kick into the distance computation, which could be faster but introduces some inaccuracies. Warning: The system will eat more memory when merging the subshards of indexes; e.g., I had five subshards and I saw 225 GB memory was occupied at peak.  
+* *Disk* The most important thing is to make sure you have a large (e.g., 1 TB is pretty safe) high-performance NVMe SSD. But to be honest I didn't check how much slower the experience would run on these older devices like SATA SSDs or even HDDs.
+
+The index looks like the following (I had five subshards):
+```bash
+donzhao@node0:~/hpdic/AdaDisk$ ls ../sift1b_data/indices/ -lh
+total 291G
+-rw-r--r-- 1 donzhao dsdm-PG0 142G Jan  3 05:21 diskann_base_R32_L50_B180G_disk.index
+-rw-r--r-- 1 donzhao dsdm-PG0 2.6K Jan  2 23:38 diskann_base_R32_L50_B180G_disk.index_centroids.bin
+-rw-r--r-- 1 donzhao dsdm-PG0   28 Jan  3 04:28 diskann_base_R32_L50_B180G_disk.index_medoids.bin
+-rw-r--r-- 1 donzhao dsdm-PG0 133K Jan  2 19:01 diskann_base_R32_L50_B180G_disk.index_pq_pivots.bin
+-rw-r--r-- 1 donzhao dsdm-PG0 5.4G Jan  2 23:59 diskann_base_R32_L50_B180G_mem.index_tempFiles_subshard-0.binpq16_compressed.bin
+-rw-r--r-- 1 donzhao dsdm-PG0 133K Jan  2 23:45 diskann_base_R32_L50_B180G_mem.index_tempFiles_subshard-0.binpq16_pivots.bin
+-rw-r--r-- 1 donzhao dsdm-PG0 6.7G Jan  3 00:58 diskann_base_R32_L50_B180G_mem.index_tempFiles_subshard-1.binpq16_compressed.bin
+-rw-r--r-- 1 donzhao dsdm-PG0 133K Jan  3 00:41 diskann_base_R32_L50_B180G_mem.index_tempFiles_subshard-1.binpq16_pivots.bin
+-rw-r--r-- 1 donzhao dsdm-PG0 4.4G Jan  3 01:52 diskann_base_R32_L50_B180G_mem.index_tempFiles_subshard-2.binpq16_compressed.bin
+-rw-r--r-- 1 donzhao dsdm-PG0 133K Jan  3 01:42 diskann_base_R32_L50_B180G_mem.index_tempFiles_subshard-2.binpq16_pivots.bin
+-rw-r--r-- 1 donzhao dsdm-PG0 7.4G Jan  3 02:42 diskann_base_R32_L50_B180G_mem.index_tempFiles_subshard-3.binpq16_compressed.bin
+-rw-r--r-- 1 donzhao dsdm-PG0 133K Jan  3 02:24 diskann_base_R32_L50_B180G_mem.index_tempFiles_subshard-3.binpq16_pivots.bin
+-rw-r--r-- 1 donzhao dsdm-PG0 6.2G Jan  3 03:47 diskann_base_R32_L50_B180G_mem.index_tempFiles_subshard-4.binpq16_compressed.bin
+-rw-r--r-- 1 donzhao dsdm-PG0 133K Jan  3 03:33 diskann_base_R32_L50_B180G_mem.index_tempFiles_subshard-4.binpq16_pivots.bin
+-rw-r--r-- 1 donzhao dsdm-PG0 120G Jan  2 23:37 diskann_base_R32_L50_B180G_pq_compressed.bin
+-rw-r--r-- 1 donzhao dsdm-PG0 134K Jan  2 19:36 diskann_base_R32_L50_B180G_pq_pivots.bin
+-rw-r--r-- 1 donzhao dsdm-PG0  13M Jan  3 05:23 diskann_base_R32_L50_B180G_sample_data.bin
+-rw-r--r-- 1 donzhao dsdm-PG0 390K Jan  3 05:23 diskann_base_R32_L50_B180G_sample_ids.bin
+donzhao@node0:~/hpdic/AdaDisk$ 
+```
 
 ## Update on January 1, 2026, for CloudLab
 ```bash
