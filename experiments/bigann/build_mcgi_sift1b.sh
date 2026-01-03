@@ -25,8 +25,8 @@ L_VAL=50
 PQ_BYTES=16        
 
 # --- 3. 内存与性能优化 ---
-RAM_BUDGET=80     # if larger than 120, no PQ is needed
-THREADS=56         # check htop
+RAM_BUDGET=50     # if larger than 120, no PQ is needed
+THREADS=64         # check htop
 
 # --- 4. 自动命名 ---
 INDEX_NAME="diskann_mcgi_R${R_VAL}_L${L_VAL}_B${RAM_BUDGET}G"
