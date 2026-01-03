@@ -15,7 +15,7 @@ gzip -d bigann_base.bvecs.gz
 cp ~/hpdic/AdaDisk/experiments/bigann/convert_sift1b.py ~/hpdic/sift1b_data/.
 python3 convert_sift1b.py
 
-# Build index
+# Baseline index building
 tmux
 chmod +x ~/hpdic/AdaDisk/experiments/bigann/run_build_sift1b_baseline.sh
 cd ~/hpdic/AdaDisk
@@ -25,9 +25,19 @@ cd ~/hpdic/AdaDisk
 cd ~/hpdic/AdaDisk
 tail -f build_sift1b.log
 
-# Query:
+# Baseline query:
 cd ~/hpdic/sift1b_data
 python ../AdaDisk/experiments/bigann/convert_search.py
 bash ../AdaDisk/experiments/bigann/run_search_baseline.sh
 # example result in ./output_baseline_nopq.txt 
+
+# MCGI index building
+tmux
+chmod +x ~/hpdic/AdaDisk/experiments/bigann/build_mcgi_sift1b.sh
+cd ~/hpdic/AdaDisk
+# You should take a look at the parameters in the following script
+./experiments/bigann/build_mcgi_sift1b.sh 2>&1 | tee build_mcgi.log
+# ctrl+b d
+cd ~/hpdic/AdaDisk
+tail -f build_mcgi.log
 ```
