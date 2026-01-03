@@ -107,7 +107,7 @@ def main():
             
             processed += current_chunk
             if processed % 100000000 == 0:
-                print(f"Written {processed / 100000000:.1f}B / 1.0B points...")
+                print(f"Written {processed / 1000000000:.1f}B / 1.0B points...")
                 
     print(f"Done! Saved generated LID to {LID_FILE}")
     print(f"Time taken: {time.time() - start_time:.2f}s")
