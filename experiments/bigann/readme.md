@@ -27,7 +27,9 @@ tail -f build_sift1b.log
 
 # Baseline query:
 cd ~/hpdic/sift1b_data
+source ../AdaDisk/venv/bin/activate
 python ../AdaDisk/experiments/bigann/convert_search.py
+sudo sysctl -w fs.aio-max-nr=1048576
 bash ../AdaDisk/experiments/bigann/run_search_baseline.sh
 # example result in ./output_baseline_nopq.txt 
 

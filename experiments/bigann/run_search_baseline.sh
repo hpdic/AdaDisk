@@ -4,19 +4,19 @@
 DISKANN_HOME="$HOME/hpdic/AdaDisk"
 SEARCH_BIN="${DISKANN_HOME}/build/apps/search_disk_index"
 
-# ✅ 修正 1: 索引路径指向 indices_success
+# ✅ 修正 1: 索引路径指向 indices
 # 注意：不要加 _disk.index 后缀
-INDEX_PREFIX="$HOME/hpdic/sift1b_data/indices_success/diskann_base_R32_L50_B110G"
+INDEX_PREFIX="$HOME/hpdic/sift1b_data/indices/diskann_base_R32_L50_B180G"
 
 QUERY_FILE="$HOME/hpdic/sift1b_data/bigann_query.bin"  # 改为 .bin
-GT_FILE="$HOME/hpdic/sift1b_data/bigann_gnd.bin"      # 改为 .bin
+GT_FILE="$HOME/hpdic/sift1b_data/bigann_gnd.bin"       # 改为 .bin
 
-RESULT_OUTPUT="search_results_old.bin"
+RESULT_OUTPUT="search_results.bin"
 
 # --- 2. 搜索参数 ---
 K=10                     # Top-10
-L_LIST="10 20 40 80 100" # 不同的搜索队列长度
-THREADS=56               # 线程数
+L_LIST="10 20 40 80 100 120 140 160 180 200" # 不同的搜索队列长度
+THREADS=128               # 线程数
 
 # --- 3. 安全检查 ---
 if [ ! -f "${INDEX_PREFIX}_disk.index" ]; then
