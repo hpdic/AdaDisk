@@ -1380,15 +1380,17 @@ int build_disk_index(const char *dataFilePath, const char *indexFilePath, const 
     return 0;
 }
 
-// [AMCGI ADD]
+// AMCGI: Fixed the memory issue for 1 billion data
 template <typename T, typename TagT>
 int build_disk_index(const char *dataFilePath, const char *indexFilePathPrefix, const char *indexBuildParameters,
                      diskann::Metric metric, bool use_opq, const std::string &codebook_prefix, bool use_filters,
                      const std::string &label_file, const std::string &universal_label, const uint32_t filter_threshold,
                      const uint32_t Lf,
-                     // AMCGI 参数
+                     // AMCGI 参数 (保持不变)
                      float lid_avg, float lid_std, float alpha_min, float alpha_max)
 {
+    std::cout << "[HPDIC DEBUG] Starting Scalable Build... " << std::endl;
+
     // 1. 解析参数
     std::stringstream ss(indexBuildParameters);
     std::string tmp;
@@ -1400,128 +1402,258 @@ int build_disk_index(const char *dataFilePath, const char *indexFilePathPrefix, 
 
     uint32_t R = (uint32_t)atoi(params_list[0].c_str());
     uint32_t L = (uint32_t)atoi(params_list[1].c_str());
+    // B (Final Index RAM Limit)
+    double final_index_ram_limit = params_list.size() > 2 ? std::stod(params_list[2]) : 64.0;
+    // M (Indexing RAM Budget - 关键参数，决定切片大小)
+    double indexing_ram_budget = params_list.size() > 3 ? std::stod(params_list[3]) : 32.0;
     uint32_t num_threads = (uint32_t)atoi(params_list[4].c_str());
-    uint32_t disk_PQ = (uint32_t)atoi(params_list[5].c_str());
-    bool append_reorder_data = (bool)atoi(params_list[6].c_str());
-    uint32_t build_PQ = (uint32_t)atoi(params_list[7].c_str());
-    uint32_t QD = (uint32_t)atoi(params_list[8].c_str());
 
-    // 2. 读取元数据
-    size_t points_num, dim;
-    diskann::get_bin_metadata(dataFilePath, points_num, dim);
+    // PQ Bytes (如果这里 > 0，merged_vamana 会尝试做 PQ，但我们主要关注最后打包)
+    uint32_t disk_PQ = 0;
+    if (params_list.size() > 5)
+        disk_PQ = (uint32_t)atoi(params_list[5].c_str());
+    bool append_reorder_data = (params_list.size() > 6) ? (bool)atoi(params_list[6].c_str()) : false;
 
-    // 3. 构建 IndexWriteParameters
-    diskann::IndexWriteParametersBuilder param_builder(L, R);
-    param_builder.with_num_threads(num_threads);
-
-    if (use_filters)
+    // 2. [MCGI] 注入 MCGI 参数 (你的逻辑)
+    // ---------------------------------------------------------
+    // 即使在分块构建中，g_mcgi_ctx 作为全局变量，
+    // 对所有线程和切片都是可见的，所以这里初始化一次即可生效。
+    // ---------------------------------------------------------
+    if (lid_avg > 0.0f || alpha_min > 0.0f) // 只要有参数就尝试初始化
     {
-        param_builder.with_filter_list_size(Lf);
-        param_builder.with_saturate_graph(false);
-    }
-    else
-    {
-        param_builder.with_saturate_graph(true);
-    }
-
-    auto params = param_builder.build();
-
-    // 4. 实例化 Index 对象
-    diskann::Index<T, TagT> index(metric, dim, points_num, std::make_shared<diskann::IndexWriteParameters>(params),
-                                  nullptr, 0, false, !label_file.empty(), false, build_PQ > 0,
-                                  build_PQ > 0 ? build_PQ : 0, use_opq, use_filters);
-
-    // 5. [MCGI] 注入 MCGI 参数 (UPDATED)
-    if (lid_avg > 0.0f)
-    {
-        // 1. 赋值统计量
+        // 如果你的逻辑不再依赖 lid_avg，传 0 也没关系，关键是 alpha_min/max
         g_mcgi_ctx.lid_avg = lid_avg;
         g_mcgi_ctx.lid_std = lid_std;
-
-        // 2. 补上：赋值 Alpha 区间（否则后面计算时拿不到这俩数）
         g_mcgi_ctx.alpha_min = alpha_min;
         g_mcgi_ctx.alpha_max = alpha_max;
-
-        // 3. 补上：打开开关（否则后面 if (ctx.enabled) 进不去）
-        g_mcgi_ctx.enabled = true;
         g_mcgi_ctx.advanced = true;
+        // g_mcgi_ctx.enabled = true; // 如果你的 struct 有这个字段，请取消注释
 
-        std::cout << "[AMCGI] Context Initialized manually. Avg=" << lid_avg << " Std=" << lid_std << " Alpha=["
-                  << alpha_min << "," << alpha_max << "]" << std::endl;
+        std::cout << "[AMCGI] Context Initialized. Avg=" << lid_avg << " Std=" << lid_std << " Alpha=[" << alpha_min
+                  << "," << alpha_max << "]" << std::endl;
     }
 
-    // 6. 执行构建
-    auto start = std::chrono::high_resolution_clock::now();
+    // 3. 准备路径
+    std::string mem_index_path = std::string(indexFilePathPrefix) + "_mem.index";
+    std::string disk_index_path = std::string(indexFilePathPrefix) + "_disk.index";
+    std::string medoids_path = std::string(indexFilePathPrefix) + "_medoids.bin";
+    std::string centroids_path = std::string(indexFilePathPrefix) + "_centroids.bin";
 
-    if (use_filters && !label_file.empty())
+    // 4. [核心修改] 执行分块合并构建 (Scalable Build)
+    // ---------------------------------------------------------
+    // 不再使用 diskann::Index index(...)，而是使用 build_merged_vamana_index
+    // 它会自动把 1B 数据切成小块构建，不会爆内存。
+    // ---------------------------------------------------------
+    std::cout << "[HPDIC] Running build_merged_vamana_index (Chunking Mode)..." << std::endl;
+
+    // 这里的 0.01 是采样率，用于选 medoids，通常够用了
+    diskann::build_merged_vamana_index<T, TagT>(dataFilePath, metric, L, R, 0.01,
+                                                indexing_ram_budget, // 限制内存使用的关键！
+                                                mem_index_path, medoids_path, centroids_path,
+                                                disk_PQ > 0 ? disk_PQ
+                                                            : 0, // 如果需要构建时压缩 (通常传0，只在最后打包PQ)
+                                                use_opq, num_threads, use_filters, label_file,
+                                                "", // labels_to_medoids_path
+                                                universal_label, Lf);
+
+    // 5. [HPDIC] 生成 Disk Layout (复用现有的 PQ 文件)
+    // ---------------------------------------------------------
+    std::cout << "[HPDIC] Generating Disk Layout with EXISTING PQ files..." << std::endl;
+
+    if (disk_PQ > 0)
     {
-        index.build_filtered_index(dataFilePath, label_file, points_num);
+        // 假设你已经把 PQ 文件准备好了
+        std::string pq_pivots_path = std::string(indexFilePathPrefix) + "_pq_pivots.bin";
+        std::string pq_compressed_path = std::string(indexFilePathPrefix) + "_pq_compressed.bin";
+
+        // 检查文件是否存在 (可选)
+        std::ifstream f1(pq_pivots_path), f2(pq_compressed_path);
+        if (!f1.good() || !f2.good())
+        {
+            std::cerr << "[Warning] PQ files not found at: " << pq_pivots_path << std::endl;
+            std::cerr << "Please ensure you copied standard PQ files to this path!" << std::endl;
+        }
+
+        if (append_reorder_data)
+        {
+            // 修正：4个参数 (PQ数据, 图, 输出路径, 重排原始数据)
+            // 去掉了 pq_pivots_path
+            diskann::create_disk_layout<uint8_t>(pq_compressed_path, mem_index_path, disk_index_path,
+                                                 std::string(dataFilePath));
+        }
+        else
+        {
+            // 修正：3个参数 (PQ数据, 图, 输出路径)
+            // 去掉了 pq_pivots_path
+            diskann::create_disk_layout<uint8_t>(pq_compressed_path, mem_index_path, disk_index_path);
+        }
     }
     else
     {
-        if (!label_file.empty())
-            index.build(dataFilePath, points_num, label_file.c_str());
-        else
-            index.build(dataFilePath, points_num);
+        // Standard Float Index (无 PQ)
+        diskann::create_disk_layout<T>(dataFilePath, mem_index_path, disk_index_path);
     }
 
-    // 7. 清理与保存
+    // 6. 清理上下文
     if (lid_avg > 0.0f)
     {
         diskann::FreeMCGIContext();
     }
 
-    std::chrono::duration<double> diff = std::chrono::high_resolution_clock::now() - start;
-    std::cout << "Indexing time: " << diff.count() << "\n";
-
-    if (disk_PQ > 0)
-    {
-        if (append_reorder_data)
-        {
-            std::string src = dataFilePath;
-            std::string dst = std::string(indexFilePathPrefix) + "_data.bin";
-            diskann::copy_file(src, dst);
-        }
-        index.save(std::string(indexFilePathPrefix).c_str(), false);
-    }
-    else
-    {
-        index.save(std::string(indexFilePathPrefix).c_str(), false);
-    }
-
-    // ================= [HPDIC FIX START] =================
-    // 这里的逻辑保持不变，用于生成 Disk Layout
-    std::cout << "[HPDIC] Generating Disk Layout..." << std::endl;
-
-    std::string mem_index_path = std::string(indexFilePathPrefix);
-    std::string disk_index_path = std::string(indexFilePathPrefix) + "_disk.index";
-    std::string data_file_to_use = std::string(dataFilePath);
-
-    if (disk_PQ > 0)
-    {
-        std::string disk_pq_compressed_vectors_path =
-            std::string(indexFilePathPrefix) + "_disk.index_pq_compressed.bin";
-        if (append_reorder_data)
-        {
-            diskann::create_disk_layout<uint8_t>(disk_pq_compressed_vectors_path, mem_index_path, disk_index_path,
-                                                 data_file_to_use);
-        }
-        else
-        {
-            diskann::create_disk_layout<uint8_t>(disk_pq_compressed_vectors_path, mem_index_path, disk_index_path);
-        }
-    }
-    else
-    {
-        // Standard Float Index
-        diskann::create_disk_layout<T>(data_file_to_use, mem_index_path, disk_index_path);
-    }
-
-    std::cout << "[HPDIC] Disk Layout generated at: " << disk_index_path << std::endl;
-    // ================= [HPDIC FIX END] =================
-
+    std::cout << "[HPDIC] Build Complete. Index saved to: " << disk_index_path << std::endl;
     return 0;
-} 
+}
+
+// // [AMCGI ADD]
+// template <typename T, typename TagT>
+// int build_disk_index(const char *dataFilePath, const char *indexFilePathPrefix, const char *indexBuildParameters,
+//                      diskann::Metric metric, bool use_opq, const std::string &codebook_prefix, bool use_filters,
+//                      const std::string &label_file, const std::string &universal_label, const uint32_t filter_threshold,
+//                      const uint32_t Lf,
+//                      // AMCGI 参数
+//                      float lid_avg, float lid_std, float alpha_min, float alpha_max)
+// {
+//     cout << "[HPDIC DEBUG] " << __DATE__ << " " << __TIME__ << " " << __FILE__ << ": " << __LINE__ << std::endl;
+
+//     // 1. 解析参数
+//     std::stringstream ss(indexBuildParameters);
+//     std::string tmp;
+//     std::vector<std::string> params_list;
+//     while (ss >> tmp)
+//     {
+//         params_list.push_back(tmp);
+//     }
+//     cout << "[HPDIC DEBUG] " << __DATE__ << " " << __TIME__ << " " << __FILE__ << ": " << __LINE__ << std::endl;
+
+//     uint32_t R = (uint32_t)atoi(params_list[0].c_str());
+//     uint32_t L = (uint32_t)atoi(params_list[1].c_str());
+//     uint32_t num_threads = (uint32_t)atoi(params_list[4].c_str());
+//     uint32_t disk_PQ = (uint32_t)atoi(params_list[5].c_str());
+//     bool append_reorder_data = (bool)atoi(params_list[6].c_str());
+//     uint32_t build_PQ = (uint32_t)atoi(params_list[7].c_str());
+//     uint32_t QD = (uint32_t)atoi(params_list[8].c_str());
+
+//     // 2. 读取元数据
+//     size_t points_num, dim;
+//     diskann::get_bin_metadata(dataFilePath, points_num, dim);
+//     cout << "[HPDIC DEBUG] " << __DATE__ << " " << __TIME__ << " " << __FILE__ << ": " << __LINE__ << std::endl;
+
+//     // 3. 构建 IndexWriteParameters
+//     diskann::IndexWriteParametersBuilder param_builder(L, R);
+//     param_builder.with_num_threads(num_threads);
+//     cout << "[HPDIC DEBUG] " << __DATE__ << " " << __TIME__ << " " << __FILE__ << ": " << __LINE__ << std::endl;
+
+//     if (use_filters)
+//     {
+//         param_builder.with_filter_list_size(Lf);
+//         param_builder.with_saturate_graph(false);
+//     }
+//     else
+//     {
+//         param_builder.with_saturate_graph(true);
+//     }
+//     cout << "[HPDIC DEBUG] " << __DATE__ << " " << __TIME__ << " " << __FILE__ << ": " << __LINE__ << std::endl;
+
+//     auto params = param_builder.build();
+//     cout << "[HPDIC DEBUG] " << __DATE__ << " " << __TIME__ << " " << __FILE__ << ": " << __LINE__ << std::endl;
+
+//     // 4. 实例化 Index 对象
+//     diskann::Index<T, TagT> index(metric, dim, points_num, std::make_shared<diskann::IndexWriteParameters>(params),
+//                                   nullptr, 0, false, !label_file.empty(), false, build_PQ > 0,
+//                                   build_PQ > 0 ? build_PQ : 0, use_opq, use_filters);
+//     cout << "[HPDIC DEBUG] " << __DATE__ << " " << __TIME__ << " " << __FILE__ << ": " << __LINE__ << std::endl;
+
+//     // 5. [MCGI] 注入 MCGI 参数 (UPDATED)
+//     if (lid_avg > 0.0f)
+//     {
+//         // 1. 赋值统计量
+//         g_mcgi_ctx.lid_avg = lid_avg;
+//         g_mcgi_ctx.lid_std = lid_std;
+
+//         // 2. 补上：赋值 Alpha 区间（否则后面计算时拿不到这俩数）
+//         g_mcgi_ctx.alpha_min = alpha_min;
+//         g_mcgi_ctx.alpha_max = alpha_max;
+
+//         // 3. 补上：打开开关（否则后面 if (ctx.enabled) 进不去）
+//         // g_mcgi_ctx.enabled = true;
+//         g_mcgi_ctx.advanced = true;
+
+//         std::cout << "[AMCGI] Context Initialized manually. Avg=" << lid_avg << " Std=" << lid_std << " Alpha=["
+//                   << alpha_min << "," << alpha_max << "]" << std::endl;
+//     }
+
+//     // 6. 执行构建
+//     auto start = std::chrono::high_resolution_clock::now();
+
+//     if (use_filters && !label_file.empty())
+//     {
+//         index.build_filtered_index(dataFilePath, label_file, points_num);
+//     }
+//     else
+//     {
+//         if (!label_file.empty())
+//             index.build(dataFilePath, points_num, label_file.c_str());
+//         else
+//             index.build(dataFilePath, points_num);
+//     }
+
+//     // 7. 清理与保存
+//     if (lid_avg > 0.0f)
+//     {
+//         diskann::FreeMCGIContext();
+//     }
+
+//     std::chrono::duration<double> diff = std::chrono::high_resolution_clock::now() - start;
+//     std::cout << "Indexing time: " << diff.count() << "\n";
+
+//     if (disk_PQ > 0)
+//     {
+//         if (append_reorder_data)
+//         {
+//             std::string src = dataFilePath;
+//             std::string dst = std::string(indexFilePathPrefix) + "_data.bin";
+//             diskann::copy_file(src, dst);
+//         }
+//         index.save(std::string(indexFilePathPrefix).c_str(), false);
+//     }
+//     else
+//     {
+//         index.save(std::string(indexFilePathPrefix).c_str(), false);
+//     }
+
+//     // ================= [HPDIC FIX START] =================
+//     // 这里的逻辑保持不变，用于生成 Disk Layout
+//     std::cout << "[HPDIC] Generating Disk Layout..." << std::endl;
+
+//     std::string mem_index_path = std::string(indexFilePathPrefix);
+//     std::string disk_index_path = std::string(indexFilePathPrefix) + "_disk.index";
+//     std::string data_file_to_use = std::string(dataFilePath);
+
+//     if (disk_PQ > 0)
+//     {
+//         std::string disk_pq_compressed_vectors_path =
+//             std::string(indexFilePathPrefix) + "_disk.index_pq_compressed.bin";
+//         if (append_reorder_data)
+//         {
+//             diskann::create_disk_layout<uint8_t>(disk_pq_compressed_vectors_path, mem_index_path, disk_index_path,
+//                                                  data_file_to_use);
+//         }
+//         else
+//         {
+//             diskann::create_disk_layout<uint8_t>(disk_pq_compressed_vectors_path, mem_index_path, disk_index_path);
+//         }
+//     }
+//     else
+//     {
+//         // Standard Float Index
+//         diskann::create_disk_layout<T>(data_file_to_use, mem_index_path, disk_index_path);
+//     }
+
+//     std::cout << "[HPDIC] Disk Layout generated at: " << disk_index_path << std::endl;
+//     // ================= [HPDIC FIX END] =================
+
+//     return 0;
+// } 
 
 // [MCGI ADD] 适配新版 index.h 的重载实现
 template <typename T, typename TagT>
