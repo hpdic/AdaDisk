@@ -1380,6 +1380,149 @@ int build_disk_index(const char *dataFilePath, const char *indexFilePath, const 
     return 0;
 }
 
+// [AMCGI ADD]
+template <typename T, typename TagT>
+int build_disk_index(const char *dataFilePath, const char *indexFilePathPrefix, const char *indexBuildParameters,
+                     diskann::Metric metric, bool use_opq, const std::string &codebook_prefix, bool use_filters,
+                     const std::string &label_file, const std::string &universal_label, const uint32_t filter_threshold,
+                     const uint32_t Lf,
+                     // AMCGI 参数
+                     float lid_avg, float lid_std, float alpha_min, float alpha_max)
+{
+    // 1. 解析参数
+    std::stringstream ss(indexBuildParameters);
+    std::string tmp;
+    std::vector<std::string> params_list;
+    while (ss >> tmp)
+    {
+        params_list.push_back(tmp);
+    }
+
+    uint32_t R = (uint32_t)atoi(params_list[0].c_str());
+    uint32_t L = (uint32_t)atoi(params_list[1].c_str());
+    uint32_t num_threads = (uint32_t)atoi(params_list[4].c_str());
+    uint32_t disk_PQ = (uint32_t)atoi(params_list[5].c_str());
+    bool append_reorder_data = (bool)atoi(params_list[6].c_str());
+    uint32_t build_PQ = (uint32_t)atoi(params_list[7].c_str());
+    uint32_t QD = (uint32_t)atoi(params_list[8].c_str());
+
+    // 2. 读取元数据
+    size_t points_num, dim;
+    diskann::get_bin_metadata(dataFilePath, points_num, dim);
+
+    // 3. 构建 IndexWriteParameters
+    diskann::IndexWriteParametersBuilder param_builder(L, R);
+    param_builder.with_num_threads(num_threads);
+
+    if (use_filters)
+    {
+        param_builder.with_filter_list_size(Lf);
+        param_builder.with_saturate_graph(false);
+    }
+    else
+    {
+        param_builder.with_saturate_graph(true);
+    }
+
+    auto params = param_builder.build();
+
+    // 4. 实例化 Index 对象
+    diskann::Index<T, TagT> index(metric, dim, points_num, std::make_shared<diskann::IndexWriteParameters>(params),
+                                  nullptr, 0, false, !label_file.empty(), false, build_PQ > 0,
+                                  build_PQ > 0 ? build_PQ : 0, use_opq, use_filters);
+
+    // 5. [MCGI] 注入 MCGI 参数 (UPDATED)
+    if (lid_avg > 0.0f)
+    {
+        // 1. 赋值统计量
+        g_mcgi_ctx.lid_avg = lid_avg;
+        g_mcgi_ctx.lid_std = lid_std;
+
+        // 2. 补上：赋值 Alpha 区间（否则后面计算时拿不到这俩数）
+        g_mcgi_ctx.alpha_min = alpha_min;
+        g_mcgi_ctx.alpha_max = alpha_max;
+
+        // 3. 补上：打开开关（否则后面 if (ctx.enabled) 进不去）
+        g_mcgi_ctx.enabled = true;
+        g_mcgi_ctx.advanced = true;
+
+        std::cout << "[AMCGI] Context Initialized manually. Avg=" << lid_avg << " Std=" << lid_std << " Alpha=["
+                  << alpha_min << "," << alpha_max << "]" << std::endl;
+    }
+
+    // 6. 执行构建
+    auto start = std::chrono::high_resolution_clock::now();
+
+    if (use_filters && !label_file.empty())
+    {
+        index.build_filtered_index(dataFilePath, label_file, points_num);
+    }
+    else
+    {
+        if (!label_file.empty())
+            index.build(dataFilePath, points_num, label_file.c_str());
+        else
+            index.build(dataFilePath, points_num);
+    }
+
+    // 7. 清理与保存
+    if (lid_avg > 0.0f)
+    {
+        diskann::FreeMCGIContext();
+    }
+
+    std::chrono::duration<double> diff = std::chrono::high_resolution_clock::now() - start;
+    std::cout << "Indexing time: " << diff.count() << "\n";
+
+    if (disk_PQ > 0)
+    {
+        if (append_reorder_data)
+        {
+            std::string src = dataFilePath;
+            std::string dst = std::string(indexFilePathPrefix) + "_data.bin";
+            diskann::copy_file(src, dst);
+        }
+        index.save(std::string(indexFilePathPrefix).c_str(), true);
+    }
+    else
+    {
+        index.save(std::string(indexFilePathPrefix).c_str(), false);
+    }
+
+    // ================= [HPDIC FIX START] =================
+    // 这里的逻辑保持不变，用于生成 Disk Layout
+    std::cout << "[HPDIC] Generating Disk Layout..." << std::endl;
+
+    std::string mem_index_path = std::string(indexFilePathPrefix);
+    std::string disk_index_path = std::string(indexFilePathPrefix) + "_disk.index";
+    std::string data_file_to_use = std::string(dataFilePath);
+
+    if (disk_PQ > 0)
+    {
+        std::string disk_pq_compressed_vectors_path =
+            std::string(indexFilePathPrefix) + "_disk.index_pq_compressed.bin";
+        if (append_reorder_data)
+        {
+            diskann::create_disk_layout<uint8_t>(disk_pq_compressed_vectors_path, mem_index_path, disk_index_path,
+                                                 data_file_to_use);
+        }
+        else
+        {
+            diskann::create_disk_layout<uint8_t>(disk_pq_compressed_vectors_path, mem_index_path, disk_index_path);
+        }
+    }
+    else
+    {
+        // Standard Float Index
+        diskann::create_disk_layout<T>(data_file_to_use, mem_index_path, disk_index_path);
+    }
+
+    std::cout << "[HPDIC] Disk Layout generated at: " << disk_index_path << std::endl;
+    // ================= [HPDIC FIX END] =================
+
+    return 0;
+} 
+
 // [MCGI ADD] 适配新版 index.h 的重载实现
 template <typename T, typename TagT>
 int build_disk_index(const char *dataFilePath, const char *indexFilePathPrefix, const char *indexBuildParameters,
@@ -1539,6 +1682,36 @@ template int build_disk_index<int8_t, uint16_t>(const char *, const char *, cons
 template int build_disk_index<uint8_t, uint16_t>(const char *, const char *, const char *, diskann::Metric, bool,
                                                  const std::string &, bool, const std::string &, const std::string &,
                                                  const uint32_t, const uint32_t, const std::string &, float, float);
+
+// ========================= T, Default Tag =========================
+// 注意：去掉原本中间的 const std::string & (即 lid_path)，改成 4 个 float
+
+template int build_disk_index<float>(const char *, const char *, const char *, diskann::Metric, bool,
+                                     const std::string &, bool, const std::string &, const std::string &,
+                                     const uint32_t, const uint32_t, float, float, float,
+                                     float); // lid_avg, lid_std, alpha_min, alpha_max
+
+template int build_disk_index<int8_t>(const char *, const char *, const char *, diskann::Metric, bool,
+                                      const std::string &, bool, const std::string &, const std::string &,
+                                      const uint32_t, const uint32_t, float, float, float, float);
+
+template int build_disk_index<uint8_t>(const char *, const char *, const char *, diskann::Metric, bool,
+                                       const std::string &, bool, const std::string &, const std::string &,
+                                       const uint32_t, const uint32_t, float, float, float, float);
+
+// ========================= T, uint16_t Tag =========================
+
+template int build_disk_index<float, uint16_t>(const char *, const char *, const char *, diskann::Metric, bool,
+                                               const std::string &, bool, const std::string &, const std::string &,
+                                               const uint32_t, const uint32_t, float, float, float, float);
+
+template int build_disk_index<int8_t, uint16_t>(const char *, const char *, const char *, diskann::Metric, bool,
+                                                const std::string &, bool, const std::string &, const std::string &,
+                                                const uint32_t, const uint32_t, float, float, float, float);
+
+template int build_disk_index<uint8_t, uint16_t>(const char *, const char *, const char *, diskann::Metric, bool,
+                                                 const std::string &, bool, const std::string &, const std::string &,
+                                                 const uint32_t, const uint32_t, float, float, float, float);
 
 template DISKANN_DLLEXPORT void create_disk_layout<int8_t>(const std::string base_file,
                                                            const std::string mem_index_file,

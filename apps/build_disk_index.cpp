@@ -32,7 +32,8 @@ int main(int argc, char **argv)
     bool use_mcgi = false;
     bool use_amcgi = false;
     std::string lid_path;
-    std::string alid_path;
+    float lid_avg = 19.5f;
+    float lid_std = 7.9f;
     float alpha_min = 1.0f;
     float alpha_max = 1.5f;
     // [HPDIC MOD: MCGI END]
@@ -116,8 +117,10 @@ int main(int argc, char **argv)
 
         optional_configs.add_options()("use_amcgi", po::bool_switch()->default_value(false),
                                        "Enable Advanced Manifold-Consistent Graph Indexing (AMCGI).");
-        optional_configs.add_options()("alid_path", po::value<std::string>(&alid_path)->default_value(""),
-                                       "Path to pre-computed ALID file (required if use_amcgi is true).");
+        optional_configs.add_options()("lid_avg", po::value<float>(&lid_avg)->default_value(19.5f),
+                                       "MCGI: Average LID value.");
+        optional_configs.add_options()("lid_std", po::value<float>(&lid_std)->default_value(7.9f),
+                                       "MCGI: Standard deviation of LID.");
         // [HPDIC MOD: MCGI END]
 
         // Merge required and optional parameters
@@ -152,14 +155,8 @@ int main(int argc, char **argv)
         if (vm["use_amcgi"].as<bool>())
         {
             use_amcgi = true;
-            if (alid_path.empty())
-            {
-                std::cerr << "Error: --alid_path is required when --use_amcgi is enabled." << std::endl;
-                return -1;
-            }
-            std::cout << "[AMCGI] Enabled. ALID Path: " << alid_path << ", Alpha Range: [" << alpha_min << ", "
-                      << alpha_max << "]" << std::endl;
-        }        
+            std::cout << "[AMCGI] Enabled. LID Stats: avg=" << lid_avg << ", std=" << lid_std << std::endl;
+        }
         // [HPDIC MOD: MCGI END]
     }
     catch (const std::exception &ex)
@@ -228,12 +225,12 @@ int main(int argc, char **argv)
                 if (use_u16_label)
                     return diskann::build_disk_index<T, uint16_t>(
                         data_path.c_str(), index_path_prefix.c_str(), params.c_str(), metric, use_opq, codebook_prefix,
-                        use_filters, label_file, universal_label, filter_threshold, Lf, alid_path.c_str(), alpha_min,
+                        use_filters, label_file, universal_label, filter_threshold, Lf, lid_avg, lid_std, alpha_min,
                         alpha_max);
                 else
                     return diskann::build_disk_index<T>(data_path.c_str(), index_path_prefix.c_str(), params.c_str(),
                                                         metric, use_opq, codebook_prefix, use_filters, label_file,
-                                                        universal_label, filter_threshold, Lf, alid_path.c_str(),
+                                                        universal_label, filter_threshold, Lf, lid_avg, lid_std,
                                                         alpha_min, alpha_max);
             }
             else

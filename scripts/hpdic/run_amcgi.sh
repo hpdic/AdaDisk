@@ -83,7 +83,6 @@ echo "----------------------------------------------------------------"
     -B "$B" \
     -M "$M" \
     -T "$THREADS" \
-    --alid_path "$ALID_DATA" \
     --alpha_min "$MCGI_ALPHA_MIN" \
     --alpha_max "$MCGI_ALPHA_MAX" \
     --use_amcgi
@@ -96,8 +95,8 @@ EXIT_CODE=$?
 
 if [ $EXIT_CODE -eq 0 ]; then
     echo ""
-    echo "✅ MCGI 索引构建成功！"
-    echo "你可以检查日志中是否有 '[MCGI]' 开头的输出来确认 Sigmoid 逻辑是否生效。"
+    echo "✅ AMCGI 索引构建成功！"
+    echo "你可以检查日志中是否有 '[AMCGI]' 开头的输出来确认。"
 else
     echo ""
     echo "❌ 构建失败 (Exit Code: $EXIT_CODE)"

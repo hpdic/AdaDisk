@@ -21,6 +21,7 @@
 #include <xmmintrin.h>
 #endif
 
+#include "disk_utils.h"
 #include "index.h"
 #include "hpdic_mcgi.h"
 
@@ -1189,7 +1190,70 @@ void Index<T, TagT, LabelT>::prune_neighbors(const uint32_t location, std::vecto
     
     // [MCGI MOD] Dynamic Alpha Injection
     float current_alpha = _indexingAlpha;
-    if (diskann::IsMCGIEnabled())
+    if (diskann::IsMCGIAdvanced()) {
+        float alpha = 1.2f; // 默认值
+
+        // [MCGI 核心修改]
+        // 只有当开启了 MCGI 且 pool 里有数据时才计算
+        if (g_mcgi_ctx.enabled && !pool.empty())
+        {
+            // 1. 这里的 alpha 原本可能是传入的参数或者写死的 1.2
+            float alpha = 1.2f; // 或者使用函数参数 alpha_param
+
+            // ================= [AMCGI INLINE START] =================
+            // 利用当前 Candidate Pool 实时估算 LID 并动态调整 Alpha
+            if (g_mcgi_ctx.enabled && pool.size() > 5)
+            {
+                // A. 确定计算 LID 用的邻居数量 k
+                // 取前 32 个，或者池子大小，以较小者为准
+                size_t lid_k = std::min((size_t)32, pool.size());
+
+                // B. 获取第 k 个邻居的距离作为参照半径 (R_max)
+                // 注意：DiskANN pool 里的 distance 通常是“平方欧氏距离”
+                float max_dist_sq = pool[lid_k - 1].distance;
+
+                // 防御性编程：避免距离极小导致除零
+                if (max_dist_sq > 1e-9f)
+                {
+                    double sum_log_ratios = 0.0;
+
+                    // C. 累加 log(R_max / R_i)
+                    // 公式推导：log(sqrt(d_max)/sqrt(d_i)) = 0.5 * log(d_max/d_i)
+                    for (size_t i = 0; i < lid_k; ++i)
+                    {
+                        float dist_sq = pool[i].distance;
+                        if (dist_sq < 1e-9f)
+                            dist_sq = 1e-9f; // 避免 log(0)
+
+                        // 只需要累加 log(d_max / d_i)
+                        sum_log_ratios += std::log(max_dist_sq / dist_sq);
+                    }
+
+                    // D. 计算 LID
+                    // 标准 MLE 公式: LID = k / sum(log(r_max/r_i))
+                    // 代入平方项系数 0.5，最终公式为: LID = 2 * k / sum_log_dist_ratios
+                    float current_lid = 0.0f;
+                    if (sum_log_ratios > 1e-6)
+                    {
+                        current_lid = (float)((2.0 * lid_k) / sum_log_ratios);
+                    }
+
+                    // E. Sigmoid 映射 -> Alpha
+                    // alpha = min + (max - min) * Sigmoid( (lid - avg) / std )
+                    if (current_lid > 0.0f)
+                    {
+                        double z_score = (current_lid - g_mcgi_ctx.lid_avg) / g_mcgi_ctx.lid_std;
+                        double sigmoid = 1.0 / (1.0 + std::exp(-1.0 * z_score)); // k=1.0 平滑度
+
+                        alpha = g_mcgi_ctx.alpha_min + (float)(sigmoid * (g_mcgi_ctx.alpha_max - g_mcgi_ctx.alpha_min));
+                    }
+                }
+            }
+        }
+        current_alpha = alpha;
+        // ================= [AMCGI INLINE END] =================
+    }
+    else if (diskann::IsMCGIEnabled())
     {
         current_alpha = diskann::GetGlobalMCGIAlpha(location);
     }

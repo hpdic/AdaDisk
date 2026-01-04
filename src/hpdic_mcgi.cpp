@@ -14,19 +14,11 @@
 
 namespace diskann {
 
+MCGIContext g_mcgi_ctx;
+
 void RunMCGIHelloWorld() {
     std::cout << ">>> [MCGI] Module Loaded Successfully." << std::endl;
 }
-
-// --- 内部私有类和静态实例 ---
-struct MCGIContext
-{
-    bool enabled = false;
-    std::vector<float> alpha_table;
-};
-
-// 全局静态实例 (Hidden from outside)
-static MCGIContext g_mcgi_ctx;
 
 // --- 辅助函数：读取 DiskANN 二进制文件 ---
 // 格式: int32(num_points) | int32(dim) | data...
@@ -139,6 +131,11 @@ float GetGlobalMCGIAlpha(unsigned node_id)
 bool IsMCGIEnabled()
 {
     return g_mcgi_ctx.enabled;
+}
+
+bool IsMCGIAdvanced()
+{
+    return g_mcgi_ctx.advanced;
 }
 
 void FreeMCGIContext()

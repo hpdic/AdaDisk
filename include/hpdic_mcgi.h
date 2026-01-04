@@ -13,6 +13,22 @@
 
 namespace diskann
 {
+
+// 1. 【搬过来】结构体定义必须在头文件里，这样 index.cpp 才能认识它
+struct MCGIContext
+{
+    bool enabled = false;
+    bool advanced = false;
+    std::vector<float> alpha_table;
+    float lid_avg = 0.0f;
+    float lid_std = 1.0f;
+    float alpha_min = 1.0f;
+    float alpha_max = 1.0f;
+};
+
+// 2. 【加这行】告诉大家有一个全局变量叫 g_mcgi_ctx，定义在别处
+extern MCGIContext g_mcgi_ctx;
+
 void RunMCGIHelloWorld();
 
 // 1. 初始化全局 MCGI 上下文 (在 disk_utils.cpp 里调用)
@@ -27,4 +43,6 @@ void FreeMCGIContext();
 
 bool IsMCGIEnabled();
 // void BuildMCGIIndex(const std::string& data_path, ...);
+
+bool IsMCGIAdvanced();
 } // namespace diskann
