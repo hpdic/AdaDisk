@@ -21,7 +21,7 @@ PQ_BYTES=16
 
 # --- 3. 内存与性能优化 ---
 RAM_BUDGET=150     # if larger than 120, no PQ is needed
-THREADS=64         # check htop
+THREADS=96         # check htop
 
 # --- 4. 自动命名 ---
 INDEX_NAME="diskann_base_R${R_VAL}_L${L_VAL}_B${RAM_BUDGET}G"
@@ -68,8 +68,8 @@ start_time=$(date +%s)
     -B "$RAM_BUDGET" \
     -M "$RAM_BUDGET" \
     -T "$THREADS" \
-    --build_PQ_bytes "$PQ_BYTES" \
-    --PQ_disk_bytes "$PQ_BYTES"
+    # --build_PQ_bytes "$PQ_BYTES" \
+    # --PQ_disk_bytes "$PQ_BYTES"
 
 end_time=$(date +%s)
 duration=$((end_time - start_time))
