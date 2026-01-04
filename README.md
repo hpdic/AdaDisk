@@ -31,6 +31,46 @@ total 291G
 donzhao@node0:~/hpdic/AdaDisk$ 
 ```
 
+## Update on January 3, 2026, for Chameleon
+You should check the documenation and see if you have more disk divices `lsblk`. If so:
+```bash
+DISK1="/dev/nvme1n1"
+DISK2="/dev/nvme2n1"
+USERNAME="cc"
+MOUNT_POINT="/home/$USERNAME/hpdic"
+RAID_DEVICE="/dev/md0"
+
+apt-get update -qq
+apt-get install -y mdadm -qq
+
+umount $MOUNT_POINT 2>/dev/null
+umount $RAID_DEVICE 2>/dev/null
+mdadm --stop $RAID_DEVICE 2>/dev/null
+mdadm --remove $RAID_DEVICE 2>/dev/null
+wipefs -a $DISK1
+wipefs -a $DISK2
+
+mdadm --create --verbose $RAID_DEVICE --level=0 --raid-devices=2 $DISK1 $DISK2 --run
+mkfs.ext4 -F $RAID_DEVICE
+mkdir -p $MOUNT_POINT
+mount $RAID_DEVICE $MOUNT_POINT
+
+chown -R $USERNAME:$USERNAME $MOUNT_POINT
+chmod 755 $MOUNT_POINT
+
+mkdir -p /etc/mdadm
+if [ ! -f /etc/mdadm/mdadm.conf ]; then
+    echo "DEVICE partitions" > /etc/mdadm/mdadm.conf
+fi
+mdadm --detail --scan >> /etc/mdadm/mdadm.conf
+update-initramfs -u
+UUID=$(blkid -s UUID -o value $RAID_DEVICE)
+sed -i "|$MOUNT_POINT|d" /etc/fstab
+echo "UUID=$UUID $MOUNT_POINT ext4 defaults 0 0" >> /etc/fstab
+
+df -h | grep $MOUNT_POINT
+```
+
 ## Update on January 1, 2026, for CloudLab
 ```bash
     git config --global user.name "Dongfang Zhao"
@@ -58,31 +98,31 @@ donzhao@node0:~/hpdic/AdaDisk$
 
 ## Update on December 30, 2025
 * Deployed AdaDisk on Intel CPUs
-  ```bash
-    cd ~/AdaDisk
-    sudo apt-get update
-    sudo apt-get install libopenblas-dev liblapacke-dev cmake libboost-all-dev libaio-dev libgoogle-perftools-dev build-essential libunwind-dev texlive-full latexmk -y
-    python3 -m venv venv
-    source venv/bin/activate
-    pip install numpy scikit-learn h5py tqdm requests
-    mkdir -p build && cd build
-    # for expermients:
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-march=native -O3" .. 
-    # for development and debug: cmake ..
-    make -j
-    cd ..
-    echo 'export MKL_THREADING_LAYER=GNU' >> ~/.bashrc
-    source ~/.bashrc
-    python scripts/hpdic/gen_data.py
-    bash scripts/hpdic/run_build_disk_index.sh 
-    python scripts/hpdic/compute_lid.py
-    bash scripts/hpdic/run_mcgi_sigmoid.sh
-    python scripts/hpdic/gen_query_gt.py
-    bash scripts/hpdic/run_ab_test.sh
-    # The following adds no more "new" test cases, but will take a lot of time to finish (for experimental results of a research paper)
-    bash experiments/scripts/full_scan.sh
-    bash experiments/scripts/scan_patch.sh
-  ```
+```bash
+cd ~/AdaDisk
+sudo apt-get update
+sudo apt-get install libopenblas-dev liblapacke-dev cmake libboost-all-dev libaio-dev libgoogle-perftools-dev build-essential libunwind-dev texlive-full latexmk -y
+python3 -m venv venv
+source venv/bin/activate
+pip install numpy scikit-learn h5py tqdm requests
+mkdir -p build && cd build
+# for expermients:
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-march=native -O3" .. 
+# for development and debug: cmake ..
+make -j
+cd ..
+echo 'export MKL_THREADING_LAYER=GNU' >> ~/.bashrc
+source ~/.bashrc
+python scripts/hpdic/gen_data.py
+bash scripts/hpdic/run_build_disk_index.sh 
+python scripts/hpdic/compute_lid.py
+bash scripts/hpdic/run_mcgi_sigmoid.sh
+python scripts/hpdic/gen_query_gt.py
+bash scripts/hpdic/run_ab_test.sh
+# The following adds no more "new" test cases, but will take a lot of time to finish (for experimental results of a research paper)
+bash experiments/scripts/full_scan.sh
+bash experiments/scripts/scan_patch.sh
+```
   If everything looks fine, follow `experiments/scripts/readme.md`
 ## Motivation: Resolving the Freshness-Latency Dilemma in Production RAG and LLM Serving
 In production Retrieval-Augmented Generation (RAG) environments, the system faces a fundamental conflict: the need for **Knowledge Freshness** (continuous data ingestion) versus the demand for **Serving Low-Latency** (real-time query retrieval).
