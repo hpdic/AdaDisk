@@ -1482,7 +1482,7 @@ int build_disk_index(const char *dataFilePath, const char *indexFilePathPrefix, 
             std::string dst = std::string(indexFilePathPrefix) + "_data.bin";
             diskann::copy_file(src, dst);
         }
-        index.save(std::string(indexFilePathPrefix).c_str(), true);
+        index.save(std::string(indexFilePathPrefix).c_str(), false);
     }
     else
     {

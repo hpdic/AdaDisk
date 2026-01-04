@@ -1246,6 +1246,13 @@ void Index<T, TagT, LabelT>::prune_neighbors(const uint32_t location, std::vecto
                         double sigmoid = 1.0 / (1.0 + std::exp(-1.0 * z_score)); // k=1.0 平滑度
 
                         alpha = g_mcgi_ctx.alpha_min + (float)(sigmoid * (g_mcgi_ctx.alpha_max - g_mcgi_ctx.alpha_min));
+                        // static int debug_print_count = 0;
+                        // if (debug_print_count < 5)
+                        // {
+                        //     std::cout << "[AMCGI Debug] PoolSize=" << pool.size() << " EstLID=" << current_lid
+                        //               << " -> Alpha=" << alpha << std::endl;
+                        //     debug_print_count++;
+                        // }
                     }
                 }
             }
