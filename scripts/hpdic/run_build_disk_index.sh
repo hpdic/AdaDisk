@@ -5,11 +5,11 @@
 # ==========================================
 
 # DiskANN 安装路径 (请确认路径是否正确)
-DISKANN_HOME="/home/cc/AdaDisk"
+DISKANN_HOME="$HOME/hpdic/AdaDisk"
 BUILDER_BIN="${DISKANN_HOME}/build/apps/build_disk_index"
 
 # 脚本与数据路径
-GEN_DATA_SCRIPT="gen_data.py"
+GEN_DATA_SCRIPT="${DISKANN_HOME}/scripts/hpdic/gen_data.py"
 DATA_DIR="${DISKANN_HOME}/hpdic_data"
 RAW_DATA="${DATA_DIR}/ingest_raw.bin"
 INDEX_PREFIX="${DATA_DIR}/ingest_index"

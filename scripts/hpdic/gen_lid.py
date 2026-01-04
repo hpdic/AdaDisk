@@ -11,7 +11,7 @@ import struct
 import os
 
 # 配置路径 (需与 shell 脚本一致)
-DATA_DIR = "hpdic_data"
+DATA_DIR = os.path.expandvars("$HOME/hpdic/AdaDisk/hpdic_data")
 RAW_FILE = os.path.join(DATA_DIR, "ingest_raw.bin")
 LID_FILE = os.path.join(DATA_DIR, "ingest_lid.bin")
 

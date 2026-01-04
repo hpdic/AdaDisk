@@ -30,7 +30,9 @@ int main(int argc, char **argv)
 
     // [HPDIC MOD: MCGI START]
     bool use_mcgi = false;
+    bool use_amcgi = false;
     std::string lid_path;
+    std::string alid_path;
     float alpha_min = 1.0f;
     float alpha_max = 1.5f;
     // [HPDIC MOD: MCGI END]
@@ -111,6 +113,11 @@ int main(int argc, char **argv)
                                        "MCGI: Minimum alpha (strictest pruning).");
         optional_configs.add_options()("alpha_max", po::value<float>(&alpha_max)->default_value(1.5f),
                                        "MCGI: Maximum alpha (relaxed pruning).");
+
+        optional_configs.add_options()("use_amcgi", po::bool_switch()->default_value(false),
+                                       "Enable Advanced Manifold-Consistent Graph Indexing (AMCGI).");
+        optional_configs.add_options()("alid_path", po::value<std::string>(&alid_path)->default_value(""),
+                                       "Path to pre-computed ALID file (required if use_amcgi is true).");
         // [HPDIC MOD: MCGI END]
 
         // Merge required and optional parameters
@@ -141,6 +148,18 @@ int main(int argc, char **argv)
             std::cout << "[MCGI] Enabled. LID Path: " << lid_path << ", Alpha Range: [" << alpha_min << ", "
                       << alpha_max << "]" << std::endl;
         }
+
+        if (vm["use_amcgi"].as<bool>())
+        {
+            use_amcgi = true;
+            if (alid_path.empty())
+            {
+                std::cerr << "Error: --alid_path is required when --use_amcgi is enabled." << std::endl;
+                return -1;
+            }
+            std::cout << "[AMCGI] Enabled. ALID Path: " << alid_path << ", Alpha Range: [" << alpha_min << ", "
+                      << alpha_max << "]" << std::endl;
+        }        
         // [HPDIC MOD: MCGI END]
     }
     catch (const std::exception &ex)
@@ -198,11 +217,23 @@ int main(int argc, char **argv)
                     return diskann::build_disk_index<T, uint16_t>(
                         data_path.c_str(), index_path_prefix.c_str(), params.c_str(), metric, use_opq, codebook_prefix,
                         use_filters, label_file, universal_label, filter_threshold, Lf, lid_path.c_str(), alpha_min,
-                        alpha_max); // 这里的传参要注意类型匹配
+                        alpha_max);
                 else
                     return diskann::build_disk_index<T>(data_path.c_str(), index_path_prefix.c_str(), params.c_str(),
                                                         metric, use_opq, codebook_prefix, use_filters, label_file,
                                                         universal_label, filter_threshold, Lf, lid_path.c_str(),
+                                                        alpha_min, alpha_max);
+            } else if (use_amcgi)
+            {
+                if (use_u16_label)
+                    return diskann::build_disk_index<T, uint16_t>(
+                        data_path.c_str(), index_path_prefix.c_str(), params.c_str(), metric, use_opq, codebook_prefix,
+                        use_filters, label_file, universal_label, filter_threshold, Lf, alid_path.c_str(), alpha_min,
+                        alpha_max);
+                else
+                    return diskann::build_disk_index<T>(data_path.c_str(), index_path_prefix.c_str(), params.c_str(),
+                                                        metric, use_opq, codebook_prefix, use_filters, label_file,
+                                                        universal_label, filter_threshold, Lf, alid_path.c_str(),
                                                         alpha_min, alpha_max);
             }
             else
