@@ -17,10 +17,10 @@ python3 convert_sift1b.py
 
 # Baseline index building
 tmux
-chmod +x ~/hpdic/AdaDisk/experiments/bigann/run_build_sift1b_baseline.sh
+chmod +x ~/hpdic/AdaDisk/experiments/bigann/run_build_baseline.sh
 cd ~/hpdic/AdaDisk
 # You should take a look at the parameters in the following script
-./experiments/bigann/run_build_sift1b_baseline.sh 2>&1 | tee build_sift1b.log
+./experiments/bigann/run_build_baseline.sh 2>&1 | tee build_sift1b.log
 # ctrl+b d
 cd ~/hpdic/AdaDisk
 tail -f build_sift1b.log
@@ -36,9 +36,9 @@ bash ../AdaDisk/experiments/bigann/run_search_baseline.sh
 # MCGI index building
 cd ~/hpdic/AdaDisk
 tmux
-chmod +x ~/hpdic/AdaDisk/experiments/bigann/build_mcgi_sift1b.sh
+chmod +x ~/hpdic/AdaDisk/experiments/bigann/run_build_mcgi.sh
 # You should take a look at the parameters in the following script
-./experiments/bigann/build_mcgi_sift1b.sh 2>&1 | tee build_mcgi.log
+./experiments/bigann/run_build_mcgi.sh 2>&1 | tee build_mcgi.log
 # ctrl+b d
 cd ~/hpdic/AdaDisk
 tail -f build_mcgi.log
