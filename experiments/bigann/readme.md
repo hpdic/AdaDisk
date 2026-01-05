@@ -34,7 +34,6 @@ bash ../AdaDisk/experiments/bigann/run_search_baseline.sh
 # example result in ./output_baseline_nopq.txt 
 
 # MCGI index building
-# TODO: There seems a memory leak in MCGI code, monitor with htop
 cd ~/hpdic/AdaDisk
 python experiments/bigann/compute_lid_fast.py
 tmux
