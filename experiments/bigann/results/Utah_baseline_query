@@ -1,8 +1,8 @@
-(venv) donzhao@node0:~/hpdic/sift1b_data$ bash ../AdaDisk/experiments/bigann/run_search_baseline.sh 
-🚀 开始测试旧索引: /users/donzhao/hpdic/sift1b_data/indices_success/diskann_base_R32_L50_B110G
+(venv) donzhao@node0:~/hpdic/sift1b_data$ bash ../AdaDisk/experiments/bigann/run_search_baseline.sh
+🚀 开始测试旧索引: /users/donzhao/hpdic/sift1b_data/indices_baseline/diskann_base_R32_L50_B110G
 📂 Query: /users/donzhao/hpdic/sift1b_data/bigann_query.bin
 📂 GT: /users/donzhao/hpdic/sift1b_data/bigann_gnd.bin
-Search parameters: #threads: 56,  beamwidth: 2.
+Search parameters: #threads: 128,  beamwidth: 2.
 Reading (with alignment) bin file /users/donzhao/hpdic/sift1b_data/bigann_query.bin ...Metadata: #pts = 10000, #dims = 128, aligned_dim = 128... allocating aligned memory of 1280000 bytes... done. Copying data to mem_aligned buffer... done.
 Opened: /users/donzhao/hpdic/sift1b_data/bigann_gnd.bin, size: 40000008, cache_size: 40000008
 Reading truthset file /users/donzhao/hpdic/sift1b_data/bigann_gnd.bin ...
@@ -15,93 +15,165 @@ L2: Using AVX2 distance computation DistanceL2Float
 * I am inside src/pq_flash_index.cpp :: load()      *
 *****************************************************
 
-Reading bin file /users/donzhao/hpdic/sift1b_data/indices_success/diskann_base_R32_L50_B110G_pq_compressed.bin ...
-Opening bin file /users/donzhao/hpdic/sift1b_data/indices_success/diskann_base_R32_L50_B110G_pq_compressed.bin... 
+Reading bin file /users/donzhao/hpdic/sift1b_data/indices_baseline/diskann_base_R32_L50_B110G_pq_compressed.bin ...
+Opening bin file /users/donzhao/hpdic/sift1b_data/indices_baseline/diskann_base_R32_L50_B110G_pq_compressed.bin... 
 Metadata: #pts = 1000000000, #dims = 117...
 done.
-Reading bin file /users/donzhao/hpdic/sift1b_data/indices_success/diskann_base_R32_L50_B110G_pq_pivots.bin ...
-Opening bin file /users/donzhao/hpdic/sift1b_data/indices_success/diskann_base_R32_L50_B110G_pq_pivots.bin... 
+Reading bin file /users/donzhao/hpdic/sift1b_data/indices_baseline/diskann_base_R32_L50_B110G_pq_pivots.bin ...
+Opening bin file /users/donzhao/hpdic/sift1b_data/indices_baseline/diskann_base_R32_L50_B110G_pq_pivots.bin... 
 Metadata: #pts = 4, #dims = 1...
 done.
 Offsets: 4096 135176 135696 136176
-Reading bin file /users/donzhao/hpdic/sift1b_data/indices_success/diskann_base_R32_L50_B110G_pq_pivots.bin ...
-Opening bin file /users/donzhao/hpdic/sift1b_data/indices_success/diskann_base_R32_L50_B110G_pq_pivots.bin... 
+Reading bin file /users/donzhao/hpdic/sift1b_data/indices_baseline/diskann_base_R32_L50_B110G_pq_pivots.bin ...
+Opening bin file /users/donzhao/hpdic/sift1b_data/indices_baseline/diskann_base_R32_L50_B110G_pq_pivots.bin... 
 Metadata: #pts = 256, #dims = 128...
 done.
-Reading bin file /users/donzhao/hpdic/sift1b_data/indices_success/diskann_base_R32_L50_B110G_pq_pivots.bin ...
-Opening bin file /users/donzhao/hpdic/sift1b_data/indices_success/diskann_base_R32_L50_B110G_pq_pivots.bin... 
+Reading bin file /users/donzhao/hpdic/sift1b_data/indices_baseline/diskann_base_R32_L50_B110G_pq_pivots.bin ...
+Opening bin file /users/donzhao/hpdic/sift1b_data/indices_baseline/diskann_base_R32_L50_B110G_pq_pivots.bin... 
 Metadata: #pts = 128, #dims = 1...
 done.
-Reading bin file /users/donzhao/hpdic/sift1b_data/indices_success/diskann_base_R32_L50_B110G_pq_pivots.bin ...
-Opening bin file /users/donzhao/hpdic/sift1b_data/indices_success/diskann_base_R32_L50_B110G_pq_pivots.bin... 
+Reading bin file /users/donzhao/hpdic/sift1b_data/indices_baseline/diskann_base_R32_L50_B110G_pq_pivots.bin ...
+Opening bin file /users/donzhao/hpdic/sift1b_data/indices_baseline/diskann_base_R32_L50_B110G_pq_pivots.bin... 
 Metadata: #pts = 118, #dims = 1...
 done.
 Loaded PQ Pivots: #ctrs: 256, #dims: 128, #chunks: 117
 Loaded PQ centroids and in-memory compressed vectors. #points: 1000000000 #dim: 128 #aligned_dim: 128 #chunks: 117
 Disk-Index File Meta-data: # nodes per sector: 15, max node len (bytes): 260, max node degree: 32
-Opened file : /users/donzhao/hpdic/sift1b_data/indices_success/diskann_base_R32_L50_B110G_disk.index
-Setting up thread-specific contexts for nthreads: 56
-allocating ctx: 0x7f05b988b000 to thread-id:139654319703744
-allocating ctx: 0x7f05b9491000 to thread-id:139654546306752
-allocating ctx: 0x7f05b9480000 to thread-id:139654311311040
-allocating ctx: 0x7f05b946f000 to thread-id:139654504343232
-allocating ctx: 0x7f05b945e000 to thread-id:139654361667264
-allocating ctx: 0x7f05b944d000 to thread-id:139654344881856
-allocating ctx: 0x7f05b943c000 to thread-id:139654336489152
-allocating ctx: 0x7f05b942b000 to thread-id:139654294525632
-allocating ctx: 0x7f05b941a000 to thread-id:139654151849664
-allocating ctx: 0x7f05b91ef000 to thread-id:139654470772416
-allocating ctx: 0x7f05b91de000 to thread-id:139654521128640
-allocating ctx: 0x7f05b91cd000 to thread-id:139654286132928
-allocating ctx: 0x7f05b91bc000 to thread-id:139654462379712
-allocating ctx: 0x7f05b91ab000 to thread-id:139654579877568
-allocating ctx: 0x7f05b919a000 to thread-id:139654126671552
-allocating ctx: 0x7f05b9189000 to thread-id:139654512735936
-allocating ctx: 0x7f05b9178000 to thread-id:139654554699456
-allocating ctx: 0x7f05b9167000 to thread-id:139654168635072
-allocating ctx: 0x7f05b9156000 to thread-id:139654235776704
-allocating ctx: 0x7f05b9145000 to thread-id:139654445594304
-allocating ctx: 0x7f05b9134000 to thread-id:139654143456960
-allocating ctx: 0x7f05b9123000 to thread-id:139654328096448
-allocating ctx: 0x7f05b9112000 to thread-id:139654420416192
-allocating ctx: 0x7f05b9101000 to thread-id:139654487557824
-allocating ctx: 0x7f05b90f0000 to thread-id:139654160242368
-allocating ctx: 0x7f05b90df000 to thread-id:139654244169408
-allocating ctx: 0x7f05b90ce000 to thread-id:139654437201600
-allocating ctx: 0x7f05b90bd000 to thread-id:139654428808896
-allocating ctx: 0x7f05b90ac000 to thread-id:139654537914048
-allocating ctx: 0x7f05b909b000 to thread-id:139654479165120
-allocating ctx: 0x7f05b908a000 to thread-id:139654185420480
-allocating ctx: 0x7f05b9079000 to thread-id:139662564440128
-allocating ctx: 0x7f05b9068000 to thread-id:139654563092160
-allocating ctx: 0x7f05b9057000 to thread-id:139654218991296
-allocating ctx: 0x7f05b9046000 to thread-id:139654277740224
-allocating ctx: 0x7f05b9035000 to thread-id:139654529521344
-allocating ctx: 0x7f05b9024000 to thread-id:139654210598592
-allocating ctx: 0x7f05b6a0f000 to thread-id:139654370059968
-allocating ctx: 0x7f05b69fe000 to thread-id:139654252562112
-allocating ctx: 0x7f05b69ed000 to thread-id:139654227384000
-allocating ctx: 0x7f05b69dc000 to thread-id:139654193813184
-allocating ctx: 0x7f05b69cb000 to thread-id:139654495950528
-allocating ctx: 0x7f05b69ba000 to thread-id:139654453987008
-allocating ctx: 0x7f05b69a9000 to thread-id:139654269347520
-allocating ctx: 0x7f05b6998000 to thread-id:139654412023488
-allocating ctx: 0x7f05b6987000 to thread-id:139654403630784
-allocating ctx: 0x7f05b6976000 to thread-id:139654386845376
-allocating ctx: 0x7f05b6965000 to thread-id:139654135064256
-allocating ctx: 0x7f05b6954000 to thread-id:139654302918336
-allocating ctx: 0x7f05b6943000 to thread-id:139654202205888
-allocating ctx: 0x7f05b6932000 to thread-id:139654571484864
-allocating ctx: 0x7f05b6921000 to thread-id:139654260954816
-allocating ctx: 0x7f05b6910000 to thread-id:139654378452672
-allocating ctx: 0x7f05b68ff000 to thread-id:139654353274560
-allocating ctx: 0x7f05b68ee000 to thread-id:139654177027776
-allocating ctx: 0x7f05b68dd000 to thread-id:139654395238080
-Reading bin file /users/donzhao/hpdic/sift1b_data/indices_success/diskann_base_R32_L50_B110G_disk.index_medoids.bin ...
-Opening bin file /users/donzhao/hpdic/sift1b_data/indices_success/diskann_base_R32_L50_B110G_disk.index_medoids.bin... 
+Opened file : /users/donzhao/hpdic/sift1b_data/indices_baseline/diskann_base_R32_L50_B110G_disk.index
+Setting up thread-specific contexts for nthreads: 128
+allocating ctx: 0x7d71f2493000 to thread-id:137920121812672
+allocating ctx: 0x7d71f2482000 to thread-id:137919383254720
+allocating ctx: 0x7d71f20f6000 to thread-id:137920105027264
+allocating ctx: 0x7d71f20e5000 to thread-id:137920113419968
+allocating ctx: 0x7d71f20d4000 to thread-id:137920096634560
+allocating ctx: 0x7d71f20c3000 to thread-id:137920021100224
+allocating ctx: 0x7d71f20b2000 to thread-id:137920130205376
+allocating ctx: 0x7d71f20a1000 to thread-id:137919962351296
+allocating ctx: 0x7d71f2090000 to thread-id:137920079849152
+allocating ctx: 0x7d71f207f000 to thread-id:137920071456448
+allocating ctx: 0x7d71f206e000 to thread-id:137920155383488
+allocating ctx: 0x7d71f205d000 to thread-id:137920004314816
+allocating ctx: 0x7d71f204c000 to thread-id:137920063063744
+allocating ctx: 0x7d71f203b000 to thread-id:137919937173184
+allocating ctx: 0x7d71f202a000 to thread-id:137920264488640
+allocating ctx: 0x7d71f2019000 to thread-id:137920054671040
+allocating ctx: 0x7d71f1def000 to thread-id:137920314844864
+allocating ctx: 0x7d71f1dde000 to thread-id:137920214132416
+allocating ctx: 0x7d71f1dcd000 to thread-id:137919995922112
+allocating ctx: 0x7d71f1dbc000 to thread-id:137920340022976
+allocating ctx: 0x7d71f1dab000 to thread-id:137920323237568
+allocating ctx: 0x7d71f1d9a000 to thread-id:137920239310528
+allocating ctx: 0x7d71f1d89000 to thread-id:137920180561600
+allocating ctx: 0x7d71f1d78000 to thread-id:137920046278336
+allocating ctx: 0x7d71f1d67000 to thread-id:137919911995072
+allocating ctx: 0x7d71f1d56000 to thread-id:137920172168896
+allocating ctx: 0x7d71f1d45000 to thread-id:137920037885632
+allocating ctx: 0x7d71f1d34000 to thread-id:137920272881344
+allocating ctx: 0x7d71f1d23000 to thread-id:137920356808384
+allocating ctx: 0x7d71f1d12000 to thread-id:137920197347008
+allocating ctx: 0x7d71f1d01000 to thread-id:137919928780480
+allocating ctx: 0x7d71f1cf0000 to thread-id:137920188954304
+allocating ctx: 0x7d71f1cdf000 to thread-id:137920088241856
+allocating ctx: 0x7d71f1cce000 to thread-id:137920205739712
+allocating ctx: 0x7d71f1cbd000 to thread-id:137920163776192
+allocating ctx: 0x7d71f1cac000 to thread-id:137920281274048
+allocating ctx: 0x7d71f1c9b000 to thread-id:137920146990784
+allocating ctx: 0x7d71f1c8a000 to thread-id:137920289666752
+allocating ctx: 0x7d71f1c79000 to thread-id:137920012707520
+allocating ctx: 0x7d71f1c68000 to thread-id:137919987529408
+allocating ctx: 0x7d71f1c57000 to thread-id:137920298059456
+allocating ctx: 0x7d71f1c46000 to thread-id:137920029492928
+allocating ctx: 0x7d71f1c35000 to thread-id:137919903602368
+allocating ctx: 0x7d71f1c24000 to thread-id:137919970744000
+allocating ctx: 0x7d71ef60f000 to thread-id:137919979136704
+allocating ctx: 0x7d71ef5fe000 to thread-id:137919836460736
+allocating ctx: 0x7d71ef5ed000 to thread-id:137919945565888
+allocating ctx: 0x7d71ef5dc000 to thread-id:137920306452160
+allocating ctx: 0x7d71ef5cb000 to thread-id:137919953958592
+allocating ctx: 0x7d71ef5ba000 to thread-id:137919895209664
+allocating ctx: 0x7d71ef5a9000 to thread-id:137919886816960
+allocating ctx: 0x7d71ef598000 to thread-id:137919878424256
+allocating ctx: 0x7d71ef587000 to thread-id:137919870031552
+allocating ctx: 0x7d71ef576000 to thread-id:137919861638848
+allocating ctx: 0x7d71ef565000 to thread-id:137920348415680
+allocating ctx: 0x7d71ef554000 to thread-id:137920138598080
+allocating ctx: 0x7d71ef543000 to thread-id:137920222525120
+allocating ctx: 0x7d71ef532000 to thread-id:137919844853440
+allocating ctx: 0x7d71ef521000 to thread-id:137919819675328
+allocating ctx: 0x7d71ef510000 to thread-id:137919853246144
+allocating ctx: 0x7d71ef4ff000 to thread-id:137919828068032
+allocating ctx: 0x7d71ef4ee000 to thread-id:137919760926400
+allocating ctx: 0x7d71ef4dd000 to thread-id:137919802889920
+allocating ctx: 0x7d71ef4cc000 to thread-id:137920247703232
+allocating ctx: 0x7d71ef4bb000 to thread-id:137919811282624
+allocating ctx: 0x7d71ef4aa000 to thread-id:137919794497216
+allocating ctx: 0x7d71ef499000 to thread-id:137919718962880
+allocating ctx: 0x7d71ef488000 to thread-id:137919777711808
+allocating ctx: 0x7d71eedef000 to thread-id:137919727355584
+allocating ctx: 0x7d71eedde000 to thread-id:137919660213952
+allocating ctx: 0x7d71eedcd000 to thread-id:137920230917824
+allocating ctx: 0x7d71eedbc000 to thread-id:137919920387776
+allocating ctx: 0x7d71eedab000 to thread-id:137919769319104
+allocating ctx: 0x7d71eed9a000 to thread-id:137919786104512
+allocating ctx: 0x7d71eed89000 to thread-id:137919752533696
+allocating ctx: 0x7d71eed78000 to thread-id:137919735748288
+allocating ctx: 0x7d71eed67000 to thread-id:137919693784768
+allocating ctx: 0x7d71eed56000 to thread-id:137920256095936
+allocating ctx: 0x7d71eed45000 to thread-id:137919668606656
+allocating ctx: 0x7d71eed34000 to thread-id:137919744140992
+allocating ctx: 0x7d71eed23000 to thread-id:137919685392064
+allocating ctx: 0x7d71ec1ea000 to thread-id:137919676999360
+allocating ctx: 0x7d71ec1d9000 to thread-id:137919601465024
+allocating ctx: 0x7d71ec1c8000 to thread-id:137919710570176
+allocating ctx: 0x7d71ec1b7000 to thread-id:137919517537984
+allocating ctx: 0x7d71ec1a6000 to thread-id:137919643428544
+allocating ctx: 0x7d71ec195000 to thread-id:137919651821248
+allocating ctx: 0x7d71ec184000 to thread-id:137919635035840
+allocating ctx: 0x7d71ec173000 to thread-id:137919618250432
+allocating ctx: 0x7d71ec162000 to thread-id:137919584679616
+allocating ctx: 0x7d71ec151000 to thread-id:137919609857728
+allocating ctx: 0x7d71ec140000 to thread-id:137919559501504
+allocating ctx: 0x7d71ec12f000 to thread-id:137919567894208
+allocating ctx: 0x7d71ec11e000 to thread-id:137919702177472
+allocating ctx: 0x7d71ec10d000 to thread-id:137919593072320
+allocating ctx: 0x7d71ec0fc000 to thread-id:137919626643136
+allocating ctx: 0x7d71ec0eb000 to thread-id:137919576286912
+allocating ctx: 0x7d71ec0da000 to thread-id:137919525930688
+allocating ctx: 0x7d71ec0c9000 to thread-id:137919551108800
+allocating ctx: 0x7d71ec0b8000 to thread-id:137919534323392
+allocating ctx: 0x7d71ec0a7000 to thread-id:137919542716096
+allocating ctx: 0x7d71ec096000 to thread-id:137919500752576
+allocating ctx: 0x7d71ec085000 to thread-id:137919433610944
+allocating ctx: 0x7d71ec074000 to thread-id:137919509145280
+allocating ctx: 0x7d71ec063000 to thread-id:137919492359872
+allocating ctx: 0x7d71ec052000 to thread-id:137919475574464
+allocating ctx: 0x7d71ec041000 to thread-id:137919483967168
+allocating ctx: 0x7d71ec030000 to thread-id:137919425218240
+allocating ctx: 0x7d71ec01f000 to thread-id:137919450396352
+allocating ctx: 0x7d71ec00e000 to thread-id:137919458789056
+allocating ctx: 0x7d71e37ee000 to thread-id:137919400040128
+allocating ctx: 0x7d71e37dd000 to thread-id:137919467181760
+allocating ctx: 0x7d71e37cc000 to thread-id:137928349792320
+allocating ctx: 0x7d71e37bb000 to thread-id:137919299327680
+allocating ctx: 0x7d71e37aa000 to thread-id:137919442003648
+allocating ctx: 0x7d71e3799000 to thread-id:137920331630272
+allocating ctx: 0x7d71e3788000 to thread-id:137919391647424
+allocating ctx: 0x7d71e3777000 to thread-id:137919366469312
+allocating ctx: 0x7d71e3766000 to thread-id:137919324505792
+allocating ctx: 0x7d71e3755000 to thread-id:137919408432832
+allocating ctx: 0x7d71e3744000 to thread-id:137919332898496
+allocating ctx: 0x7d71e3733000 to thread-id:137919349683904
+allocating ctx: 0x7d71e3722000 to thread-id:137919316113088
+allocating ctx: 0x7d71e3711000 to thread-id:137919374862016
+allocating ctx: 0x7d71e3700000 to thread-id:137919358076608
+allocating ctx: 0x7d71e36ef000 to thread-id:137919341291200
+allocating ctx: 0x7d71e36de000 to thread-id:137919416825536
+allocating ctx: 0x7d71e36cd000 to thread-id:137919307720384
+Reading bin file /users/donzhao/hpdic/sift1b_data/indices_baseline/diskann_base_R32_L50_B110G_disk.index_medoids.bin ...
+Opening bin file /users/donzhao/hpdic/sift1b_data/indices_baseline/diskann_base_R32_L50_B110G_disk.index_medoids.bin... 
 Metadata: #pts = 9, #dims = 1...
 done.
-Reading (with alignment) bin file /users/donzhao/hpdic/sift1b_data/indices_success/diskann_base_R32_L50_B110G_disk.index_centroids.bin ...Metadata: #pts = 9, #dims = 128, aligned_dim = 128... allocating aligned memory of 4608 bytes... done. Copying data to mem_aligned buffer... done.
+Reading (with alignment) bin file /users/donzhao/hpdic/sift1b_data/indices_baseline/diskann_base_R32_L50_B110G_disk.index_centroids.bin ...Metadata: #pts = 9, #dims = 128, aligned_dim = 128... allocating aligned memory of 4608 bytes... done. Copying data to mem_aligned buffer... done.
 done..
 Caching 10000 nodes around medoid(s)
 Caching 10000...
@@ -113,40 +185,75 @@ done
 Loading the cache list into memory....done.
      L   Beamwidth             QPS    Mean Latency    99.9 Latency        Mean IOs    Mean IO (us)         CPU (s)       Recall@10
 ===================================================================================================================================
-    10           2        18257.88         3025.18         6554.00           24.35         2479.40          496.87           45.94
-    20           2        13135.46         4221.97         8742.00           34.77         3904.79          249.80           58.16
-    40           2         8576.67         6483.04        11966.00           54.30         6031.83          352.01           69.87
-    80           2         5055.20        11018.03        16967.00           92.70        10306.85          543.11           79.79
-   100           2         4198.90        13262.96        19634.00          112.16        12635.11          421.38           82.58
+    10           2        21653.28         5809.92        11455.00           24.35         4813.78          942.43           45.94
+    20           2        15693.77         8084.21        15558.00           34.77         7739.60          275.00           58.16
+    40           2        10065.47        12624.43        22309.00           54.30        12107.11          413.43           69.87
+    80           2         5874.33        21662.98        35331.00           92.70        20851.65          644.57           79.79
+   100           2         4874.16        26118.96        40707.00          112.16        25383.57          538.07           82.58
+   120           2         4135.08        30792.05        48075.00          131.71        29968.42          594.66           84.66
+   140           2         3610.91        35255.79        50038.00          151.29        34338.44          659.44           86.24
+   160           2         3181.28        40036.67        58028.00          170.98        39020.74          729.76           87.51
+   180           2         2867.43        44430.21        59585.00          190.73        43310.45          805.01           88.63
+   200           2         2597.32        49055.37        63393.00          210.51        47826.13          886.16           89.56
 Done searching. Now saving results 
-Writing bin: search_results_old.bin_10_idx_uint32.bin
+Writing bin: search_results.bin_10_idx_uint32.bin
 bin: #pts = 10000, #dims = 10, size = 400008B
 Finished writing bin.
-Writing bin: search_results_old.bin_10_dists_float.bin
+Writing bin: search_results.bin_10_dists_float.bin
 bin: #pts = 10000, #dims = 10, size = 400008B
 Finished writing bin.
-Writing bin: search_results_old.bin_20_idx_uint32.bin
+Writing bin: search_results.bin_20_idx_uint32.bin
 bin: #pts = 10000, #dims = 10, size = 400008B
 Finished writing bin.
-Writing bin: search_results_old.bin_20_dists_float.bin
+Writing bin: search_results.bin_20_dists_float.bin
 bin: #pts = 10000, #dims = 10, size = 400008B
 Finished writing bin.
-Writing bin: search_results_old.bin_40_idx_uint32.bin
+Writing bin: search_results.bin_40_idx_uint32.bin
 bin: #pts = 10000, #dims = 10, size = 400008B
 Finished writing bin.
-Writing bin: search_results_old.bin_40_dists_float.bin
+Writing bin: search_results.bin_40_dists_float.bin
 bin: #pts = 10000, #dims = 10, size = 400008B
 Finished writing bin.
-Writing bin: search_results_old.bin_80_idx_uint32.bin
+Writing bin: search_results.bin_80_idx_uint32.bin
 bin: #pts = 10000, #dims = 10, size = 400008B
 Finished writing bin.
-Writing bin: search_results_old.bin_80_dists_float.bin
+Writing bin: search_results.bin_80_dists_float.bin
 bin: #pts = 10000, #dims = 10, size = 400008B
 Finished writing bin.
-Writing bin: search_results_old.bin_100_idx_uint32.bin
+Writing bin: search_results.bin_100_idx_uint32.bin
 bin: #pts = 10000, #dims = 10, size = 400008B
 Finished writing bin.
-Writing bin: search_results_old.bin_100_dists_float.bin
+Writing bin: search_results.bin_100_dists_float.bin
+bin: #pts = 10000, #dims = 10, size = 400008B
+Finished writing bin.
+Writing bin: search_results.bin_120_idx_uint32.bin
+bin: #pts = 10000, #dims = 10, size = 400008B
+Finished writing bin.
+Writing bin: search_results.bin_120_dists_float.bin
+bin: #pts = 10000, #dims = 10, size = 400008B
+Finished writing bin.
+Writing bin: search_results.bin_140_idx_uint32.bin
+bin: #pts = 10000, #dims = 10, size = 400008B
+Finished writing bin.
+Writing bin: search_results.bin_140_dists_float.bin
+bin: #pts = 10000, #dims = 10, size = 400008B
+Finished writing bin.
+Writing bin: search_results.bin_160_idx_uint32.bin
+bin: #pts = 10000, #dims = 10, size = 400008B
+Finished writing bin.
+Writing bin: search_results.bin_160_dists_float.bin
+bin: #pts = 10000, #dims = 10, size = 400008B
+Finished writing bin.
+Writing bin: search_results.bin_180_idx_uint32.bin
+bin: #pts = 10000, #dims = 10, size = 400008B
+Finished writing bin.
+Writing bin: search_results.bin_180_dists_float.bin
+bin: #pts = 10000, #dims = 10, size = 400008B
+Finished writing bin.
+Writing bin: search_results.bin_200_idx_uint32.bin
+bin: #pts = 10000, #dims = 10, size = 400008B
+Finished writing bin.
+Writing bin: search_results.bin_200_dists_float.bin
 bin: #pts = 10000, #dims = 10, size = 400008B
 Finished writing bin.
 Clearing scratch
