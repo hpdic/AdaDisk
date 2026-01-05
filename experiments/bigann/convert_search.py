@@ -3,7 +3,7 @@ import struct
 import os
 
 # --- 配置路径 ---
-BASE_DIR = "/users/donzhao/hpdic/sift1b_data"
+BASE_DIR = os.path.expanduser("~/hpdic/sift1b_data")
 QUERY_IN  = os.path.join(BASE_DIR, "bigann_query.bvecs")
 QUERY_OUT = os.path.join(BASE_DIR, "bigann_query.bin")
 

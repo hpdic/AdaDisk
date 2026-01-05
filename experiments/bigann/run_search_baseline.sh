@@ -6,7 +6,7 @@ SEARCH_BIN="${DISKANN_HOME}/build/apps/search_disk_index"
 
 # ✅ 修正 1: 索引路径指向 indices
 # 注意：不要加 _disk.index 后缀
-INDEX_PREFIX="$HOME/hpdic/sift1b_data/indices/diskann_base_R32_L50_B180G"
+INDEX_PREFIX="$HOME/hpdic/sift1b_data/indices/diskann_base_R32_L50_B150G"
 
 QUERY_FILE="$HOME/hpdic/sift1b_data/bigann_query.bin"  # 改为 .bin
 GT_FILE="$HOME/hpdic/sift1b_data/bigann_gnd.bin"       # 改为 .bin
