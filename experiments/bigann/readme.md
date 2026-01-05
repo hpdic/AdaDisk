@@ -25,13 +25,12 @@ cd ~/hpdic/AdaDisk
 cd ~/hpdic/AdaDisk
 tail -f build_sift1b.log
 
-# Baseline query:
+# Baseline query
 cd ~/hpdic/sift1b_data
 source ../AdaDisk/venv/bin/activate
 python ../AdaDisk/experiments/bigann/convert_search.py
 sudo sysctl -w fs.aio-max-nr=1048576
 bash ../AdaDisk/experiments/bigann/run_search_baseline.sh
-# example result in ./output_baseline_nopq.txt 
 
 # MCGI index building
 cd ~/hpdic/AdaDisk
@@ -42,4 +41,11 @@ chmod +x ~/hpdic/AdaDisk/experiments/bigann/run_build_mcgi.sh
 # ctrl+b d
 cd ~/hpdic/AdaDisk
 tail -f build_mcgi.log
+
+# MCGI query
+cd ~/hpdic/sift1b_data
+source ../AdaDisk/venv/bin/activate
+python ../AdaDisk/experiments/bigann/convert_search.py
+sudo sysctl -w fs.aio-max-nr=1048576
+bash ../AdaDisk/experiments/bigann/run_search_mcgi.sh
 ```
