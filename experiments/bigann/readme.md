@@ -35,7 +35,6 @@ bash ../AdaDisk/experiments/bigann/run_search_baseline.sh
 
 # MCGI index building
 cd ~/hpdic/AdaDisk
-python experiments/bigann/compute_lid_fast.py
 tmux
 chmod +x ~/hpdic/AdaDisk/experiments/bigann/build_mcgi_sift1b.sh
 # You should take a look at the parameters in the following script
