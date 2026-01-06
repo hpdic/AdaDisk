@@ -1,5 +1,9 @@
 # [HPDIC MOD] AdaDisk: A Distributed Agentic System for Adaptive Ingestion-Query Scheduling of DiskANN (https://github.com/microsoft/DiskANN) RAG in LLM Serving
 
+## Technical Reports
+* [MCGI 2026](https://arxiv.org/pdf/2601.01930)
+* [MCGI 2025](paper/icml26/main.pdf)
+  
 ## Some hardware notes on billion-scale experiments
 Here's what I suggest for running the billion-scale experiments on SIFT1B dataset: 80+ CPU cores, 256 GB+ memory (in which 200 GB is budgeted in the parameters such that only three subshards are needed; details see below), and 1 TB NVMe SSD. Then you'll be able to have a full run of index building finished within ~10 hours if your system is relatively new. Detailed usage are as follows: 
 * *CPU* The PQ procedure seems to be parallelizable with ~86 tasks because I observed almost always full CPU utilization on a 64-core machine while almost always 67% utilization on a 128-core machine. So, it's advisable to deploy this implementation on a 90+ core machine for best performance. When building the index, I saw all of 128 cores are working. So, having more cores is always better.
@@ -140,10 +144,6 @@ Standard monolithic vector search pipelines (e.g., vanilla DiskANN) couple these
     
 * **LLM-Driven Control Plane:**
     Unlike rigid cron jobs or static scripts, AdaDisk employs lightweight **Small Language Models (SLMs)** as the system's control plane. These agents autonomously validate inputs, verify system readiness, and make adaptive scheduling decisions (e.g., back-pressure handling), ensuring the database remains robust under fluctuating RAG workloads.
-
-## Technical Reports
-* [MCGI 2026](https://arxiv.org/pdf/2601.01930)
-* [MCGI 2025](paper/icml26/main.pdf)
 
 ## Compilation
 The original DiskANN didn't work for AMD CPUs due to the use of some Intel-specific optimizations.
