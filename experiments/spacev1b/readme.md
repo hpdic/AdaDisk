@@ -24,4 +24,19 @@ chmod +x run_build_baseline.sh
 # ctrl+b d
 cd ~/hpdic/AdaDisk/experiments/spacev1b
 tail -f build_spacev1b.log
+
+# Baseline query
+cd ~/hpdic/AdaDisk/experiments/spacev1b
+chmod +x run_query_baseline.sh
+./run_query_baseline.sh
+
+# Build MCGI index
+pip install faiss-cpu numpy
+python calculate_lid.py
+tmux a
+chmod +x run_build_mcgi.sh
+./run_build_mcgi.sh 2>&1 | tee build_mcgi_spacev1b.log
+# ctrl+b d
+cd ~/hpdic/AdaDisk/experiments/spacev1b
+tail -f build_mcgi_spacev1b.log
 ```

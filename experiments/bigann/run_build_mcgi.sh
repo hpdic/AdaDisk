@@ -9,12 +9,11 @@ DISKANN_HOME="$HOME/hpdic/AdaDisk"
 BUILDER_BIN="${DISKANN_HOME}/build/apps/build_disk_index"
 
 # 数据绝对路径
-RAW_DATA="$HOME/hpdic/sift1b_data/sift1b_base.bin"
+RAW_DATA="$HOME/hpdic/spacev1b_data/spacev1b_base.bin"
 
 # 输出路径 (放在 NVMe 上速度最快)
-OUTPUT_DIR="$HOME/hpdic/sift1b_data/indices_mcgi"
+OUTPUT_DIR="$HOME/hpdic/spacev1b_data/index_mcgi"
 
-LID_FILE="$HOME/hpdic/sift1b_data/sift1b_lid.bin"
 ALPHA_MIN="1.0"
 ALPHA_MAX="1.5"
 
@@ -25,8 +24,8 @@ L_VAL=50
 PQ_BYTES=16        
 
 # --- 3. 内存与性能优化 ---
-RAM_BUDGET=300     # if larger than 120, no PQ is needed
-THREADS=64         # check htop
+RAM_BUDGET=160     # if larger than 120, no PQ is needed
+THREADS=96         # check htop
 
 # --- 4. 自动命名 ---
 INDEX_NAME="diskann_mcgi_R${R_VAL}_L${L_VAL}_B${RAM_BUDGET}G"
@@ -64,7 +63,7 @@ rm -f "${INDEX_PREFIX}"*
 start_time=$(date +%s)
 
 "$BUILDER_BIN" \
-    --data_type uint8 \
+    --data_type int8 \
     --dist_fn l2 \
     --data_path "$RAW_DATA" \
     --index_path_prefix "$INDEX_PREFIX" \
@@ -75,7 +74,9 @@ start_time=$(date +%s)
     -T "$THREADS" \
     --use_amcgi \
     --alpha_min "$ALPHA_MIN" \
-    --alpha_max "$ALPHA_MAX"    
+    --alpha_max "$ALPHA_MAX" \
+    --lid_avg 23.1403 \
+    --lid_std 6.9409   
 
 end_time=$(date +%s)
 duration=$((end_time - start_time))
