@@ -4,7 +4,7 @@
 DATA_PATH="/home/cc/hpdic/spacev1b_data/spacev1b_base.bin"
 INDEX_DIR="/home/cc/hpdic/spacev1b_data/indices_baseline" #TODO Update this path as needed
 INDEX_PREFIX="${INDEX_DIR}/spacev1b"
-BUILD_RAM_LIMIT=200  # 利用你的 251GB 内存，设为 200 可以极速构建
+BUILD_RAM_LIMIT=160  # 利用你的 251GB 内存，设为 200 可以极速构建
 
 # 确保 build 目录存在
 mkdir -p "${INDEX_DIR}"
@@ -19,5 +19,5 @@ echo "Starting SpaceV-1B Index Build..."
   -R 32 \
   -L 50 \
   -B "${BUILD_RAM_LIMIT}" \
-  -M 32 \
+  -M "${BUILD_RAM_LIMIT}" \
   -T 96
