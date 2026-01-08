@@ -24,7 +24,7 @@ L_VAL=50
 PQ_BYTES=16        
 
 # --- 3. 内存与性能优化 ---
-RAM_BUDGET=160     # if larger than 120, no PQ is needed
+RAM_BUDGET=170     # if larger than 120, no PQ is needed
 THREADS=96         # check htop
 
 # --- 4. 自动命名 ---
