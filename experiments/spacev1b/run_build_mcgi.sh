@@ -14,7 +14,6 @@ RAW_DATA="$HOME/hpdic/spacev1b_data/spacev1b_base.bin"
 # 输出路径 (放在 NVMe 上速度最快)
 OUTPUT_DIR="$HOME/hpdic/spacev1b_data/index_mcgi"
 
-LID_FILE="$HOME/hpdic/spacev1b_data/spacev1b_lid.bin"
 ALPHA_MIN="1.0"
 ALPHA_MAX="1.5"
 
@@ -75,7 +74,9 @@ start_time=$(date +%s)
     -T "$THREADS" \
     --use_amcgi \
     --alpha_min "$ALPHA_MIN" \
-    --alpha_max "$ALPHA_MAX"    
+    --alpha_max "$ALPHA_MAX" \
+    --lid_avg 23.1403 \
+    --lid_std 6.9409    
 
 end_time=$(date +%s)
 duration=$((end_time - start_time))

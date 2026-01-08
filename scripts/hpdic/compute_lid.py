@@ -109,17 +109,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-#
-# Output:
-#
-# (venv) cc@uc-nvme:~/hpdic/AdaDisk/experiments/spacev1b$ python calculate_lid.py 
-# 正在读取 /home/cc/hpdic/spacev1b_data/spacev1b_base.bin 的前 10000 个向量...
-
-# ========================================
-# SpaceV-1B (Sample 10k) LID Analysis
-# ========================================
-# LID Mean      : 23.1403
-# LID Std       : 6.9409
-# LID Min / Max : 3.65 / 53.94
-# ========================================    
+ 
