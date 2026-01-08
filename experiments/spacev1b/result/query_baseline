@@ -1,4 +1,4 @@
-(venv) cc@uc-nvme:~/hpdic/spacev1b_data$ bash ../AdaDisk/experiments/spacev1b/run_search_baseline.sh 
+(venv) cc@uc-nvme:~/hpdic/AdaDisk/experiments/spacev1b$ ./run_search_baseline.sh 
 🚀 开始测试旧索引: /home/cc/hpdic/spacev1b_data/index_baseline/spacev1b_index
 📂 Query: /home/cc/hpdic/spacev1b_data/spacev1b_query.bin
 📂 GT: /home/cc/hpdic/spacev1b_data/spacev1b_ground_truth.bin
@@ -7,6 +7,7 @@ Reading (with alignment) bin file /home/cc/hpdic/spacev1b_data/spacev1b_query.bi
 Opened: /home/cc/hpdic/spacev1b_data/spacev1b_ground_truth.bin, size: 23452808, cache_size: 23452808
 Reading truthset file /home/cc/hpdic/spacev1b_data/spacev1b_ground_truth.bin ...
 Metadata: #pts = 29316, #dims = 100... 
+Using AVX2 distance computation DistanceL2Int8.
 L2: Using AVX2 distance computation DistanceL2Float
 
 
@@ -41,134 +42,134 @@ Loaded PQ centroids and in-memory compressed vectors. #points: 1000000000 #dim: 
 Disk-Index File Meta-data: # nodes per sector: 17, max node len (bytes): 232, max node degree: 32
 Opened file : /home/cc/hpdic/spacev1b_data/index_baseline/spacev1b_index_disk.index
 Setting up thread-specific contexts for nthreads: 128
-allocating ctx: 0x7048d7e8d000 to thread-id:123448955221696
-allocating ctx: 0x7048d7b58000 to thread-id:123448048809664
-allocating ctx: 0x7048d7b47000 to thread-id:123448972007104
-allocating ctx: 0x7048d7b36000 to thread-id:123448963614400
-allocating ctx: 0x7048d7b25000 to thread-id:123448988792512
-allocating ctx: 0x7048d7b14000 to thread-id:123448946828992
-allocating ctx: 0x7048d7b03000 to thread-id:123448896472768
-allocating ctx: 0x7048d7af2000 to thread-id:123448938436288
-allocating ctx: 0x7048d7ae1000 to thread-id:123448930043584
-allocating ctx: 0x7048d7ad0000 to thread-id:123448879687360
-allocating ctx: 0x7048d7abf000 to thread-id:123448921650880
-allocating ctx: 0x7048d7aae000 to thread-id:123448913258176
-allocating ctx: 0x7048d7a9d000 to thread-id:123448862901952
-allocating ctx: 0x7048d7a8c000 to thread-id:123448871294656
-allocating ctx: 0x7048d7a7b000 to thread-id:123448904865472
-allocating ctx: 0x7048d7a6a000 to thread-id:123448888080064
-allocating ctx: 0x7048d7a59000 to thread-id:123448854509248
-allocating ctx: 0x7048d7a48000 to thread-id:123448829331136
-allocating ctx: 0x7048d7a37000 to thread-id:123448846116544
-allocating ctx: 0x7048d7a26000 to thread-id:123448837723840
-allocating ctx: 0x7048d7a15000 to thread-id:123448812545728
-allocating ctx: 0x7048d77ef000 to thread-id:123448804153024
-allocating ctx: 0x7048d77de000 to thread-id:123448787367616
-allocating ctx: 0x7048d77cd000 to thread-id:123448820938432
-allocating ctx: 0x7048d77bc000 to thread-id:123448778974912
-allocating ctx: 0x7048d77ab000 to thread-id:123448795760320
-allocating ctx: 0x7048d779a000 to thread-id:123448745404096
-allocating ctx: 0x7048d7789000 to thread-id:123448720225984
-allocating ctx: 0x7048d7778000 to thread-id:123448737011392
-allocating ctx: 0x7048d7767000 to thread-id:123448728618688
-allocating ctx: 0x7048d7756000 to thread-id:123448770582208
-allocating ctx: 0x7048d7745000 to thread-id:123448753796800
-allocating ctx: 0x7048d7734000 to thread-id:123448703440576
-allocating ctx: 0x7048d7723000 to thread-id:123448711833280
-allocating ctx: 0x7048d7712000 to thread-id:123448762189504
-allocating ctx: 0x7048d7701000 to thread-id:123448669869760
-allocating ctx: 0x7048d76f0000 to thread-id:123448661477056
-allocating ctx: 0x7048d76df000 to thread-id:123448644691648
-allocating ctx: 0x7048d76ce000 to thread-id:123448636298944
-allocating ctx: 0x7048d76bd000 to thread-id:123448695047872
-allocating ctx: 0x7048d76ac000 to thread-id:123448686655168
-allocating ctx: 0x7048d769b000 to thread-id:123448627906240
-allocating ctx: 0x7048d768a000 to thread-id:123448653084352
-allocating ctx: 0x7048d7679000 to thread-id:123448619513536
-allocating ctx: 0x7048d7668000 to thread-id:123448678262464
-allocating ctx: 0x7048d7657000 to thread-id:123448611120832
-allocating ctx: 0x7048d7646000 to thread-id:123448602728128
-allocating ctx: 0x7048d7635000 to thread-id:123448560764608
-allocating ctx: 0x7048d7624000 to thread-id:123448552371904
-allocating ctx: 0x7048d500f000 to thread-id:123448543979200
-allocating ctx: 0x7048d4ffe000 to thread-id:123448585942720
-allocating ctx: 0x7048d4fed000 to thread-id:123448594335424
-allocating ctx: 0x7048d4fdc000 to thread-id:123448577550016
-allocating ctx: 0x7048d4fcb000 to thread-id:123448569157312
-allocating ctx: 0x7048d4fba000 to thread-id:123448535586496
-allocating ctx: 0x7048d4fa9000 to thread-id:123448527193792
-allocating ctx: 0x7048d4f98000 to thread-id:123448518801088
-allocating ctx: 0x7048d4f87000 to thread-id:123448510408384
-allocating ctx: 0x7048d4f76000 to thread-id:123448502015680
-allocating ctx: 0x7048d4f65000 to thread-id:123448493622976
-allocating ctx: 0x7048d4f54000 to thread-id:123448476837568
-allocating ctx: 0x7048d4f43000 to thread-id:123448485230272
-allocating ctx: 0x7048d4f32000 to thread-id:123448443266752
-allocating ctx: 0x7048d4f21000 to thread-id:123448426481344
-allocating ctx: 0x7048d4f10000 to thread-id:123448409695936
-allocating ctx: 0x7048d4eff000 to thread-id:123448392910528
-allocating ctx: 0x7048d4eee000 to thread-id:123448401303232
-allocating ctx: 0x7048d4edd000 to thread-id:123448468444864
-allocating ctx: 0x7048d4ecc000 to thread-id:123448460052160
-allocating ctx: 0x7048d4ebb000 to thread-id:123448451659456
-allocating ctx: 0x7048d4eaa000 to thread-id:123448434874048
-allocating ctx: 0x7048d4e99000 to thread-id:123448418088640
-allocating ctx: 0x7048d4e88000 to thread-id:123448384517824
-allocating ctx: 0x7048d47ef000 to thread-id:123448300590784
-allocating ctx: 0x7048d47de000 to thread-id:123448376125120
-allocating ctx: 0x7048d47cd000 to thread-id:123448367732416
-allocating ctx: 0x7048d47bc000 to thread-id:123448359339712
-allocating ctx: 0x7048d47ab000 to thread-id:123448350947008
-allocating ctx: 0x7048d479a000 to thread-id:123448342554304
-allocating ctx: 0x7048d4789000 to thread-id:123448233449152
-allocating ctx: 0x7048d4778000 to thread-id:123448334161600
-allocating ctx: 0x7048d4767000 to thread-id:123448325768896
-allocating ctx: 0x7048d4756000 to thread-id:123448317376192
-allocating ctx: 0x7048d4745000 to thread-id:123448308983488
-allocating ctx: 0x7048d4734000 to thread-id:123448292198080
-allocating ctx: 0x7048d4723000 to thread-id:123448283805376
-allocating ctx: 0x7048d33ed000 to thread-id:123448275412672
-allocating ctx: 0x7048d33dc000 to thread-id:123448267019968
-allocating ctx: 0x7048d33cb000 to thread-id:123448157914816
-allocating ctx: 0x7048d33ba000 to thread-id:123448258627264
-allocating ctx: 0x7048d33a9000 to thread-id:123448250234560
-allocating ctx: 0x7048d3398000 to thread-id:123448241841856
-allocating ctx: 0x7048d3387000 to thread-id:123448124344000
-allocating ctx: 0x7048d3376000 to thread-id:123448115951296
-allocating ctx: 0x7048d3365000 to thread-id:123448107558592
-allocating ctx: 0x7048d3354000 to thread-id:123448225056448
-allocating ctx: 0x7048d3343000 to thread-id:123448216663744
-allocating ctx: 0x7048d3332000 to thread-id:123448099165888
-allocating ctx: 0x7048d3321000 to thread-id:123448090773184
-allocating ctx: 0x7048d3310000 to thread-id:123448082380480
-allocating ctx: 0x7048d32ff000 to thread-id:123448208271040
-allocating ctx: 0x7048d32ee000 to thread-id:123448073987776
-allocating ctx: 0x7048d32dd000 to thread-id:123448199878336
-allocating ctx: 0x7048d32cc000 to thread-id:123448065595072
-allocating ctx: 0x7048d32bb000 to thread-id:123448191485632
-allocating ctx: 0x7048d32aa000 to thread-id:123448183092928
-allocating ctx: 0x7048d3299000 to thread-id:123448057202368
-allocating ctx: 0x7048d3288000 to thread-id:123448040416960
-allocating ctx: 0x7048d3277000 to thread-id:123448174700224
-allocating ctx: 0x7048d3266000 to thread-id:123448166307520
-allocating ctx: 0x7048d3255000 to thread-id:123448032024256
-allocating ctx: 0x7048d3244000 to thread-id:123448980399808
-allocating ctx: 0x7048d3233000 to thread-id:123448149522112
-allocating ctx: 0x7048d3222000 to thread-id:123448141129408
-allocating ctx: 0x7048d3211000 to thread-id:123448023631552
-allocating ctx: 0x7048d3200000 to thread-id:123448132736704
-allocating ctx: 0x7048ca9ee000 to thread-id:123447990060736
-allocating ctx: 0x7048ca9dd000 to thread-id:123448015238848
-allocating ctx: 0x7048ca9cc000 to thread-id:123447981668032
-allocating ctx: 0x7048ca9bb000 to thread-id:123447931311808
-allocating ctx: 0x7048ca9aa000 to thread-id:123447973275328
-allocating ctx: 0x7048ca999000 to thread-id:123447964882624
-allocating ctx: 0x7048ca988000 to thread-id:123448006846144
-allocating ctx: 0x7048ca977000 to thread-id:123458173982784
-allocating ctx: 0x7048ca966000 to thread-id:123447956489920
-allocating ctx: 0x7048ca955000 to thread-id:123447948097216
-allocating ctx: 0x7048ca944000 to thread-id:123447939704512
-allocating ctx: 0x7048ca933000 to thread-id:123447998453440
+allocating ctx: 0x7a6b06f9a000 to thread-id:134590914098880
+allocating ctx: 0x7a6b0649d000 to thread-id:134590897313472
+allocating ctx: 0x7a6b0648c000 to thread-id:134590905706176
+allocating ctx: 0x7a6b06091000 to thread-id:134590880528064
+allocating ctx: 0x7a6b06080000 to thread-id:134590888920768
+allocating ctx: 0x7a6b0606f000 to thread-id:134590872135360
+allocating ctx: 0x7a6b0605e000 to thread-id:134590863742656
+allocating ctx: 0x7a6b0604d000 to thread-id:134590855349952
+allocating ctx: 0x7a6b0603c000 to thread-id:134590846957248
+allocating ctx: 0x7a6b0602b000 to thread-id:134590838564544
+allocating ctx: 0x7a6b0601a000 to thread-id:134590830171840
+allocating ctx: 0x7a6b05def000 to thread-id:134590821779136
+allocating ctx: 0x7a6b05dde000 to thread-id:134590813386432
+allocating ctx: 0x7a6b05dcd000 to thread-id:134590804993728
+allocating ctx: 0x7a6b05dbc000 to thread-id:134590796601024
+allocating ctx: 0x7a6b05dab000 to thread-id:134590788208320
+allocating ctx: 0x7a6b05d9a000 to thread-id:134590779815616
+allocating ctx: 0x7a6b05d89000 to thread-id:134590771422912
+allocating ctx: 0x7a6b05d78000 to thread-id:134590763030208
+allocating ctx: 0x7a6b05d67000 to thread-id:134590754637504
+allocating ctx: 0x7a6b05d56000 to thread-id:134590746244800
+allocating ctx: 0x7a6b05d45000 to thread-id:134590737852096
+allocating ctx: 0x7a6b05d34000 to thread-id:134590729459392
+allocating ctx: 0x7a6b05d23000 to thread-id:134590721066688
+allocating ctx: 0x7a6b05d12000 to thread-id:134590712673984
+allocating ctx: 0x7a6b05d01000 to thread-id:134590704281280
+allocating ctx: 0x7a6b05cf0000 to thread-id:134590695888576
+allocating ctx: 0x7a6b05cdf000 to thread-id:134590687495872
+allocating ctx: 0x7a6b05cce000 to thread-id:134590653925056
+allocating ctx: 0x7a6b05cbd000 to thread-id:134590679103168
+allocating ctx: 0x7a6b05cac000 to thread-id:134590670710464
+allocating ctx: 0x7a6b05c9b000 to thread-id:134590662317760
+allocating ctx: 0x7a6b05c8a000 to thread-id:134590645532352
+allocating ctx: 0x7a6b05c79000 to thread-id:134590637139648
+allocating ctx: 0x7a6b05c68000 to thread-id:134590628746944
+allocating ctx: 0x7a6b05c57000 to thread-id:134590620354240
+allocating ctx: 0x7a6b05c46000 to thread-id:134590611961536
+allocating ctx: 0x7a6b05c35000 to thread-id:134590603568832
+allocating ctx: 0x7a6b05c24000 to thread-id:134590595176128
+allocating ctx: 0x7a6b0360f000 to thread-id:134590586783424
+allocating ctx: 0x7a6b035fe000 to thread-id:134590569998016
+allocating ctx: 0x7a6b035ed000 to thread-id:134590578390720
+allocating ctx: 0x7a6b035dc000 to thread-id:134590561605312
+allocating ctx: 0x7a6b035cb000 to thread-id:134590553212608
+allocating ctx: 0x7a6b035ba000 to thread-id:134590544819904
+allocating ctx: 0x7a6b035a9000 to thread-id:134590528034496
+allocating ctx: 0x7a6b03598000 to thread-id:134590536427200
+allocating ctx: 0x7a6b03587000 to thread-id:134590494463680
+allocating ctx: 0x7a6b03576000 to thread-id:134590519641792
+allocating ctx: 0x7a6b03565000 to thread-id:134590486070976
+allocating ctx: 0x7a6b03554000 to thread-id:134590511249088
+allocating ctx: 0x7a6b03543000 to thread-id:134590502856384
+allocating ctx: 0x7a6b03532000 to thread-id:134590452500160
+allocating ctx: 0x7a6b03521000 to thread-id:134590460892864
+allocating ctx: 0x7a6b03510000 to thread-id:134590469285568
+allocating ctx: 0x7a6b034ff000 to thread-id:134590477678272
+allocating ctx: 0x7a6b034ee000 to thread-id:134590444107456
+allocating ctx: 0x7a6b034dd000 to thread-id:134590435714752
+allocating ctx: 0x7a6b034cc000 to thread-id:134590410536640
+allocating ctx: 0x7a6b034bb000 to thread-id:134590393751232
+allocating ctx: 0x7a6b034aa000 to thread-id:134590385358528
+allocating ctx: 0x7a6b03499000 to thread-id:134590427322048
+allocating ctx: 0x7a6b03488000 to thread-id:134590418929344
+allocating ctx: 0x7a6b02def000 to thread-id:134590402143936
+allocating ctx: 0x7a6b02dde000 to thread-id:134590376965824
+allocating ctx: 0x7a6b02dcd000 to thread-id:134590335002304
+allocating ctx: 0x7a6b02dbc000 to thread-id:134590360180416
+allocating ctx: 0x7a6b02dab000 to thread-id:134590343395008
+allocating ctx: 0x7a6b02d9a000 to thread-id:134590368573120
+allocating ctx: 0x7a6b02d89000 to thread-id:134590351787712
+allocating ctx: 0x7a6b02d78000 to thread-id:134590301431488
+allocating ctx: 0x7a6b02d67000 to thread-id:134590276253376
+allocating ctx: 0x7a6b02d56000 to thread-id:134590293038784
+allocating ctx: 0x7a6b02d45000 to thread-id:134590267860672
+allocating ctx: 0x7a6b02d34000 to thread-id:134590217504448
+allocating ctx: 0x7a6b02d23000 to thread-id:134590242682560
+allocating ctx: 0x7a6b019ed000 to thread-id:134590158755520
+allocating ctx: 0x7a6b019dc000 to thread-id:134590150362816
+allocating ctx: 0x7a6b019cb000 to thread-id:134590234289856
+allocating ctx: 0x7a6b019ba000 to thread-id:134590141970112
+allocating ctx: 0x7a6b019a9000 to thread-id:134590133577408
+allocating ctx: 0x7a6b01998000 to thread-id:134590225897152
+allocating ctx: 0x7a6b01987000 to thread-id:134590108399296
+allocating ctx: 0x7a6b01976000 to thread-id:134590326609600
+allocating ctx: 0x7a6b01965000 to thread-id:134590318216896
+allocating ctx: 0x7a6b01954000 to thread-id:134590309824192
+allocating ctx: 0x7a6b01943000 to thread-id:134590284646080
+allocating ctx: 0x7a6b01932000 to thread-id:134589856618176
+allocating ctx: 0x7a6b01921000 to thread-id:134590259467968
+allocating ctx: 0x7a6b01910000 to thread-id:134590251075264
+allocating ctx: 0x7a6b018ff000 to thread-id:134589881796288
+allocating ctx: 0x7a6b018ee000 to thread-id:134589873403584
+allocating ctx: 0x7a6b018dd000 to thread-id:134590209111744
+allocating ctx: 0x7a6b018cc000 to thread-id:134589865010880
+allocating ctx: 0x7a6b018bb000 to thread-id:134600097257536
+allocating ctx: 0x7a6b018aa000 to thread-id:134590200719040
+allocating ctx: 0x7a6b01899000 to thread-id:134590192326336
+allocating ctx: 0x7a6b01888000 to thread-id:134590183933632
+allocating ctx: 0x7a6b01877000 to thread-id:134590175540928
+allocating ctx: 0x7a6b01866000 to thread-id:134590167148224
+allocating ctx: 0x7a6b01855000 to thread-id:134590125184704
+allocating ctx: 0x7a6b01844000 to thread-id:134590116792000
+allocating ctx: 0x7a6b01833000 to thread-id:134590091613888
+allocating ctx: 0x7a6b01822000 to thread-id:134590100006592
+allocating ctx: 0x7a6b01811000 to thread-id:134590083221184
+allocating ctx: 0x7a6b01800000 to thread-id:134590074828480
+allocating ctx: 0x7a6af07ed000 to thread-id:134590066435776
+allocating ctx: 0x7a6af07dc000 to thread-id:134590058043072
+allocating ctx: 0x7a6af07cb000 to thread-id:134590049650368
+allocating ctx: 0x7a6af07ba000 to thread-id:134590041257664
+allocating ctx: 0x7a6af07a9000 to thread-id:134590032864960
+allocating ctx: 0x7a6af0798000 to thread-id:134590016079552
+allocating ctx: 0x7a6af0787000 to thread-id:134590007686848
+allocating ctx: 0x7a6af0776000 to thread-id:134590024472256
+allocating ctx: 0x7a6af0765000 to thread-id:134589999294144
+allocating ctx: 0x7a6af0754000 to thread-id:134589982508736
+allocating ctx: 0x7a6af0743000 to thread-id:134589990901440
+allocating ctx: 0x7a6af0732000 to thread-id:134589974116032
+allocating ctx: 0x7a6af0721000 to thread-id:134589965723328
+allocating ctx: 0x7a6af0710000 to thread-id:134589957330624
+allocating ctx: 0x7a6af06ff000 to thread-id:134589940545216
+allocating ctx: 0x7a6af06ee000 to thread-id:134589948937920
+allocating ctx: 0x7a6af06dd000 to thread-id:134589932152512
+allocating ctx: 0x7a6af06cc000 to thread-id:134589923759808
+allocating ctx: 0x7a6af06bb000 to thread-id:134589915367104
+allocating ctx: 0x7a6af06aa000 to thread-id:134589906974400
+allocating ctx: 0x7a6af0699000 to thread-id:134589890188992
+allocating ctx: 0x7a6af0688000 to thread-id:134589898581696
 Reading bin file /home/cc/hpdic/spacev1b_data/index_baseline/spacev1b_index_disk.index_medoids.bin ...
 Opening bin file /home/cc/hpdic/spacev1b_data/index_baseline/spacev1b_index_disk.index_medoids.bin... 
 Metadata: #pts = 33, #dims = 1...
@@ -184,16 +185,16 @@ done
 Loading the cache list into memory....done.
      L   Beamwidth             QPS    Mean Latency    99.9 Latency        Mean IOs    Mean IO (us)         CPU (s)       Recall@10
 ===================================================================================================================================
-    10           2        23121.72         5387.41        13982.00           26.81         4581.69          708.09            0.00
-    20           2        24788.60         5033.34        12733.00           42.56         4239.02          669.75            0.00
-    40           2        16350.46         7719.86        18866.00           70.51         6667.37          877.72            0.00
-    80           2         9667.59        13079.09        30239.00          121.78        11295.42         1497.87            0.00
-   100           2         8496.25        14901.07        34150.00          146.62        12883.95         1678.32            0.00
-   120           2         7246.05        17466.68        40260.00          171.06        15142.02         1935.53            0.00
-   140           2         6401.65        19786.24        43856.00          195.13        17111.96         2233.76            0.00
-   160           2         5670.58        22337.00        48463.00          218.82        19315.13         2528.22            0.00
-   180           2         5184.85        24431.90        52788.00          242.45        21216.12         2672.46            0.00
-   200           2         4681.23        27093.84        59985.00          266.10        23498.20         2997.64            0.00
+    10           2        19552.57         6459.46        15044.00           25.23         5778.66          602.63           57.80
+    20           2        24706.64         5098.76        12823.00           36.59         4439.88          556.68           67.79
+    40           2        14856.15         8518.88        20681.00           57.45         7578.57          794.78           76.33
+    80           2         8258.74        15381.80        34143.00           97.97        13880.93         1268.30           83.39
+   100           2         9636.34        13156.16        28232.00          118.06        11520.28         1358.87           85.13
+   120           2         8491.71        14927.29        31044.00          138.06        13107.32         1502.44           86.42
+   140           2         7597.17        16706.97        34903.00          158.02        14852.56         1498.83           87.34
+   160           2         6918.03        18359.27        36058.00          177.98        16308.89         1653.31           88.09
+   180           2         6238.30        20371.37        40574.00          197.90        18148.40         1783.28           88.71
+   200           2         5772.28        22021.58        41012.00          217.80        19588.88         1951.86           89.21
 Done searching. Now saving results 
 Writing bin: search_results.bin_10_idx_uint32.bin
 bin: #pts = 29316, #dims = 10, size = 1172648B
@@ -256,4 +257,4 @@ Writing bin: search_results.bin_200_dists_float.bin
 bin: #pts = 29316, #dims = 10, size = 1172648B
 Finished writing bin.
 Clearing scratch
-(venv) cc@uc-nvme:~/hpdic/spacev1b_data$ 
+(venv) cc@uc-nvme:~/hpdic/AdaDisk/experiments/spacev1b$ 

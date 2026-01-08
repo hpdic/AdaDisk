@@ -29,7 +29,7 @@ echo "📂 Query: $QUERY_FILE"
 echo "📂 GT: $GT_FILE"
 
 "$SEARCH_BIN" \
-  --data_type uint8 \
+  --data_type int8 \
   --dist_fn l2 \
   --index_path_prefix "$INDEX_PREFIX" \
   --query_file "$QUERY_FILE" \
