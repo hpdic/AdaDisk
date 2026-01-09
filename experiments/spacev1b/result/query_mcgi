@@ -1,0 +1,228 @@
+cc@uc-nvme:~/hpdic/AdaDisk/experiments/spacev1b$ ./run_search_mcgi.sh
+🚀 开始测试旧索引: /home/cc/hpdic/spacev1b_data/index_mcgi/spacev1b_index
+📂 Query: /home/cc/hpdic/spacev1b_data/spacev1b_query.bin
+📂 GT: /home/cc/hpdic/spacev1b_data/spacev1b_ground_truth.bin
+Search parameters: #threads: 96,  beamwidth: 2.
+Reading (with alignment) bin file /home/cc/hpdic/spacev1b_data/spacev1b_query.bin ...Metadata: #pts = 29316, #dims = 100, aligned_dim = 104... allocating aligned memory of 3048864 bytes... done. Copying data to mem_aligned buffer... done.
+Opened: /home/cc/hpdic/spacev1b_data/spacev1b_ground_truth.bin, size: 23452808, cache_size: 23452808
+Reading truthset file /home/cc/hpdic/spacev1b_data/spacev1b_ground_truth.bin ...
+Metadata: #pts = 29316, #dims = 100... 
+Using AVX2 distance computation DistanceL2Int8.
+L2: Using AVX2 distance computation DistanceL2Float
+
+
+*****************************************************
+* ==HPDIC MOD== Hello from modified libdiskann.so!  *
+* I am inside src/pq_flash_index.cpp :: load()      *
+*****************************************************
+
+Reading bin file /home/cc/hpdic/spacev1b_data/index_mcgi/spacev1b_index_pq_compressed.bin ...
+Opening bin file /home/cc/hpdic/spacev1b_data/index_mcgi/spacev1b_index_pq_compressed.bin... 
+Metadata: #pts = 1000000000, #dims = 100...
+done.
+Reading bin file /home/cc/hpdic/spacev1b_data/index_mcgi/spacev1b_index_pq_pivots.bin ...
+Opening bin file /home/cc/hpdic/spacev1b_data/index_mcgi/spacev1b_index_pq_pivots.bin... 
+Metadata: #pts = 4, #dims = 1...
+done.
+Offsets: 4096 106504 106912 107324
+Reading bin file /home/cc/hpdic/spacev1b_data/index_mcgi/spacev1b_index_pq_pivots.bin ...
+Opening bin file /home/cc/hpdic/spacev1b_data/index_mcgi/spacev1b_index_pq_pivots.bin... 
+Metadata: #pts = 256, #dims = 100...
+done.
+Reading bin file /home/cc/hpdic/spacev1b_data/index_mcgi/spacev1b_index_pq_pivots.bin ...
+Opening bin file /home/cc/hpdic/spacev1b_data/index_mcgi/spacev1b_index_pq_pivots.bin... 
+Metadata: #pts = 100, #dims = 1...
+done.
+Reading bin file /home/cc/hpdic/spacev1b_data/index_mcgi/spacev1b_index_pq_pivots.bin ...
+Opening bin file /home/cc/hpdic/spacev1b_data/index_mcgi/spacev1b_index_pq_pivots.bin... 
+Metadata: #pts = 101, #dims = 1...
+done.
+Loaded PQ Pivots: #ctrs: 256, #dims: 100, #chunks: 100
+Loaded PQ centroids and in-memory compressed vectors. #points: 1000000000 #dim: 100 #aligned_dim: 104 #chunks: 100
+Disk-Index File Meta-data: # nodes per sector: 17, max node len (bytes): 232, max node degree: 32
+Opened file : /home/cc/hpdic/spacev1b_data/index_mcgi/spacev1b_index_disk.index
+Setting up thread-specific contexts for nthreads: 96
+allocating ctx: 0x79775949d000 to thread-id:133544324097728
+allocating ctx: 0x79775948c000 to thread-id:133543862499008
+allocating ctx: 0x797759091000 to thread-id:133543661074112
+allocating ctx: 0x797759080000 to thread-id:133544097494720
+allocating ctx: 0x79775906f000 to thread-id:133544021960384
+allocating ctx: 0x79775905e000 to thread-id:133543988389568
+allocating ctx: 0x79775904d000 to thread-id:133543770179264
+allocating ctx: 0x79775903c000 to thread-id:133543677859520
+allocating ctx: 0x79775902b000 to thread-id:133543543576256
+allocating ctx: 0x79775901a000 to thread-id:133544223385280
+allocating ctx: 0x797758def000 to thread-id:133544290526912
+allocating ctx: 0x797758dde000 to thread-id:133544231777984
+allocating ctx: 0x797758dcd000 to thread-id:133544156243648
+allocating ctx: 0x797758dbc000 to thread-id:133543921247936
+allocating ctx: 0x797758dab000 to thread-id:133543593932480
+allocating ctx: 0x797758d9a000 to thread-id:133543812142784
+allocating ctx: 0x797758d89000 to thread-id:133543719823040
+allocating ctx: 0x797758d78000 to thread-id:133544273741504
+allocating ctx: 0x797758d67000 to thread-id:133543904462528
+allocating ctx: 0x797758d56000 to thread-id:133543610717888
+allocating ctx: 0x797758d45000 to thread-id:133544164636352
+allocating ctx: 0x797758d34000 to thread-id:133543795357376
+allocating ctx: 0x797758d23000 to thread-id:133543728215744
+allocating ctx: 0x797758d12000 to thread-id:133544256956096
+allocating ctx: 0x797758d01000 to thread-id:133543971604160
+allocating ctx: 0x797758cf0000 to thread-id:133544122672832
+allocating ctx: 0x797758cdf000 to thread-id:133543954818752
+allocating ctx: 0x797758cce000 to thread-id:133543778571968
+allocating ctx: 0x797758cbd000 to thread-id:133544240170688
+allocating ctx: 0x797758cac000 to thread-id:133543635896000
+allocating ctx: 0x797758c9b000 to thread-id:133543619110592
+allocating ctx: 0x797758c8a000 to thread-id:133544038745792
+allocating ctx: 0x797758c79000 to thread-id:133543568754368
+allocating ctx: 0x797758c68000 to thread-id:133544307312320
+allocating ctx: 0x797758c57000 to thread-id:133543845713600
+allocating ctx: 0x797758c46000 to thread-id:133543711430336
+allocating ctx: 0x797758c35000 to thread-id:133543887677120
+allocating ctx: 0x797758c24000 to thread-id:133544173029056
+allocating ctx: 0x79775660f000 to thread-id:133544055531200
+allocating ctx: 0x7977565fe000 to thread-id:133543786964672
+allocating ctx: 0x7977565ed000 to thread-id:133544030353088
+allocating ctx: 0x7977565dc000 to thread-id:133543938033344
+allocating ctx: 0x7977565cb000 to thread-id:133544072316608
+allocating ctx: 0x7977565ba000 to thread-id:133543761786560
+allocating ctx: 0x7977565a9000 to thread-id:133544206599872
+allocating ctx: 0x797756598000 to thread-id:133544005174976
+allocating ctx: 0x797756587000 to thread-id:133544332490432
+allocating ctx: 0x797756576000 to thread-id:133544139458240
+allocating ctx: 0x797756565000 to thread-id:133543870891712
+allocating ctx: 0x797756554000 to thread-id:133543577147072
+allocating ctx: 0x797756543000 to thread-id:133543686252224
+allocating ctx: 0x797756532000 to thread-id:133543585539776
+allocating ctx: 0x797756521000 to thread-id:133543803750080
+allocating ctx: 0x797756510000 to thread-id:133543753393856
+allocating ctx: 0x7977564ff000 to thread-id:133543828928192
+allocating ctx: 0x7977564ee000 to thread-id:133543854106304
+allocating ctx: 0x7977564dd000 to thread-id:133543912855232
+allocating ctx: 0x7977564cc000 to thread-id:133544198207168
+allocating ctx: 0x7977564bb000 to thread-id:133544315705024
+allocating ctx: 0x7977564aa000 to thread-id:133544214992576
+allocating ctx: 0x797756499000 to thread-id:133544013567680
+allocating ctx: 0x797756488000 to thread-id:133543669466816
+allocating ctx: 0x797755def000 to thread-id:133553517688896
+allocating ctx: 0x797755dde000 to thread-id:133543896069824
+allocating ctx: 0x797755dcd000 to thread-id:133544047138496
+allocating ctx: 0x797755dbc000 to thread-id:133544147850944
+allocating ctx: 0x797755dab000 to thread-id:133543879284416
+allocating ctx: 0x797755d9a000 to thread-id:133544114280128
+allocating ctx: 0x797755d89000 to thread-id:133544063923904
+allocating ctx: 0x797755d78000 to thread-id:133543736608448
+allocating ctx: 0x797755d67000 to thread-id:133544080709312
+allocating ctx: 0x797755d56000 to thread-id:133544282134208
+allocating ctx: 0x797755d45000 to thread-id:133543703037632
+allocating ctx: 0x797755d34000 to thread-id:133543644288704
+allocating ctx: 0x797755d23000 to thread-id:133543837320896
+allocating ctx: 0x7977549ed000 to thread-id:133544298919616
+allocating ctx: 0x7977549dc000 to thread-id:133543929640640
+allocating ctx: 0x7977549cb000 to thread-id:133544189814464
+allocating ctx: 0x7977549ba000 to thread-id:133544131065536
+allocating ctx: 0x7977549a9000 to thread-id:133544181421760
+allocating ctx: 0x797754998000 to thread-id:133543963211456
+allocating ctx: 0x797754987000 to thread-id:133544089102016
+allocating ctx: 0x797754976000 to thread-id:133543996782272
+allocating ctx: 0x797754965000 to thread-id:133543694644928
+allocating ctx: 0x797754954000 to thread-id:133543820535488
+allocating ctx: 0x797754943000 to thread-id:133543560361664
+allocating ctx: 0x797754932000 to thread-id:133543745001152
+allocating ctx: 0x797754921000 to thread-id:133543602325184
+allocating ctx: 0x797754910000 to thread-id:133544105887424
+allocating ctx: 0x7977548ff000 to thread-id:133543551968960
+allocating ctx: 0x7977548ee000 to thread-id:133544248563392
+allocating ctx: 0x7977548dd000 to thread-id:133543979996864
+allocating ctx: 0x7977548cc000 to thread-id:133543946426048
+allocating ctx: 0x7977548bb000 to thread-id:133543627503296
+allocating ctx: 0x7977548aa000 to thread-id:133543652681408
+allocating ctx: 0x797754899000 to thread-id:133544265348800
+Reading bin file /home/cc/hpdic/spacev1b_data/index_mcgi/spacev1b_index_disk.index_medoids.bin ...
+Opening bin file /home/cc/hpdic/spacev1b_data/index_mcgi/spacev1b_index_disk.index_medoids.bin... 
+Metadata: #pts = 33, #dims = 1...
+done.
+Reading (with alignment) bin file /home/cc/hpdic/spacev1b_data/index_mcgi/spacev1b_index_disk.index_centroids.bin ...Metadata: #pts = 33, #dims = 100, aligned_dim = 104... allocating aligned memory of 13728 bytes... done. Copying data to mem_aligned buffer... done.
+done..
+Caching 10000 nodes around medoid(s)
+Caching 10000...
+Level: 1.. #nodes: 32, #nodes thus far: 32
+Level: 2.. #nodes: 978, #nodes thus far: 1010
+Level: 3. #nodes: 8990, #nodes thus far: 10000
+done
+Loading the cache list into memory....done.
+     L   Beamwidth             QPS    Mean Latency    99.9 Latency        Mean IOs    Mean IO (us)         CPU (s)       Recall@10
+===================================================================================================================================
+    10           2        32590.75         2901.18         6626.00           25.78         2364.35          467.68           57.15
+    20           2        29074.69         3254.93         7642.00           37.27         2849.03          312.44           67.27
+    40           2        18890.24         5034.43        11333.00           58.22         4435.74          459.21           76.03
+    80           2        10881.57         8761.49        22501.00           98.74         7792.26          741.79           83.05
+   100           2         9490.92        10044.10        20211.00          118.77         8928.09          845.59           84.78
+   120           2         8152.16        11698.62        23675.00          138.78        10409.21          978.09           86.00
+   140           2         7003.68        13624.30        31111.00          158.75        12147.11         1122.99           86.91
+   160           2         6328.43        15081.92        29053.00          178.74        13420.67         1265.49           87.66
+   180           2         5618.11        16992.98        37450.00          198.70        15138.17         1415.95           88.24
+   200           2         5187.56        18400.27        34473.00          218.65        16359.65         1559.21           88.74
+Done searching. Now saving results 
+Writing bin: search_results_mcgi.bin_10_idx_uint32.bin
+bin: #pts = 29316, #dims = 10, size = 1172648B
+Finished writing bin.
+Writing bin: search_results_mcgi.bin_10_dists_float.bin
+bin: #pts = 29316, #dims = 10, size = 1172648B
+Finished writing bin.
+Writing bin: search_results_mcgi.bin_20_idx_uint32.bin
+bin: #pts = 29316, #dims = 10, size = 1172648B
+Finished writing bin.
+Writing bin: search_results_mcgi.bin_20_dists_float.bin
+bin: #pts = 29316, #dims = 10, size = 1172648B
+Finished writing bin.
+Writing bin: search_results_mcgi.bin_40_idx_uint32.bin
+bin: #pts = 29316, #dims = 10, size = 1172648B
+Finished writing bin.
+Writing bin: search_results_mcgi.bin_40_dists_float.bin
+bin: #pts = 29316, #dims = 10, size = 1172648B
+Finished writing bin.
+Writing bin: search_results_mcgi.bin_80_idx_uint32.bin
+bin: #pts = 29316, #dims = 10, size = 1172648B
+Finished writing bin.
+Writing bin: search_results_mcgi.bin_80_dists_float.bin
+bin: #pts = 29316, #dims = 10, size = 1172648B
+Finished writing bin.
+Writing bin: search_results_mcgi.bin_100_idx_uint32.bin
+bin: #pts = 29316, #dims = 10, size = 1172648B
+Finished writing bin.
+Writing bin: search_results_mcgi.bin_100_dists_float.bin
+bin: #pts = 29316, #dims = 10, size = 1172648B
+Finished writing bin.
+Writing bin: search_results_mcgi.bin_120_idx_uint32.bin
+bin: #pts = 29316, #dims = 10, size = 1172648B
+Finished writing bin.
+Writing bin: search_results_mcgi.bin_120_dists_float.bin
+bin: #pts = 29316, #dims = 10, size = 1172648B
+Finished writing bin.
+Writing bin: search_results_mcgi.bin_140_idx_uint32.bin
+bin: #pts = 29316, #dims = 10, size = 1172648B
+Finished writing bin.
+Writing bin: search_results_mcgi.bin_140_dists_float.bin
+bin: #pts = 29316, #dims = 10, size = 1172648B
+Finished writing bin.
+Writing bin: search_results_mcgi.bin_160_idx_uint32.bin
+bin: #pts = 29316, #dims = 10, size = 1172648B
+Finished writing bin.
+Writing bin: search_results_mcgi.bin_160_dists_float.bin
+bin: #pts = 29316, #dims = 10, size = 1172648B
+Finished writing bin.
+Writing bin: search_results_mcgi.bin_180_idx_uint32.bin
+bin: #pts = 29316, #dims = 10, size = 1172648B
+Finished writing bin.
+Writing bin: search_results_mcgi.bin_180_dists_float.bin
+bin: #pts = 29316, #dims = 10, size = 1172648B
+Finished writing bin.
+Writing bin: search_results_mcgi.bin_200_idx_uint32.bin
+bin: #pts = 29316, #dims = 10, size = 1172648B
+Finished writing bin.
+Writing bin: search_results_mcgi.bin_200_dists_float.bin
+bin: #pts = 29316, #dims = 10, size = 1172648B
+Finished writing bin.
+Clearing scratch
+cc@uc-nvme:~/hpdic/AdaDisk/experiments/spacev1b$ 

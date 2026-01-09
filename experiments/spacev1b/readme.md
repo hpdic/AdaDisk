@@ -39,4 +39,9 @@ chmod +x run_build_mcgi.sh
 # ctrl+b d
 cd ~/hpdic/AdaDisk/experiments/spacev1b
 tail -f build_mcgi_spacev1b.log
+
+# MCGI query
+cd ~/hpdic/AdaDisk/experiments/spacev1b
+chmod +x run_search_mcgi.sh
+./run_search_mcgi.sh
 ```
