@@ -15,7 +15,7 @@ RAW_DATA="$HOME/hpdic/spacev1b_data/spacev1b_base.bin"
 OUTPUT_DIR="$HOME/hpdic/spacev1b_data/index_mcgi"
 
 ALPHA_MIN="1.0"
-ALPHA_MAX="1.5"
+ALPHA_MAX="2.0"
 
 
 # --- 2. 核心参数 (R32/L50 性价比最高) ---

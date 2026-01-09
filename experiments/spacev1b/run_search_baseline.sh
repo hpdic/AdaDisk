@@ -15,8 +15,8 @@ RESULT_OUTPUT="search_results.bin"
 
 # --- 2. 搜索参数 ---
 K=10                     # Top-10
-L_LIST="10 20 40 80 100 120 140 160 180 200" # 不同的搜索队列长度
-THREADS=128               # 线程数
+L_LIST="100 500 1000 1500 2000 2500 3000 3500 4000" # 不同的搜索队列长度
+THREADS=96               # 线程数
 
 # --- 3. 安全检查 ---
 if [ ! -f "${INDEX_PREFIX}_disk.index" ]; then
