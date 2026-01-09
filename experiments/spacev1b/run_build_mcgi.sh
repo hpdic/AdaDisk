@@ -15,7 +15,7 @@ RAW_DATA="$HOME/hpdic/spacev1b_data/spacev1b_base.bin"
 OUTPUT_DIR="$HOME/hpdic/spacev1b_data/index_mcgi"
 
 ALPHA_MIN="1.0"
-ALPHA_MAX="2.0"
+ALPHA_MAX="1.2"
 
 
 # --- 2. 核心参数 (R32/L50 性价比最高) ---
@@ -24,7 +24,7 @@ L_VAL=50
 PQ_BYTES=16        
 
 # --- 3. 内存与性能优化 ---
-RAM_BUDGET=170     # if larger than 120, no PQ is needed
+RAM_BUDGET=200     # if larger than 120, no PQ is needed
 THREADS=96         # check htop
 
 # --- 4. 自动命名 ---
