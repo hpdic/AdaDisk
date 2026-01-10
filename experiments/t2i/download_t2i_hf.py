@@ -9,8 +9,8 @@ BASE_URL = "https://huggingface.co/datasets/unum-cloud/ann-t2i-1m/resolve/main/b
 QUERY_URL = "https://huggingface.co/datasets/unum-cloud/ann-t2i-1m/resolve/main/query.public.100K.fbin"
 
 # 本地文件名
-BASE_FILE = "t2i_base_1M.fbin"
-QUERY_FILE = "t2i_query.fbin"
+BASE_FILE = os.path.expanduser("~/t2i_data/t2i_base_1M.fbin")
+QUERY_FILE = os.path.expanduser("~/t2i_data/t2i_query.fbin")
 
 def download_file(url, filename):
     if os.path.exists(filename):

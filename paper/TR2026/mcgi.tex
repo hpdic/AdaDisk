@@ -799,21 +799,19 @@ For the standard million-scale datasets (SIFT1M, GloVe-100, GIST1M), we follow t
 For the SIFT1B dataset, we employed a memory-resident construction strategy (utilizing 200 GB RAM) to avoid quantization errors during the build phase. 
 To adapt to the I/O characteristics of the storage backend, the graph degree was set to $R=32$ with a beam search width of $L_{build}=50$.
 
-\begin{table}[h]
+\begin{table}[t]
 \centering
-\small  
-\setlength{\tabcolsep}{4pt} 
-\caption{Parameter settings for index construction across different datasets.}
-\label{tab:build_params}
-\begin{tabular}{lcccccc}
+\caption{Dataset Specifications and Indexing Parameters.}
+\label{tab:datasets}
+\begin{tabular}{lccccc}
 \toprule
-Dataset & $R$ & $L_{build}$ & $\alpha$ Range & $m_{PQ}$ (Bytes) & $k_{LID}$ & Build RAM \\
+Dataset & $R$ & $L_{build}$ & $\alpha$ Range & $m_{PQ}$ (Bytes) & Data Type\\
 \midrule
-SIFT1M    & 64 & 100 & $[1.0, 1.5]$ & N/A & 32 & N/A \\
-GloVe-100 & 64 & 100 & $[1.0, 1.5]$ & N/A & 50 & N/A \\
-GIST1M    & 96 & 150 & $[1.0, 1.5]$ & N/A & 50 & N/A \\
-SIFT1B    & 32 & 50  & $[1.0, 1.5]$ & 16  & NA & 200 GB \\
-T2I-1B    & 32 & 50  & $[0.5, 1.2]$ & 16  & NA & 180 GB \\
+SIFT1M    & 64 & 100 & $[1.0, 1.5]$ & N/A & float32 \\
+GloVe-100 & 64 & 100 & $[1.0, 1.5]$ & N/A & float32 \\
+GIST1M    & 96 & 150 & $[1.0, 1.5]$ & N/A & float32 \\
+SIFT1B    & 32 & 50  & $[1.0, 1.5]$ & 16  & uint8   \\
+T2I-1B    & 32 & 50  & $[0.5, 1.2]$ & 16  & float32 \\
 \bottomrule
 \end{tabular}
 \end{table}
