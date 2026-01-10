@@ -33,8 +33,8 @@ echo "Starting T2I Index Build..."
   -M "${BUILD_RAM_LIMIT}" \
   -T 96 \
   --use_amcgi \
-  --alpha_min 0.5 \
-  --alpha_max 1.2 \
+  --alpha_min 1.0 \
+  --alpha_max 1.5 \
   --lid_avg 18.3252 \
   --lid_std 6.9964   
 

@@ -708,57 +708,62 @@ Thus, \ours{} retains all edges present in the RNG (plus additional shortcuts), 
 
 Proposition~\ref{prop:connectivity} ensures that there are no structural dead ends. While Lemma~\ref{lemma:complexity} dictates the \textit{cost} of routing, Proposition~\ref{prop:connectivity} ensures the \textit{possibility} of routing. Even in the worst-case scenario where heuristics fail, a path exists from the entry point to any target via the edges of the underlying EMST, provided the graph traversal algorithm (beam search) has sufficient width to discover these backbone links.
 
-\section{System Implementation}
-\label{sec:implementation}
+% \section{System Implementation}
+% \label{sec:implementation}
 
-\don{TODO: remove some implementation details and add more billion-scale experiments}
+% \don{TODO: remove some implementation details and add more billion-scale experiments}
 
-We implemented MCGI on top of the official C++ codebase of DiskANN~\cite{subramanya2019diskann}. 
-\ours{} implementation is open-sourced as a subproject of the \textit{AdaDisk} project, available at: \url{https://github.com/hpdic/AdaDisk}.
-To ensure fair comparison and production-level efficiency, we integrated the Maximum Likelihood Estimator (MLE) for LID directly into the graph building process. 
-The core distance computations were optimized using AVX-512 SIMD instructions to maximize hardware utilization. 
-All latency-critical components, including the dynamic candidate list management and the LID-aware routing logic, were implemented in C++ to avoid the overhead of high-level language interpreters. 
+% We implemented MCGI on top of the official C++ codebase of DiskANN~\cite{subramanya2019diskann}. 
+% \ours{} implementation is open-sourced as a subproject of the \textit{AdaDisk} project, available at: \url{https://github.com/hpdic/AdaDisk}.
+% To ensure fair comparison and production-level efficiency, we integrated the Maximum Likelihood Estimator (MLE) for LID directly into the graph building process. 
+% The core distance computations were optimized using AVX-512 SIMD instructions to maximize hardware utilization. 
+% All latency-critical components, including the dynamic candidate list management and the LID-aware routing logic, were implemented in C++ to avoid the overhead of high-level language interpreters. 
 
-Unlike standard standalone implementations of ANN indices, MCGI is designed as a modular, agentic orchestration system that automates the entire lifecycle of RAG serving from data ingestion to adaptive indexing and query execution. Our implementation consists of a hybrid codebase spanning core C++ modifications and a comprehensive Python-based control plane.
+% Unlike standard standalone implementations of ANN indices, MCGI is designed as a modular, agentic orchestration system that automates the entire lifecycle of RAG serving from data ingestion to adaptive indexing and query execution. Our implementation consists of a hybrid codebase spanning core C++ modifications and a comprehensive Python-based control plane.
 
-\subsection{Agentic Framework}
-To ensure reproducibility and handle the complexity of billion-scale experiments, we developed a Python-based orchestration layer that manages the interaction between the storage backend and the indexing engine. As shown in the repository structure, the workflow is driven by specific agents:
+% \subsection{Agentic Framework}
+% To ensure reproducibility and handle the complexity of billion-scale experiments, we developed a Python-based orchestration layer that manages the interaction between the storage backend and the indexing engine. As shown in the repository structure, the workflow is driven by specific agents:
 
-\begin{itemize}
-    \item \textbf{Data Ingestion \& Formatting:} 
-    Custom pipelines were engineered to handle the conversion of legacy SIFT1B formats (compressed \texttt{.bvecs}, \texttt{.tar.gz}) into memory-mapped binary formats (\texttt{.bin}) optimized for direct disk access. This module includes integrity checks and automatic dimension validation to ensure data consistency before indexing.
+% \begin{itemize}
+%     \item \textbf{Data Ingestion \& Formatting:} 
+%     Custom pipelines were engineered to handle the conversion of legacy SIFT1B formats (compressed \texttt{.bvecs}, \texttt{.tar.gz}) into memory-mapped binary formats (\texttt{.bin}) optimized for direct disk access. This module includes integrity checks and automatic dimension validation to ensure data consistency before indexing.
     
-    \item \textbf{LID Estimation Engine:} 
-    A standalone module responsible for pre-computing the Local Intrinsic Dimensionality for the raw dataset. This script implements the MLE-based estimator and generates the metadata required by the MCGI construction algorithm, serving as the cognitive input for the adaptive system.
+%     \item \textbf{LID Estimation Engine:} 
+%     A standalone module responsible for pre-computing the Local Intrinsic Dimensionality for the raw dataset. This script implements the MLE-based estimator and generates the metadata required by the MCGI construction algorithm, serving as the cognitive input for the adaptive system.
     
-    \item \textbf{Adaptive Index Construction:} 
-    This driver script automates the build process. It dynamically injects the Sigmoid-based pruning parameters (i.e., $\alpha(u)$) into the C++ builder based on the computed LID distribution, removing the need for manual parameter tuning and ensuring the graph topology adapts to local geometric complexity.
+%     \item \textbf{Adaptive Index Construction:} 
+%     This driver script automates the build process. It dynamically injects the Sigmoid-based pruning parameters (i.e., $\alpha(u)$) into the C++ builder based on the computed LID distribution, removing the need for manual parameter tuning and ensuring the graph topology adapts to local geometric complexity.
     
-    \item \textbf{Automated Evaluation Pipeline:} 
-    To capture the Recall-QPS trade-off, we implemented a batch execution system that automatically sweeps through varying beam widths (i.e., $L_{search}$) and thread counts. This ensures that the performance curves are generated from comprehensive, rather than cherry-picked, data points.
-\end{itemize}
+%     \item \textbf{Automated Evaluation Pipeline:} 
+%     To capture the Recall-QPS trade-off, we implemented a batch execution system that automatically sweeps through varying beam widths (i.e., $L_{search}$) and thread counts. This ensures that the performance curves are generated from comprehensive, rather than cherry-picked, data points.
+% \end{itemize}
 
-\subsection{Kernel Modifications}
-We extended the foundational DiskANN (Vamana) C++ codebase to support variable-density topology. Key engineering modifications include:
+% \subsection{Kernel Modifications}
+% We extended the foundational DiskANN (Vamana) C++ codebase to support variable-density topology. Key engineering modifications include:
 
-\begin{itemize}
-    \item \textbf{Dynamic Pruning Logic:} We rewrote the graph neighbor selection kernel to accept per-node pruning thresholds $\alpha(u)$, replacing the static $\alpha$ parameter found in the original implementation. This allows the index to act conservatively in high-LID regions while remaining aggressive in low-LID areas.
+% \begin{itemize}
+%     \item \textbf{Dynamic Pruning Logic:} We rewrote the graph neighbor selection kernel to accept per-node pruning thresholds $\alpha(u)$, replacing the static $\alpha$ parameter found in the original implementation. This allows the index to act conservatively in high-LID regions while remaining aggressive in low-LID areas.
     
-    \item \textbf{Hybrid Environment Management:} The system is encapsulated in a Python virtual environment (\texttt{venv}) with automated dependency resolution for critical low-level libraries (\texttt{libaio}, \texttt{tcmalloc}, and \texttt{Intel MKL}). This ensures consistent performance across heterogeneous hardware nodes (e.g., facilitating the transition from Ice Lake to Haswell architectures).
+%     \item \textbf{Hybrid Environment Management:} The system is encapsulated in a Python virtual environment (\texttt{venv}) with automated dependency resolution for critical low-level libraries (\texttt{libaio}, \texttt{tcmalloc}, and \texttt{Intel MKL}). This ensures consistent performance across heterogeneous hardware nodes (e.g., facilitating the transition from Ice Lake to Haswell architectures).
     
-    \item \textbf{Low-Level Optimizations:} 
-    \begin{enumerate}
-        \item \textbf{SIMD Instructions:} We leverage \textbf{AVX-512} intrinsics for high-performance distance computations ($L_2$ Euclidean distance), maximizing throughput on the Intel Ice Lake architecture.
-        \item \textbf{Direct I/O:} To bypass the OS page cache during random reads in the search phase, we employ \texttt{O\_DIRECT} flags, ensuring that latency measurements reflect true SSD/HDD performance without OS interference.
-        \item \textbf{Prefetching:} We explicitly utilize software prefetching (\texttt{\_mm\_prefetch}) to load graph adjacency lists into the cache hierarchy ahead of traversal, masking memory access latency during greedy beam search.
-    \end{enumerate}
-\end{itemize}
+%     \item \textbf{Low-Level Optimizations:} 
+%     \begin{enumerate}
+%         \item \textbf{SIMD Instructions:} We leverage \textbf{AVX-512} intrinsics for high-performance distance computations ($L_2$ Euclidean distance), maximizing throughput on the Intel Ice Lake architecture.
+%         \item \textbf{Direct I/O:} To bypass the OS page cache during random reads in the search phase, we employ \texttt{O\_DIRECT} flags, ensuring that latency measurements reflect true SSD/HDD performance without OS interference.
+%         \item \textbf{Prefetching:} We explicitly utilize software prefetching (\texttt{\_mm\_prefetch}) to load graph adjacency lists into the cache hierarchy ahead of traversal, masking memory access latency during greedy beam search.
+%     \end{enumerate}
+% \end{itemize}
 
 
 
 \section{Experimental Evaluation}
 \label{sec:experiments}
 
+We implemented MCGI on top of the official C++ codebase of DiskANN~\cite{subramanya2019diskann}. 
+\ours{} implementation is open-sourced as a subproject of the \textit{AdaDisk} project, available at: \url{https://github.com/hpdic/AdaDisk}.
+To ensure fair comparison and production-level efficiency, we integrated the Maximum Likelihood Estimator (MLE) for LID directly into the graph building process. 
+The core distance computations were optimized using AVX SIMD instructions to maximize hardware utilization. 
+All latency-critical components, including the dynamic candidate list management and the LID-aware routing logic, were implemented in C++ to avoid the overhead of high-level language interpreters. 
 We evaluate the performance of \ours{} against state-of-the-art disk-based and memory-mapped approximate nearest neighbor (ANN) search algorithms. We focus on answering the following research questions:
 \begin{itemize}
     \item \textbf{RQ1 (High-Dimensional Effectiveness):} How does \ours{} perform compared to baselines on high-dimensional data (e.g., GIST1M) where the curse of dimensionality typically degrades the efficiency of graph-based indices?
@@ -811,7 +816,7 @@ SIFT1M    & 64 & 100 & $[1.0, 1.5]$ & N/A & float32 \\
 GloVe-100 & 64 & 100 & $[1.0, 1.5]$ & N/A & float32 \\
 GIST1M    & 96 & 150 & $[1.0, 1.5]$ & N/A & float32 \\
 SIFT1B    & 32 & 50  & $[1.0, 1.5]$ & 16  & uint8   \\
-T2I-1B    & 32 & 50  & $[0.5, 1.2]$ & 16  & float32 \\
+T2I-1B    & 32 & 50  & $[1.0, 1.5]$ & 16  & float32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -917,18 +922,16 @@ To validate the scalability of MCGI to billion-scale datasets, we conducted comp
 The advantage of MCGI is even more pronounced in terms of query latency, as illustrated in Figure~\ref{fig:sift1b} (b). At 90\% recall, DiskANN incurs a mean latency of 49.06 ms due to excessive backtracking and redundant I/O operations. MCGI, leveraging its geometry-aware routing strategy, reduces the mean latency to just 16.20 ms, a 3$\times$ reduction. This significant improvement confirms that MCGI's manifold-consistent pruning strategy effectively identifies ``high-value'' neighbors, allowing the search agent to achieve higher recall with fewer, more effective disk accesses. 
 
 Figure~\ref{fig:t2i_performance} presents the performance comparison on the billion-scale T2I-1B dataset.
-T2I-1B represents a significantly different challenge compared to SIFT1B due to its higher dimensionality ($D=200$) and 32-bit floating-point data type.
-These characteristics make distance computations notably more expensive, shifting the system bottleneck partially from pure I/O towards CPU computation.
-As observed in the critical high-recall regime (Recall@10 $> 90\%$), \ours consistently outperforms DiskANN, achieving higher QPS at lower latency profiles.
-Unlike on SIFT1B where gains are primarily driven by I/O reduction, the performance advantage on T2I-1B is largely attributed to \ours's ability to mitigate computational overhead.
-By adaptively pruning edges based on local manifold complexity, \ours effectively reduces the average node degree in simpler regions.
-This leads to fewer expensive floating-point distance calculations per search step, translating into faster query processing even when the I/O savings are modest.
-This result highlights \ours's versatility in optimizing billion-scale indexing not only for I/O-bound scenarios but also for compute-intensive high-dimensional workloads.
+Unlike SIFT1B, T2I-1B introduces a distinct challenge characterized by higher dimensionality ($D=200$) and 32-bit floating-point precision.
+These factors make distance computations significantly more expensive, shifting the system bottleneck from pure I/O latency towards CPU computation.
+In the critical high-recall regime (Recall@10 $> 90\%$), \ours demonstrates a clear advantage over DiskANN, delivering higher QPS at reduced latency.
+Notably, this performance gain is achieved even when the I/O reduction is less pronounced than on SIFT1B.
+The advantage stems from \ours's geometric pruning strategy: by identifying simpler local manifolds, our algorithm aggressively prunes redundant edges, thereby reducing the average node degree without compromising navigability.
+This optimization directly translates to fewer expensive floating-point operations per hop, highlighting \ours's versatility in handling both I/O-bound and compute-bound billion-scale workloads.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/t2i_performance.pdf}
-  \vspace{-3mm}
   \caption{
   Performance on T2I-1B.
   }

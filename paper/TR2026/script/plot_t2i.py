@@ -5,11 +5,11 @@ import os
 # ================= 0. 路径配置 =================
 OUTPUT_DIR = os.path.expanduser("~/hpdic/AdaDisk/paper/TR2026/figures")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
-# 【修正】 改回原文件名，不乱加后缀
 OUTPUT_FILE = os.path.join(OUTPUT_DIR, "t2i_performance.pdf")
 
-# ================= 1. 数据准备 (T2I-10M) =================
+# ================= 1. 数据准备 (T2I-10M New Run) =================
 # --- DiskANN (Baseline) ---
+# 保持不变
 base_recall = [
     57.46, 70.00, 80.30, 88.09, 90.02, 
     91.42, 92.48, 93.34, 94.03, 94.60
@@ -23,18 +23,20 @@ base_latency_ms = [
     15.21, 17.56, 19.93, 22.17, 24.54
 ]
 
-# --- MCGI (Ours) ---
+# --- MCGI (Ours) - New Data ---
+# 数据来源：User Log (L=10 to 200)
+# Latency 单位已转为 ms (/1000)
 mcgi_recall = [
-    57.60, 70.12, 80.35, 88.04, 90.03, 
-    91.42, 92.51, 93.33, 94.02, 94.59
+    56.68, 69.60, 79.99, 87.87, 89.91, 
+    91.39, 92.48, 93.33, 94.00, 94.57
 ]
 mcgi_qps = [
-    41973.76, 26490.92, 15916.37, 8820.47, 7357.11, 
-    6310.41, 5547.63, 4931.70, 4436.40, 4023.34
+    43986.03, 28409.03, 16985.90, 9481.81, 7730.43, 
+    6592.73, 5704.39, 5035.36, 4439.65, 4014.05
 ]
 mcgi_latency_ms = [
-    2.25, 3.58, 5.99, 10.83, 12.99, 
-    15.15, 17.24, 19.39, 21.56, 23.78
+    2.15, 3.34, 5.61, 10.08, 12.36, 
+    14.50, 16.76, 19.00, 21.55, 23.84
 ]
 
 # ================= 2. 画图配置 (视觉聚焦策略) =================
@@ -63,7 +65,8 @@ ax1.plot(mcgi_recall, mcgi_qps, 's--', color='#d62728', label='MCGI (Ours)', zor
 ax1.set_xlabel('Recall@10 (%)')
 ax1.set_ylabel('QPS (Queries/s)')
 
-# 【聚焦高精度区域】放大差距
+# 【聚焦高精度区域】
+# L<80 的点 (Recall ~87.8% 及以下) 会被自动切掉，符合"忽略低 Recall"的需求
 ax1.set_xlim(88, 95.5)
 ax1.set_ylim(3000, 10000) 
 
@@ -91,4 +94,4 @@ plt.tight_layout()
 plt.subplots_adjust(bottom=0.23, wspace=0.35) 
 
 plt.savefig(OUTPUT_FILE, format='pdf', bbox_inches='tight')
-print(f"✅ Figure Updated: {OUTPUT_FILE}")
+print(f"✅ New T2I Figure Saved to: {OUTPUT_FILE}")
