@@ -4,7 +4,7 @@ import struct
 
 # === 修改区域 ===
 DATA_PATH = "/home/cc/hpdic/spacev1b_data/spacev1b_base.bin"
-SAMPLE_SIZE = 10000    # 已改为 1万
+SAMPLE_SIZE = 100000    # 10万
 DIM = 100              # SpaceV 维度
 K_NEIGHBORS = 100      # 保持 100 不变，估算更稳
 
@@ -50,7 +50,7 @@ def main():
     lids = compute_lid_mle(distances, K_NEIGHBORS)
     
     print("\n" + "="*40)
-    print(f"SpaceV-1B (Sample 10k) LID Analysis")
+    print(f"SpaceV-1B (Sample 100k) LID Analysis")
     print("="*40)
     print(f"LID Mean      : {np.mean(lids):.4f}")
     print(f"LID Std       : {np.std(lids):.4f}")
@@ -63,13 +63,11 @@ if __name__ == "__main__":
 #
 # Output:
 #
-# (venv) cc@uc-nvme:~/hpdic/AdaDisk/experiments/spacev1b$ python calculate_lid.py 
-# 正在读取 /home/cc/hpdic/spacev1b_data/spacev1b_base.bin 的前 10000 个向量...
-
+# 正在读取 /home/cc/hpdic/spacev1b_data/spacev1b_base.bin 的前 100000 个向量...
 # ========================================
-# SpaceV-1B (Sample 10k) LID Analysis
+# SpaceV-1B (Sample 100k) LID Analysis
 # ========================================
-# LID Mean      : 23.1403
-# LID Std       : 6.9409
-# LID Min / Max : 3.65 / 53.94
-# ========================================       
+# LID Mean      : 27.0084
+# LID Std       : 8.4265
+# LID Min / Max : 1.69 / 66.69
+# ========================================     
