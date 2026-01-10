@@ -17,7 +17,8 @@ echo "💾 输出索引: $INDEX_PREFIX"
 echo "🧠 内存预算: ${BUILD_RAM_LIMIT} GB"
 echo "----------------------------------------------------------------"
 
-rm -f "${INDEX_PREFIX}"*
+rm -f "${INDEX_PREFIX}"_disk.index
+rm -f "${INDEX_PREFIX}"_mem*
 
 start_time=$(date +%s)
 
@@ -33,8 +34,8 @@ echo "Starting Deep Index Build..."
   -M "${BUILD_RAM_LIMIT}" \
   -T 96 \
   --use_amcgi \
-  --alpha_min 1.0 \
-  --alpha_max 1.5 \
+  --alpha_min 0.5 \
+  --alpha_max 1.2 \
   --lid_avg 16.5682 \
   --lid_std 5.9916   
 
