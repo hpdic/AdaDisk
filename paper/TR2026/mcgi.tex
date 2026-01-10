@@ -442,7 +442,7 @@ The pruning behavior never exceeds the relaxation upper limit ($\alpha_{\max}$) 
 \subsection{Manifold-Consistent Graph Indexing}
 \label{subsec:algorithm}
 
-\don{TODO: Need to update the algorithm to reflect the fact that LID is calculated on the fly, rather than being preprocessed as a batch (which is unacceptable for billion-scale data sets).}
+% \don{TODO: Need to update the algorithm to reflect the fact that LID is calculated on the fly, rather than being preprocessed as a batch (which is unacceptable for billion-scale data sets).}
 
 The MCGI algorithm (Algorithm~\ref{alg:mcgi}) introduces a geometric calibration phase to a graph indexing procedure. Unlike static methods that apply a uniform connectivity rule, MCGI executes in two distinct stages to ensure the topology respects the manifold structure.
 
@@ -510,6 +510,59 @@ We analyze the computational complexity as follows. Let $N$ be the total number 
     \item \textit{Construction Phase:} The core refinement loop operates with a time complexity of $O(T \cdot N \cdot R \cdot \log L)$, where $R$ is the maximum degree and $T$ is the number of iterations.
 \end{itemize}
 Since the calibration is a one-pass pre-processing step (as opposed to the multi-pass iterative refinedment in Phase 2), the total time complexity remains dominated by the graph refinement, ensuring that \ours{} scales linearly with $N$, consistent with state-of-the-art methods like DiskANN~\cite{subramanya2019diskann}.
+
+Calculating the exact Local Intrinsic Dimensionality (LID) for the entire dataset serves as a computational bottleneck on billion-scale data, typically requiring $O(N^2)$ complexity or a pre-built index. 
+To address this, we propose \textit{Online-MCGI} (Algorithm~\ref{alg:online_mcgi}), which integrates LID estimation directly into the graph construction process. 
+First, we bootstrap global statistics ($\mu, \sigma$) using a small random subset of the data, reducing the preprocessing cost to negligible levels. 
+Then, during the iterative graph refinement, we estimate the local LID $\hat{\ell}_u$ for each node $u$ on-the-fly using its current candidate set $\mathcal{C}$ obtained from the greedy search. 
+While the initial estimates may be noisy, they progressively converge to the true manifold dimensionality as the neighbor quality improves with each iteration. 
+This approach allows the pruning parameter $\alpha_u$ to dynamically adapt to local geometric complexity without incurring the prohibitive cost of offline global analysis.
+
+\begin{algorithm}[tb]
+   \caption{Online Manifold-Consistent Graph Indexing}
+   \label{alg:online_mcgi}
+\begin{algorithmic}
+   \STATE Input: Dataset $X$, Max Degree $R$, Beam Width $L$, Sample Rate $S$
+   \STATE Output: Optimized Graph $G$
+
+   \STATE
+   \STATE // Phase 1: Bootstrap Statistics (Fast Approximation)
+   \STATE $X_{sample} \leftarrow \text{RandomSample}(X, S)$
+   \STATE $\mathcal{L}_{sample} \leftarrow \text{EstimateLID}(X_{sample})$ \COMMENT{Compute LID on subset}
+   \STATE $\mu \leftarrow \text{Mean}(\mathcal{L}_{sample})$, $\sigma \leftarrow \text{StdDev}(\mathcal{L}_{sample})$
+
+   \STATE 
+   \STATE // Phase 2: Online Topology Refinement
+   \STATE $G \leftarrow \text{RandomGraph}(X, R)$
+   
+   \FOR{$iter \leftarrow 1$ to $MaxIter$}
+       \FOR{each node $u \in G$ in parallel}
+           \STATE $\mathcal{C} \leftarrow \text{GreedySearch}(u, G, L)$
+           
+           \STATE // Online LID Estimation \& Parameter Adaptation
+           \STATE $\hat{\ell}_u \leftarrow \text{ComputeLID}(u, \mathcal{C})$ \COMMENT{Estimate from neighbors}
+           \STATE $z_u \leftarrow (\hat{\ell}_u - \mu) / \sigma$
+           \STATE $\alpha_u \leftarrow \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) / (1 + \exp(z_u))$
+
+           \STATE $\mathcal{N}_{new} \leftarrow \emptyset$
+           
+           \FOR{$v \in \text{SortByDistance}(\mathcal{C} \cup \mathcal{N}(u))$}
+               \STATE $pruned \leftarrow \text{False}$
+               \FOR{$n \in \mathcal{N}_{new}$}
+                   \STATE // Pruning with dynamic $\alpha_u$
+                   \IF{$\alpha_u \cdot d(n, v) \le d(u, v)$}
+                       \STATE $pruned \leftarrow \text{True}$; break
+                   \ENDIF
+               \ENDFOR
+               \IF{not $pruned$ \AND $|\mathcal{N}_{new}| < R$}
+                   \STATE $\mathcal{N}_{new}.\text{add}(v)$
+               \ENDIF
+           \ENDFOR
+           \STATE $\mathcal{N}(u) \leftarrow \mathcal{N}_{new}$
+       \ENDFOR
+   \ENDFOR
+\end{algorithmic}
+\end{algorithm}
 
 \section{Theoretical Analysis}
 \label{sec:theory}
@@ -727,6 +780,7 @@ We evaluate our method on four standard benchmarks, ranging from million-scale t
     \item GloVe-100~\cite{pennington2014glove} ($N=1.2 \times 10^6, D=100$): Word embedding vectors measuring semantic similarity. Following standard practice, we normalize the vectors to unit length and use Euclidean distance as a proxy for Cosine similarity.
     \item GIST1M~\cite{jegou2011product} ($N=10^6, D=960$): A high-dimensional dataset representing global image features. This dataset is particularly challenging for index structures due to the sparsity of the space and the high intrinsic dimensionality.
     \item SIFT1B~\cite{jegou2011searching} ($N=10^9, D=128$): A billion-scale dataset used to evaluate the scalability and I/O efficiency of our method. It shares the same feature distribution as SIFT1M but scales the volume by three orders of magnitude, representing a realistic industrial scenario.
+    \item T2I-1B~\cite{simhadri2025results} ($N=10^9, D=200$): A billion-scale dataset consisting of CLIP~\cite{radford2021learning} embeddings derived from the LAION-5B dataset. Unlike visual descriptors like SIFT, T2I-1B represents a cross-modal retrieval scenario with a more complex manifold structure and higher intrinsic dimensionality, posing greater challenges for graph-based indexing algorithms.
 \end{itemize}
 
 \paragraph{Baselines.} 
@@ -758,7 +812,8 @@ Dataset & $R$ & $L_{build}$ & $\alpha$ Range & $m_{PQ}$ (Bytes) & $k_{LID}$ & Bu
 SIFT1M    & 64 & 100 & $[1.0, 1.5]$ & N/A & 32 & N/A \\
 GloVe-100 & 64 & 100 & $[1.0, 1.5]$ & N/A & 50 & N/A \\
 GIST1M    & 96 & 150 & $[1.0, 1.5]$ & N/A & 50 & N/A \\
-SIFT1B    & 32 & 50  & $[1.0, 1.5]$ & 16  & 100 & 200 GB \\
+SIFT1B    & 32 & 50  & $[1.0, 1.5]$ & 16  & NA & 200 GB \\
+T2I-1B    & 32 & 50  & $[0.5, 1.2]$ & 16  & NA & 180 GB \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -781,6 +836,7 @@ SIFT1M    & 14.2 & 3.1 & $10 \to 100$ & 1 \\
 GloVe-100 & 18.5 & 4.2 & $10 \to 120$ & 1 \\
 GIST1M    & 22.1 & 5.8 & $20 \to 200$ & 1 \\
 SIFT1B    & 19.5 & 7.9 & $10 \to 400$ & 80 \\
+T2I-1B    & 18.3 & 7.0 & $10 \to 200$ & 80 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -861,6 +917,25 @@ To validate the scalability of MCGI to billion-scale datasets, we conducted comp
 \end{figure}
 
 The advantage of MCGI is even more pronounced in terms of query latency, as illustrated in Figure~\ref{fig:sift1b} (b). At 90\% recall, DiskANN incurs a mean latency of 49.06 ms due to excessive backtracking and redundant I/O operations. MCGI, leveraging its geometry-aware routing strategy, reduces the mean latency to just 16.20 ms, a 3$\times$ reduction. This significant improvement confirms that MCGI's manifold-consistent pruning strategy effectively identifies ``high-value'' neighbors, allowing the search agent to achieve higher recall with fewer, more effective disk accesses. 
+
+Figure~\ref{fig:t2i_performance} presents the performance comparison on the billion-scale T2I-1B dataset.
+T2I-1B represents a significantly different challenge compared to SIFT1B due to its higher dimensionality ($D=200$) and 32-bit floating-point data type.
+These characteristics make distance computations notably more expensive, shifting the system bottleneck partially from pure I/O towards CPU computation.
+As observed in the critical high-recall regime (Recall@10 $> 90\%$), \ours consistently outperforms DiskANN, achieving higher QPS at lower latency profiles.
+Unlike on SIFT1B where gains are primarily driven by I/O reduction, the performance advantage on T2I-1B is largely attributed to \ours's ability to mitigate computational overhead.
+By adaptively pruning edges based on local manifold complexity, \ours effectively reduces the average node degree in simpler regions.
+This leads to fewer expensive floating-point distance calculations per search step, translating into faster query processing even when the I/O savings are modest.
+This result highlights \ours's versatility in optimizing billion-scale indexing not only for I/O-bound scenarios but also for compute-intensive high-dimensional workloads.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/t2i_performance.pdf}
+  \vspace{-3mm}
+  \caption{
+  Performance on T2I-1B.
+  }
+  \label{fig:t2i_performance}
+\end{figure}
 
 \subsection{Resource Efficiency (RQ4)}
 \label{subsec:resource_efficiency}
