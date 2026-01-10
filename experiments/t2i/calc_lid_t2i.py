@@ -1,8 +1,9 @@
 import numpy as np
 import faiss
 import struct
+import os
 
-DATA_PATH = "t2i_base_1M.fbin" 
+DATA_PATH = os.path.expanduser("~/hpdic/t2i_data/t2i_base_1M.fbin") 
 SAMPLE_SIZE = 10000 
 DIM = 200  # T2I 是 200 维
 K_NEIGHBORS = 100
@@ -46,3 +47,11 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# ========================================
+# T2I-1M LID Analysis
+# ========================================
+# LID Mean      : 18.3252
+# LID Std       : 6.9964
+# LID Min / Max : 4.04 / 56.09
+# ========================================

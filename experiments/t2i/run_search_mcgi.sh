@@ -6,10 +6,10 @@ SEARCH_BIN="${DISKANN_HOME}/build/apps/search_disk_index"
 
 # ✅ 修正 1: 索引路径指向 indices
 # 注意：不要加 _disk.index 后缀
-INDEX_PREFIX="$HOME/hpdic/deep1b_data/index_mcgi/deep1b"
+INDEX_PREFIX="$HOME/hpdic/t2i_data/index_mcgi/t2i"
 
-QUERY_FILE="$HOME/hpdic/deep1b_data/deep1b_query.fbin"  # 改为 .bin
-GT_FILE="$HOME/hpdic/deep1b_data/deep1b_10M_gt.bin"       # 改为 .bin
+QUERY_FILE="$HOME/hpdic/t2i_data/t2i_query.fbin"  # 改为 .bin
+GT_FILE="$HOME/hpdic/t2i_data/t2i_1M_gt.bin"       # 改为 .bin
 
 RESULT_OUTPUT="search_results.bin"
 

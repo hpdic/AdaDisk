@@ -1,9 +1,8 @@
 #!/bin/bash
-# SpaceV-1B Index Build Script (Baseline)
 
-DATA_PATH="/home/cc/hpdic/deep1b_data/deep1b_base_1M.fbin"
-INDEX_DIR="/home/cc/hpdic/deep1b_data/index_mcgi" #TODO Update this path as needed
-INDEX_PREFIX="${INDEX_DIR}/deep1b"
+DATA_PATH="/home/cc/hpdic/t2i_data/t2i_base_1M.fbin"
+INDEX_DIR="/home/cc/hpdic/t2i_data/index_mcgi" #TODO Update this path as needed
+INDEX_PREFIX="${INDEX_DIR}/t2i"
 BUILD_RAM_LIMIT=180  # 利用你的 251GB 内存，设为 200 可以极速构建
 
 # 确保 build 目录存在
@@ -22,7 +21,7 @@ rm -f "${INDEX_PREFIX}"_mem*
 
 start_time=$(date +%s)
 
-echo "Starting Deep Index Build..."
+echo "Starting T2I Index Build..."
 ~/hpdic/AdaDisk/build/apps/build_disk_index \
   --data_type float \
   --dist_fn l2 \
@@ -36,8 +35,8 @@ echo "Starting Deep Index Build..."
   --use_amcgi \
   --alpha_min 0.5 \
   --alpha_max 1.2 \
-  --lid_avg 16.5682 \
-  --lid_std 5.9916   
+  --lid_avg 18.3252 \
+  --lid_std 6.9964   
 
 end_time=$(date +%s)
 duration=$((end_time - start_time))
