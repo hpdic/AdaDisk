@@ -792,7 +792,8 @@ We evaluate our method on four standard benchmarks, ranging from million-scale t
 We compare MCGI against two baselines, each serving a distinct role:
 \begin{itemize}
     \item DiskANN (Vamana)~\cite{subramanya2019diskann}: The state-of-the-art disk-based graph index. Since MCGI builds upon the Vamana architecture, this comparison isolates the specific gains derived from our manifold-aware routing strategy.
-    \item Faiss (IVF-Flat)~\cite{johnson2019billion}: An industry-standard inverted index serving as a performance roofline. Although running in memory-mapped mode, its sequential scanning pattern allows aggressive OS caching, effectively simulating in-memory performance. We include it to benchmark how closely our disk-resident solution approaches the throughput limits of memory-resident systems.
+    \item IVF-Flat (Faiss)~\cite{johnson2019billion}: An industry-standard inverted index serving as a performance roofline. Although running in memory-mapped mode, its sequential scanning pattern allows aggressive OS caching, effectively simulating in-memory performance. We include it to benchmark how closely our disk-resident solution approaches the throughput limits of memory-resident systems.
+    \item HNSW~\cite{malkov2018efficient}: The state-of-the-art in-memory graph index known for its superior recall-latency trade-off. Unlike disk-resident approaches, HNSW maintains the entire hierarchical graph topology in DRAM, completely eliminating I/O latency. We include it to establish a performance ceiling for graph-based search, allowing us to quantify the gap between our disk-resident solution and the theoretical limit of unconstrained memory-resident traversal. 
 \end{itemize}
 
 \paragraph{Evaluation Metrics.} 
@@ -807,7 +808,7 @@ To adapt to the I/O characteristics of the storage backend, the graph degree was
 \begin{table}[t]
 \centering
 \caption{Dataset Specifications and Indexing Parameters.}
-\label{tab:datasets}
+\label{tab:build_params}
 \begin{tabular}{lccccc}
 \toprule
 Dataset & $R$ & $L_{build}$ & $\alpha$ Range & $m_{PQ}$ (Bytes) & Data Type\\
@@ -821,13 +822,13 @@ T2I-1B    & 32 & 50  & $[1.0, 1.5]$ & 16  & float32 \\
 \end{tabular}
 \end{table}
 
-\paragraph{Adaptive Mapping and Search Configuration}
-The MCGI agent dynamically maps geometric complexity to topology constraints. Table~\ref{tab:search_params} lists the statistical parameters derived from the dataset's LID distribution used in the Sigmoid mapping function $\Phi(\cdot)$, alongside the runtime search sweep parameters.
+\paragraph{Search Configuration}
+Table~\ref{tab:search_params} lists the statistical parameters derived from the dataset's LID distribution used in the Sigmoid mapping function $\Phi(\cdot)$, alongside the runtime search sweep parameters.
 
 \begin{table}[h]
 \centering
 \small 
-\caption{Adaptive Mapping Statistics and Runtime Search Parameters. 
+\caption{Runtime Search Parameters and LID Statistics. 
 % Note: SIFT1B shares similar intrinsic dimensionality characteristics with SIFT1M due to identical feature extraction protocols.
 }
 \label{tab:search_params}
@@ -889,16 +890,17 @@ Real-world applications typically demand strict accuracy guarantees, such as Rec
 \begin{table}[!t]
 \centering
 \caption{Peak QPS at strict recall thresholds on GIST1M. 
-% Comparisons should be drawn primarily between MCGI and DiskANN (both disk-based random access), with Faiss serving as an in-memory reference.
 }
 \label{tab:high_recall}
 \begin{tabular}{l|cc}
 \toprule
 Method & R@10 $\ge$ 95\% & R@10 $\ge$ 97\% \\
 \midrule
-DiskANN (Baseline) & 64.7 & 53.8 \\
-Faiss (In-Memory) & 590.5 & 575.6 \\
-MCGI (Ours) & 375.1 & 83.8 \\
+DiskANN (disk-resident) & 64.7 & 53.8 \\
+MCGI (disk-resident) & 375.1 & 83.8 \\
+SPANN (disk-memory hybrid) & TBD & TBD \\
+IVF-Flat (in-memory) & 590.5 & 575.6 \\
+HNSW (in-memory) & 2,165 & 1,085 \\
 \bottomrule
 \end{tabular}
 \end{table}
