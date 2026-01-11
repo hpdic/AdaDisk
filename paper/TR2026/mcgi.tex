@@ -852,12 +852,12 @@ Real-world applications typically demand strict accuracy guarantees, such as Rec
 \label{tab:high_recall}
 \begin{tabular}{l|c|c}
 \toprule
-Method & Type & R@10 95\% \\
+Algorithm & Data Locality & Recall@10 $\ge$ 95\% \\
 \midrule
-DiskANN & disk-resident & 64.7 \\
-MCGI & disk-resident & 375.1 \\
-IVF-Flat & in-memory & 590.5 \\
-HNSW & in-memory & 2,165 \\
+DiskANN~\cite{subramanya2019diskann} & disk-resident & 64.7 \\
+MCGI (this work) & disk-resident & 375.1 \\
+IVF-Flat~\cite{johnson2019billion} & in-memory & 590.5 \\
+HNSW~\cite{malkov2018efficient} & in-memory & 2,165 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1027,7 +1027,7 @@ Results presented in this paper were obtained using the Chameleon testbed suppor
 \bibliography{ref}
 \bibliographystyle{acm}
 
-% \newpage
+\newpage
 \appendix
 
 \section{More Experimental Details}
@@ -1035,7 +1035,7 @@ Results presented in this paper were obtained using the Chameleon testbed suppor
 \paragraph{Build Configuration}
 Table~\ref{tab:build_params} summarizes the dataset specifications and indexing parameters used during the construction of MCGI and baseline DiskANN indices.   $R$ denotes the maximum outdegree of each node in the graph. $L_{build}$ is the size of the candidate list during index construction. $\alpha$ Range indicates the range of pruning aggressiveness explored during the LID-based Sigmoid mapping. $m_{PQ}$ specifies the number of bytes allocated for Product Quantization (PQ) codes when applicable. Data Type indicates whether the dataset vectors are stored as 32-bit floating-point numbers or 8-bit unsigned integers.
 
-\begin{table}[!t]
+\begin{table}[h]
 \centering
 \caption{Dataset Specifications and Indexing Parameters.}
 \label{tab:build_params}
@@ -1055,7 +1055,7 @@ T2I-1B    & 32 & 50  & $[1.0, 1.5]$ & 16  & float32 \\
 \paragraph{Search Configuration}
 Table~\ref{tab:search_params} lists the statistical parameters derived from the dataset's LID distribution used in the Sigmoid mapping function $\Phi(\cdot)$, alongside the runtime search sweep parameters. $\mu_{LID}$ and $\sigma_{LID}$ denote the mean and standard deviation of the Local Intrinsic Dimensionality (LID) estimates across the dataset. Beam ($L_{search}$) indicates the range of candidate list sizes evaluated during query execution to capture the Recall-QPS trade-off. Threads specifies the number of parallel threads utilized during search to maximize hardware concurrency. 
 
-\begin{table}[!t]
+\begin{table}[h]
 \centering
 \small 
 \caption{Runtime Search Parameters and LID Statistics. 
