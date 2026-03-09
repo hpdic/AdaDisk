@@ -191,7 +191,7 @@ Following the formulation in~\cite{10.1145/2783258.2783405}, which adapts the Hi
 The rationale behind this estimator stems from modeling the local distance distribution as a power law. Within a sufficiently small neighborhood bounded by $r_k$, the cumulative distribution of distances $F_x(r)$ grows proportionally to $r^m$, where $m$ is the intrinsic dimensionality. By treating the observed normalized distances $r_i / r_k$ as independent samples drawn from this power law distribution, we can formulate a likelihood function. Solving for the MLE of the exponent $m$ yields exactly the negative inverse of the average log ratios. This elegantly translates the abstract continuous growth rate into a discrete, computationally efficient statistical average.
 \end{remark}
 
-\subsection{Mapping Function}
+\subsection{Mapping Function from LID to Pruning Parameter}
 \label{subsec:mapping}
 
 The primary hypothesis of the proposed Manifold-Consistent Graph Indexing (MCGI) is that the graph topology should adapt to the local geometric complexity, rather than being a static vertex-edge structure. 
@@ -201,31 +201,24 @@ Conversely, regions with high LID typically exhibit significant curvature, noise
 The question then becomes how to quantitatively map the estimated LID to the pruning parameter $\alpha$ that controls the edge selection during graph construction.
 We refer to such a function as the \textit{mapping function} $\Phi: \mathbb{R}^+ \to [\alpha_{\min}, \alpha_{\max}]$, which translates the geometric complexity of the local neighborhood into a corresponding pruning constraint.
 
-\don{TODO}
-Let $u \in V$ be a node in the graph, and $\widehat{\text{LID}}(u)$ be its estimated LID. We define the pruning parameter $\alpha(u)$ as:
+Let $u \in V$ be a node in the graph and $\widehat{\text{LID}}(u)$ be its estimated LID. We define the \emph{pruning parameter} $\alpha(u)$ as:
 \begin{equation}
-    \alpha(u) \triangleq \Phi( \widehat{\text{LID}}(u) ).
+    \alpha(u) \triangleq \Phi( \widehat{\text{LID}}(u) ),
 \end{equation}
-The function $\Phi: \mathbb{R}^+ \to [\alpha_{\min}, \alpha_{\max}]$ is designed to satisfy the following geometric intuition: in regions with high LID, the graph should enforce a stricter connectivity constraint (smaller $\alpha$) to avoid short-circuiting the manifold; conversely, in low-LID regions, the constraint can be relaxed (larger $\alpha$).
+where $\Phi$ will be constructed to satisfy the following geometric requirements: in regions with high LID, the graph should enforce a stricter connectivity constraint (smaller $\alpha$) to avoid short-circuiting the manifold; conversely, in low-LID regions, the constraint can be relaxed (larger $\alpha$).
 
 To ensure the mapping is robust across datasets with varying complexity scales, we employ Z-score normalization based on the empirical distribution of the LID estimates. We first compute the normalized score $z(u)$:
 \begin{equation}
     z(u) = \frac{\widehat{\text{LID}}(u) - \mu_{\widehat{\text{LID}}}}{\sigma_{\widehat{\text{LID}}}},
 \end{equation}
 where $\mu_{\widehat{\text{LID}}}$ and $\sigma_{\widehat{\text{LID}}}$ denote the mean and standard deviation of the set of estimated LID values $\{ \widehat{\text{LID}}(v) \mid v \in V \}$ computed across the entire graph.
-
 We then formulate $\Phi$ using a logistic function to smoothly map the Z-score to the operational range $[\alpha_{\min}, \alpha_{\max}]$:
 \begin{equation}
     \Phi(\widehat{\text{LID}}(u)) = \alpha_{\min} + \frac{\alpha_{\max} - \alpha_{\min}}{1 + \exp(z(u))}.
 \end{equation}
-We employ the logistic function over a linear mapping to exploit its saturation properties. 
-LID estimates often exhibit heavy-tailed distributions with extreme outliers. 
-A linear mapping would be hypersensitive to these outliers, skewing the $\alpha$ values for the majority of the data. 
-The logistic function acts as a robust soft-thresholding mechanism: it reduces the variance in the high-LID and low-LID tails (saturating towards $\alpha_{\min}$ and $\alpha_{\max}$, respectively) while maintaining sensitivity in the transition region around the population mean.
-We set $\alpha_{\min}=1.0$ and $\alpha_{\max}=1.5$ following standard practices in graph indexing~\cite{subramanya2019diskann}, unless otherwise stated. 
-This formulation ensures that nodes with average complexity ($z(u) \approx 0$) are assigned $\alpha \approx 1.25$, while nodes with significantly higher complexity ($z(u) > 0$) are penalized with a stricter $\alpha$ approaching the limit of 1.0.
+We employ a logistic function rather than a linear mapping to mitigate the impact of extreme outliers inherent in LID estimations. Because LID distributions are typically heavy tailed, a linear scaling would be severely skewed by a few extreme values, compressing the $\alpha$ assignments for the vast majority of nodes into a narrow, indistinguishable band. The logistic function resolves this by acting as a smooth squashing mechanism. Centered on the Z score, it allocates its steepest and most sensitive region to the bulk of the population near the mean. Simultaneously, it safely clamps outlier nodes to the operational boundaries without distorting the global mapping resolution. In experiments~(\S\ref{sec:experiments}), we set $\alpha_{\min}=1.0$ and $\alpha_{\max}=1.5$ following standard practices in graph indexing~\cite{subramanya2019diskann}, unless otherwise stated. This formulation ensures that nodes with average complexity ($z(u) \approx 0$) receive an intermediate parameter ($\alpha \approx 1.25$), while those in highly complex regions ($z(u) > 0$) are smoothly penalized toward the strict routing limit of 1.0.
 
-The mapping function $\Phi$ satisfies the following geometric properties that are essential for stable graph construction: Monotonicity and Boundedness.
+The mapping function $\Phi$ satisfies the following geometric properties that are essential for stable graph construction: Monotonicity and Boundedness. We state these properties formally as propositions and provide proofs in the Appendix.
 
 \begin{proposition}[Monotonicity]
 The mapping function $\Phi$ is strictly decreasing with respect to the estimated local intrinsic dimensionality. Formally, given that the standard deviation of the LID estimates $\sigma_{\widehat{\text{LID}}} > 0$ and the pruning range $\alpha_{\max} > \alpha_{\min}$, the derivative satisfies:
@@ -234,129 +227,27 @@ The mapping function $\Phi$ is strictly decreasing with respect to the estimated
 \end{equation}
 \end{proposition}
 
-\don{Move full proof to appendix}
-
 \begin{proof}
-Let $L = \widehat{\text{LID}}(u)$ be the independent variable. We define the normalized Z-score $z$ as a function of $L$:
-\begin{equation}
-    z(L) = \frac{L - \mu_{\widehat{\text{LID}}}}{\sigma_{\widehat{\text{LID}}}}.
-\end{equation}
-The mapping function is defined as:
-\begin{equation}
-    \Phi(L) = \alpha_{\min} + \frac{C}{1 + \exp(z(L))},
-\end{equation}
-where $C = \alpha_{\max} - \alpha_{\min}$. Since we strictly require $\alpha_{\max} > \alpha_{\min}$, it follows that $C > 0$.
-To determine the sign of the gradient, we apply the chain rule:
-\begin{equation}
-    \frac{d \Phi}{d L} = \frac{d \Phi}{d z} \cdot \frac{d z}{d L}.
-\end{equation}
-First, we differentiate the Z-score term with respect to $L$:
-\begin{equation}
-    \frac{d z}{d L} = \frac{1}{\sigma_{\widehat{\text{LID}}}}.
-\end{equation}
-Next, we differentiate the logistic component $\Phi$ with respect to $z$:
-\begin{align}
-    \frac{d \Phi}{d z} &= \frac{d}{d z} \left( \alpha_{\min} + C (1 + e^z)^{-1} \right) \\
-    &= C \cdot (-1) \cdot (1 + e^z)^{-2} \cdot \frac{d}{d z}(1 + e^z) \\
-    &= - C \cdot \frac{e^z}{(1 + e^z)^2}.
-\end{align}
-Combining these terms yields the full derivative:
-\begin{equation}
-    \frac{d \Phi}{d L} = - \frac{C}{\sigma_{\widehat{\text{LID}}}} \cdot \frac{e^z}{(1 + e^z)^2}.
-\end{equation}
-We analyze the sign of each component:
-\begin{itemize}
-    \item The operational range constant $C > 0$.
-    \item The standard deviation $\sigma_{\widehat{\text{LID}}} > 0$, assuming the dataset exhibits non-zero geometric variance.
-    \item The exponential function $e^z > 0$ for all $z \in \mathbb{R}$.
-    \item The denominator $(1 + e^z)^2 > 0$.
-\end{itemize}
-Therefore, the term $\frac{C}{\sigma_{\widehat{\text{LID}}}} \frac{e^z}{(1 + e^z)^2}$ is strictly positive. The leading negative sign guarantees that $\frac{d \Phi}{d L} < 0$.
-This confirms that the pruning parameter $\alpha$ strictly decreases as the local geometric complexity increases, thereby enforcing a more conservative graph topology in high-LID regions to prevent topology distortion in complex regions.
+See Appendix~\ref{appendix:proofs}, Proof~\ref{proof:mono}.
 \end{proof}
 
 \begin{proposition}[Boundedness]
-The pruning parameter $\alpha(u)$ derived from the mapping function is strictly bounded within the prescribed operational interval. For any node $u$ with a finite LID estimate:
+The pruning parameter $\alpha(u)$ derived from the mapping function is strictly bounded within the prescribed operational interval. That is, for any node $u$ with a finite LID estimate, the following holds:
 \begin{equation}
     \alpha_{\min} < \alpha(u) < \alpha_{\max}.
 \end{equation}
 \end{proposition}
 
-\don{Move proofs to appendix}
-
 \begin{proof}
-Let $S(u)$ denote the logistic component of the mapping function:
-\begin{equation}
-    S(u) = \frac{1}{1 + \exp(z(u))}.
-\end{equation}
-For any finite input $\widehat{\text{LID}}(u)$, the Z-score $z(u)$ is finite. The exponential function maps the real line to the positive real line, i.e., $\exp(z(u)) \in (0, \infty)$.
-Consequently, the denominator lies in the interval $(1, \infty)$. Taking the reciprocal yields the bounds for the logistic component:
-\begin{equation}
-    0 < S(u) < 1.
-\end{equation}
-Substituting $S(u)$ back into the definition of $\Phi$:
-\begin{equation}
-    \alpha(u) = \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) \cdot S(u).
-\end{equation}
-Since $(\alpha_{\max} - \alpha_{\min}) > 0$, we can apply the inequality boundaries:
-\begin{align}
-    \alpha(u) &> \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) \cdot 0 = \alpha_{\min}, \\
-    \alpha(u) &< \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) \cdot 1 = \alpha_{\max}.
-\end{align}
-This proves that the topology is strictly confined. 
-The pruning behavior never exceeds the relaxation upper limit ($\alpha_{\max}$) and never becomes stricter than the lower limit ($\alpha_{\min}$), ensuring graph connectivity and preventing degree explosion.
+See Appendix~\ref{appendix:proofs}, Proof~\ref{proof:bound}.
 \end{proof}
 
-\subsection{Manifold-Consistent Graph Indexing}
+\subsection{Indexing Algorithms}
 \label{subsec:algorithm}
 
 % \don{TODO: Need to update the algorithm to reflect the fact that LID is calculated on the fly, rather than being preprocessed as a batch (which is unacceptable for billion-scale data sets).}
 
-The MCGI algorithm (Algorithm~\ref{alg:mcgi}) introduces a geometric calibration phase to a graph indexing procedure. Unlike static methods that apply a uniform connectivity rule, MCGI executes in two distinct stages to ensure the topology respects the manifold structure.
-
-\begin{algorithm}[tb]
-   \caption{Manifold-Consistent Graph Indexing (MCGI)}
-   \label{alg:mcgi}
-\begin{algorithmic}
-   \STATE Input: Dataset $X$, Max Degree $R$, Beam Width $L$
-   \STATE Output: Optimized Graph $G$
-
-   \STATE
-   \STATE // Phase 1: Geometric Calibration
-   \STATE $\mathcal{L} \leftarrow \text{ParallelEstimateLID}(X)$
-   \STATE $\mu \leftarrow \text{Mean}(\mathcal{L})$
-   \STATE $\sigma \leftarrow \text{StdDev}(\mathcal{L})$
-
-   \FOR{each node $u \in V$ in parallel}
-       \STATE $z_u \leftarrow (\mathcal{L}[u] - \mu) / \sigma$
-       \STATE $\alpha_u \leftarrow \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) / (1 + \exp(z_u))$
-   \ENDFOR
-
-   \STATE 
-   \STATE // Phase 2: Topology Refinement
-   \STATE $G \leftarrow \text{RandomGraph}(X, R)$
-   
-   \FOR{$iter \leftarrow 1$ to $MaxIter$}
-       \FOR{each node $u \in G$ in parallel}
-           \STATE $\mathcal{C} \leftarrow \text{GreedySearch}(u, G, L)$
-           \STATE $\mathcal{N}_{new} \leftarrow \emptyset$
-           
-           \FOR{$v \in \text{SortByDistance}(\mathcal{C} \cup \mathcal{N}(u))$}
-               \STATE $pruned \leftarrow \text{False}$
-               \FOR{$n \in \mathcal{N}_{new}$}
-                   \IF{$\alpha_u \cdot d(n, v) \le d(u, v)$}
-                       \STATE $pruned \leftarrow \text{True}$; break
-                   \ENDIF
-               \ENDFOR
-               \IF{not $pruned$ \AND $|\mathcal{N}_{new}| < R$}
-                   \STATE $\mathcal{N}_{new}.\text{add}(v)$
-               \ENDIF
-           \ENDFOR
-           \STATE $\mathcal{N}(u) \leftarrow \mathcal{N}_{new}$
-       \ENDFOR
-   \ENDFOR
-\end{algorithmic}
-\end{algorithm}
+The Manifold-Consistent Graph Indexing (MCGI) algorithm introduces a geometric calibration phase to a graph indexing procedure. Unlike static methods that apply a uniform connectivity rule, MCGI executes in two distinct stages to ensure the topology respects the manifold structure, as follows. The full description of the algorithm is in Appendix~\ref{appendix:alg}, Algorithm~\ref{alg:online_mcgi}.
 
 \paragraph{Phase 1: Geometric Calibration.}
 Before modifying the graph topology, the system first performs a global analysis of the dataset geometry. We estimate the LID for every point and aggregate the population statistics ($\mu, \sigma$) defined in Section~\ref{subsec:mapping}. 
@@ -365,79 +256,33 @@ This phase ``freezes'' the geometric profile of the dataset. By pre-computing th
 \paragraph{Phase 2: Manifold-Consistent Refinement.}
 The index construction follows an iterative refinement strategy. 
 Let $\mathcal{N}(u)$ denote the set of neighbors for node $u$ in the graph $G$. 
-In each iteration, the algorithm dynamically updates $\mathcal{N}(u)$ by:
+In each iteration, the algorithm dynamically updates $\mathcal{N}(u)$ by considering a candidate pool $\mathcal{C}$ obtained from a greedy search on the current graph structure:
 \begin{enumerate}
     \item Queries the pre-computed geometric profile to determine the node-specific constraint $\alpha(u)$.
     \item Explores the graph to identify a candidate pool $\mathcal{C}$.
     \item Filters connections using the dynamic occlusion criterion. 
 \end{enumerate}
 
-\subsubsection{Computational Complexity}
-
 We analyze the computational complexity as follows. Let $N$ be the total number of vectors in dataset $\mathcal{X}$, $R$ the maximum degree, $L$ the construction beam width, and $T$ the number of refinement iterations.
+The two phases of MCGI have the following time complexities:
 \begin{itemize}
     \item \textit{Calibration Phase:} The LID estimation relies on a fixed-size $k$-NN sampling, bounded by $O(N \log N)$. The subsequent parameter mapping is a linear scan $O(N)$.
     \item \textit{Construction Phase:} The core refinement loop operates with a time complexity of $O(T \cdot N \cdot R \cdot \log L)$, where $R$ is the maximum degree and $T$ is the number of iterations.
 \end{itemize}
 Since the calibration is a one-pass pre-processing step (as opposed to the multi-pass iterative refinedment in Phase 2), the total time complexity remains dominated by the graph refinement, ensuring that \ours{} scales linearly with $N$, consistent with state-of-the-art methods like DiskANN~\cite{subramanya2019diskann}.
 
-\subsubsection{Online MCGI}
-
-Calculating the exact Local Intrinsic Dimensionality (LID) for the entire dataset serves as a computational bottleneck on billion-scale data, typically requiring $O(N^2)$ complexity or a pre-built index. 
-To address this, we propose \textit{Online-MCGI} (Algorithm~\ref{alg:online_mcgi}), which integrates LID estimation directly into the graph construction process. 
+In practice, calculating the exact LID for the entire dataset may cause a computational bottleneck on billion-scale data. 
+To address this, we propose \textit{Online-MCGI}, which integrates LID estimation directly into the graph construction process. 
 First, we bootstrap global statistics ($\mu, \sigma$) using a small random subset of the data, reducing the preprocessing cost to negligible levels. 
 Then, during the iterative graph refinement, we estimate the local LID $\hat{\ell}_u$ for each node $u$ on-the-fly using its current candidate set $\mathcal{C}$ obtained from the greedy search. 
 While the initial estimates may be noisy, they progressively converge to the true manifold dimensionality as the neighbor quality improves with each iteration. 
 This approach allows the pruning parameter $\alpha_u$ to dynamically adapt to local geometric complexity without incurring the prohibitive cost of offline global analysis.
-
-\begin{algorithm}[tb]
-   \caption{Online Manifold-Consistent Graph Indexing}
-   \label{alg:online_mcgi}
-\begin{algorithmic}
-   \STATE Input: Dataset $X$, Max Degree $R$, Beam Width $L$, Sample Rate $S$
-   \STATE Output: Optimized Graph $G$
-
-   \STATE
-   \STATE // Phase 1: Bootstrap Statistics (Fast Approximation)
-   \STATE $X_{sample} \leftarrow \text{RandomSample}(X, S)$
-   \STATE $\mathcal{L}_{sample} \leftarrow \text{EstimateLID}(X_{sample})$ \COMMENT{Compute LID on subset}
-   \STATE $\mu \leftarrow \text{Mean}(\mathcal{L}_{sample})$, $\sigma \leftarrow \text{StdDev}(\mathcal{L}_{sample})$
-
-   \STATE 
-   \STATE // Phase 2: Online Topology Refinement
-   \STATE $G \leftarrow \text{RandomGraph}(X, R)$
-   
-   \FOR{$iter \leftarrow 1$ to $MaxIter$}
-       \FOR{each node $u \in G$ in parallel}
-           \STATE $\mathcal{C} \leftarrow \text{GreedySearch}(u, G, L)$
-           
-           \STATE // Online LID Estimation \& Parameter Adaptation
-           \STATE $\hat{\ell}_u \leftarrow \text{ComputeLID}(u, \mathcal{C})$ \COMMENT{Estimate from neighbors}
-           \STATE $z_u \leftarrow (\hat{\ell}_u - \mu) / \sigma$
-           \STATE $\alpha_u \leftarrow \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) / (1 + \exp(z_u))$
-
-           \STATE $\mathcal{N}_{new} \leftarrow \emptyset$
-           
-           \FOR{$v \in \text{SortByDistance}(\mathcal{C} \cup \mathcal{N}(u))$}
-               \STATE $pruned \leftarrow \text{False}$
-               \FOR{$n \in \mathcal{N}_{new}$}
-                   \STATE // Pruning with dynamic $\alpha_u$
-                   \IF{$\alpha_u \cdot d(n, v) \le d(u, v)$}
-                       \STATE $pruned \leftarrow \text{True}$; break
-                   \ENDIF
-               \ENDFOR
-               \IF{not $pruned$ \AND $|\mathcal{N}_{new}| < R$}
-                   \STATE $\mathcal{N}_{new}.\text{add}(v)$
-               \ENDIF
-           \ENDFOR
-           \STATE $\mathcal{N}(u) \leftarrow \mathcal{N}_{new}$
-       \ENDFOR
-   \ENDFOR
-\end{algorithmic}
-\end{algorithm}
+The full description of this online algorithm can be found in Appendix~\ref{appendix:alg}, Algorithm~\ref{alg:online_mcgi}. 
 
 \section{Theoretical Analysis}
 \label{sec:theory}
+
+\don{TODO: write a leading paragraphy to summarize our main theoretical results.}
 
 \subsection{Geometric Complexity and Adaptive Routing}
 \label{subsec:geometric_complexity}
@@ -850,9 +695,178 @@ We presented Manifold Consistent Graph Indexing (MCGI), a framework that fundame
 \appendix
 
 \section{Complete Proofs}
-\don{TODO}
+\label{appendix:proofs}
 
-\section{More Experimental Details}
+\begin{proposition}[Monotonicity]\label{proof:mono}
+The mapping function $\Phi$ is strictly decreasing with respect to the estimated local intrinsic dimensionality. Formally, given that the standard deviation of the LID estimates $\sigma_{\widehat{\text{LID}}} > 0$ and the pruning range $\alpha_{\max} > \alpha_{\min}$, the derivative satisfies:
+\begin{equation}
+    \frac{d \Phi}{d \widehat{\text{LID}}(u)} < 0.
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Let $L = \widehat{\text{LID}}(u)$ be the independent variable. We define the normalized Z-score $z$ as a function of $L$:
+\begin{equation}
+    z(L) = \frac{L - \mu_{\widehat{\text{LID}}}}{\sigma_{\widehat{\text{LID}}}}.
+\end{equation}
+The mapping function is defined as:
+\begin{equation}
+    \Phi(L) = \alpha_{\min} + \frac{C}{1 + \exp(z(L))},
+\end{equation}
+where $C = \alpha_{\max} - \alpha_{\min}$. Since we strictly require $\alpha_{\max} > \alpha_{\min}$, it follows that $C > 0$.
+To determine the sign of the gradient, we apply the chain rule:
+\begin{equation}
+    \frac{d \Phi}{d L} = \frac{d \Phi}{d z} \cdot \frac{d z}{d L}.
+\end{equation}
+First, we differentiate the Z-score term with respect to $L$:
+\begin{equation}
+    \frac{d z}{d L} = \frac{1}{\sigma_{\widehat{\text{LID}}}}.
+\end{equation}
+Next, we differentiate the logistic component $\Phi$ with respect to $z$:
+\begin{align}
+    \frac{d \Phi}{d z} &= \frac{d}{d z} \left( \alpha_{\min} + C (1 + e^z)^{-1} \right) \\
+    &= C \cdot (-1) \cdot (1 + e^z)^{-2} \cdot \frac{d}{d z}(1 + e^z) \\
+    &= - C \cdot \frac{e^z}{(1 + e^z)^2}.
+\end{align}
+Combining these terms yields the full derivative:
+\begin{equation}
+    \frac{d \Phi}{d L} = - \frac{C}{\sigma_{\widehat{\text{LID}}}} \cdot \frac{e^z}{(1 + e^z)^2}.
+\end{equation}
+We analyze the sign of each component:
+\begin{itemize}
+    \item The operational range constant $C > 0$.
+    \item The standard deviation $\sigma_{\widehat{\text{LID}}} > 0$, assuming the dataset exhibits non-zero geometric variance.
+    \item The exponential function $e^z > 0$ for all $z \in \mathbb{R}$.
+    \item The denominator $(1 + e^z)^2 > 0$.
+\end{itemize}
+Therefore, the term $\frac{C}{\sigma_{\widehat{\text{LID}}}} \frac{e^z}{(1 + e^z)^2}$ is strictly positive. The leading negative sign guarantees that $\frac{d \Phi}{d L} < 0$.
+This confirms that the pruning parameter $\alpha$ strictly decreases as the local geometric complexity increases, thereby enforcing a more conservative graph topology in high-LID regions to prevent topology distortion in complex regions.
+\end{proof}
+
+\begin{proposition}[Boundedness]\label{proof:bound}
+The pruning parameter $\alpha(u)$ derived from the mapping function is strictly bounded within the prescribed operational interval. For any node $u$ with a finite LID estimate:
+\begin{equation}
+    \alpha_{\min} < \alpha(u) < \alpha_{\max}.
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Let $S(u)$ denote the logistic component of the mapping function:
+\begin{equation}
+    S(u) = \frac{1}{1 + \exp(z(u))}.
+\end{equation}
+For any finite input $\widehat{\text{LID}}(u)$, the Z-score $z(u)$ is finite. The exponential function maps the real line to the positive real line, i.e., $\exp(z(u)) \in (0, \infty)$.
+Consequently, the denominator lies in the interval $(1, \infty)$. Taking the reciprocal yields the bounds for the logistic component:
+\begin{equation}
+    0 < S(u) < 1.
+\end{equation}
+Substituting $S(u)$ back into the definition of $\Phi$:
+\begin{equation}
+    \alpha(u) = \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) \cdot S(u).
+\end{equation}
+Since $(\alpha_{\max} - \alpha_{\min}) > 0$, we can apply the inequality boundaries:
+\begin{align}
+    \alpha(u) &> \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) \cdot 0 = \alpha_{\min}, \\
+    \alpha(u) &< \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) \cdot 1 = \alpha_{\max}.
+\end{align}
+This proves that the topology is strictly confined. 
+The pruning behavior never exceeds the relaxation upper limit ($\alpha_{\max}$) and never becomes stricter than the lower limit ($\alpha_{\min}$), ensuring graph connectivity and preventing degree explosion.
+\end{proof}
+
+\section{Full Algorithms}
+\label{appendix:alg}
+
+\begin{algorithm}[h!]
+   \caption{Manifold-Consistent Graph Indexing (MCGI)}
+   \label{alg:mcgi}
+\begin{algorithmic}
+   \STATE Input: Dataset $X$, Max Degree $R$, Beam Width $L$
+   \STATE Output: Optimized Graph $G$
+
+   \STATE
+   \STATE // Phase 1: Geometric Calibration
+   \STATE $\mathcal{L} \leftarrow \text{ParallelEstimateLID}(X)$
+   \STATE $\mu \leftarrow \text{Mean}(\mathcal{L})$
+   \STATE $\sigma \leftarrow \text{StdDev}(\mathcal{L})$
+
+   \FOR{each node $u \in V$ in parallel}
+       \STATE $z_u \leftarrow (\mathcal{L}[u] - \mu) / \sigma$
+       \STATE $\alpha_u \leftarrow \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) / (1 + \exp(z_u))$
+   \ENDFOR
+
+   \STATE 
+   \STATE // Phase 2: Topology Refinement
+   \STATE $G \leftarrow \text{RandomGraph}(X, R)$
+   
+   \FOR{$iter \leftarrow 1$ to $MaxIter$}
+       \FOR{each node $u \in G$ in parallel}
+           \STATE $\mathcal{C} \leftarrow \text{GreedySearch}(u, G, L)$
+           \STATE $\mathcal{N}_{new} \leftarrow \emptyset$
+           
+           \FOR{$v \in \text{SortByDistance}(\mathcal{C} \cup \mathcal{N}(u))$}
+               \STATE $pruned \leftarrow \text{False}$
+               \FOR{$n \in \mathcal{N}_{new}$}
+                   \IF{$\alpha_u \cdot d(n, v) \le d(u, v)$}
+                       \STATE $pruned \leftarrow \text{True}$; break
+                   \ENDIF
+               \ENDFOR
+               \IF{not $pruned$ \AND $|\mathcal{N}_{new}| < R$}
+                   \STATE $\mathcal{N}_{new}.\text{add}(v)$
+               \ENDIF
+           \ENDFOR
+           \STATE $\mathcal{N}(u) \leftarrow \mathcal{N}_{new}$
+       \ENDFOR
+   \ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[h!]
+   \caption{Online Manifold-Consistent Graph Indexing}
+   \label{alg:online_mcgi}
+\begin{algorithmic}
+   \STATE Input: Dataset $X$, Max Degree $R$, Beam Width $L$, Sample Rate $S$
+   \STATE Output: Optimized Graph $G$
+
+   \STATE
+   \STATE // Phase 1: Bootstrap Statistics (Fast Approximation)
+   \STATE $X_{sample} \leftarrow \text{RandomSample}(X, S)$
+   \STATE $\mathcal{L}_{sample} \leftarrow \text{EstimateLID}(X_{sample})$ \COMMENT{Compute LID on subset}
+   \STATE $\mu \leftarrow \text{Mean}(\mathcal{L}_{sample})$, $\sigma \leftarrow \text{StdDev}(\mathcal{L}_{sample})$
+
+   \STATE 
+   \STATE // Phase 2: Online Topology Refinement
+   \STATE $G \leftarrow \text{RandomGraph}(X, R)$
+   
+   \FOR{$iter \leftarrow 1$ to $MaxIter$}
+       \FOR{each node $u \in G$ in parallel}
+           \STATE $\mathcal{C} \leftarrow \text{GreedySearch}(u, G, L)$
+           
+           \STATE // Online LID Estimation \& Parameter Adaptation
+           \STATE $\hat{\ell}_u \leftarrow \text{ComputeLID}(u, \mathcal{C})$ \COMMENT{Estimate from neighbors}
+           \STATE $z_u \leftarrow (\hat{\ell}_u - \mu) / \sigma$
+           \STATE $\alpha_u \leftarrow \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) / (1 + \exp(z_u))$
+
+           \STATE $\mathcal{N}_{new} \leftarrow \emptyset$
+           
+           \FOR{$v \in \text{SortByDistance}(\mathcal{C} \cup \mathcal{N}(u))$}
+               \STATE $pruned \leftarrow \text{False}$
+               \FOR{$n \in \mathcal{N}_{new}$}
+                   \STATE // Pruning with dynamic $\alpha_u$
+                   \IF{$\alpha_u \cdot d(n, v) \le d(u, v)$}
+                       \STATE $pruned \leftarrow \text{True}$; break
+                   \ENDIF
+               \ENDFOR
+               \IF{not $pruned$ \AND $|\mathcal{N}_{new}| < R$}
+                   \STATE $\mathcal{N}_{new}.\text{add}(v)$
+               \ENDIF
+           \ENDFOR
+           \STATE $\mathcal{N}(u) \leftarrow \mathcal{N}_{new}$
+       \ENDFOR
+   \ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\section{Experimental Details}
 
 \paragraph{Build Configuration}
 Table~\ref{tab:build_params} summarizes the dataset specifications and indexing parameters used during the construction of MCGI and baseline DiskANN indices.   $R$ denotes the maximum outdegree of each node in the graph. $L_{build}$ is the size of the candidate list during index construction. $\alpha$ Range indicates the range of pruning aggressiveness explored during the LID-based Sigmoid mapping. $m_{PQ}$ specifies the number of bytes allocated for Product Quantization (PQ) codes when applicable. Data Type indicates whether the dataset vectors are stored as 32-bit floating-point numbers or 8-bit unsigned integers.
