@@ -193,11 +193,15 @@ The rationale behind this estimator stems from modeling the local distance distr
 
 \subsection{Mapping Function}
 \label{subsec:mapping}
-\don{TODO}
-The primary goal of Manifold-Consistent Graph Indexing is that the graph topology should adapt to the local geometric complexity. 
-In regions where the Local Intrinsic Dimensionality (LID) is low, the data manifold approximates a flat Euclidean subspace. In such isotropic regions, the Euclidean metric is a reliable proxy for geodesic distance, allowing for aggressive edge pruning (larger $\alpha$ in~\cite{subramanya2019diskann}) to permit long-range direct connections without risking semantic shortcuts.
-Conversely, regions with high LID typically exhibit significant curvature, noise, or singularity. In this case, the Euclidean distance often violates the manifold geodesic structure. To preserve topological fidelity, the indexing algorithm must adopt a conservative pruning strategy (smaller $\alpha$ in~\cite{subramanya2019diskann}), thereby forcing the search to take smaller, safer steps along the manifold surface.
 
+The primary hypothesis of the proposed Manifold-Consistent Graph Indexing (MCGI) is that the graph topology should adapt to the local geometric complexity, rather than being a static vertex-edge structure. 
+While the following formulation may seem technical, MCGI is conceptually straightforward: it uses the estimated LID to determine how aggressively to prune edges during graph construction.
+That is, in regions where the Local Intrinsic Dimensionality (LID) is low, the data manifold approximates a flat Euclidean subspace. In such isotropic regions, the Euclidean metric is a reliable proxy for geodesic distance, allowing for aggressive edge pruning (larger $\alpha$ in~\cite{subramanya2019diskann}) to permit long-range direct connections without risking semantic shortcuts.
+Conversely, regions with high LID typically exhibit significant curvature, noise, or singularity. In this case, the Euclidean distance often violates the manifold geodesic structure. To preserve topological fidelity, the indexing algorithm must adopt a conservative pruning strategy (smaller $\alpha$ in~\cite{subramanya2019diskann}), thereby forcing the search to take smaller, safer steps along the manifold surface.
+The question then becomes how to quantitatively map the estimated LID to the pruning parameter $\alpha$ that controls the edge selection during graph construction.
+We refer to such a function as the \textit{mapping function} $\Phi: \mathbb{R}^+ \to [\alpha_{\min}, \alpha_{\max}]$, which translates the geometric complexity of the local neighborhood into a corresponding pruning constraint.
+
+\don{TODO}
 Let $u \in V$ be a node in the graph, and $\widehat{\text{LID}}(u)$ be its estimated LID. We define the pruning parameter $\alpha(u)$ as:
 \begin{equation}
     \alpha(u) \triangleq \Phi( \widehat{\text{LID}}(u) ).
