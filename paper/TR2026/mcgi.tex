@@ -36,8 +36,9 @@
 \newcommand{\don}[1]{\textcolor{blue}{[Dongfang: #1]}}
 \newcommand{\ours}{MCGI\xspace}
 
-\title{MCGI: Manifold Consistent Graph Indexing\\ for Billion Scale Disk Resident Vector Search}
-
+\title{MCGI: Manifold Consistent Graph Indexing
+\\for Billion Scale Disk Resident Vector Search} 
+ 
 \author{
   Dongfang Zhao \\
   Tacoma School of Engineering and Technology \\
@@ -48,7 +49,7 @@
 
 \begin{document}
 
-\maketitle
+\maketitle 
 
 \begin{abstract}
 Graph-based Approximate Nearest Neighbor (ANN) search often suffers from performance degradation in high dimensional spaces due to the Euclidean Geodesic mismatch, where greedy routing diverges from the underlying data manifold.
@@ -137,20 +138,21 @@ While subsequent works have utilized LID for tasks such as query hardness predic
 MCGI diverges from this paradigm by employing LID as an active control signal. By dynamically modulating the graph traversal parameters based on local geometry, our method transforms LID from a descriptive metric into a prescriptive mechanism for efficient routing.
 
 
-\section{Methodology} \label{method}
+\section{Methodology} 
+\label{method}
 
-\subsection{Definitions and Preliminaries}
+\subsection{Notations and Definitions}
 
 We start by briefly introducing the notions of Local Intrinsic Dimensionality (LID) in the words of analysis. A full treatment can be found, for example, in Houle~\cite{DBLP:conf/sisap/Houle17}.
 
 \begin{definition}[Local Intrinsic Dimensionality]
 \label{def:lid}
-    Let $\mathcal{X}$ be a domain equipped with a distance measure $d: \mathcal{X} \times \mathcal{X} \to \mathbb{R}^+$. For a reference point $x \in \mathcal{X}$, let $F_x(r) = \mathbb{P}(d(x, Y) \le r)$ denote the cumulative distribution function (CDF) of the distance between $x$ and a random variable $Y$ drawn from the underlying data distribution. 
+    Let $\mathcal{X}$ be a domain equipped with a distance measure $d: \mathcal{X} \times \mathcal{X} \to \mathbb{R}^+$. For a reference point $x \in \mathcal{X}$, let $F_x(r) = \mathbb{P}(d(x, Y) \le r)$ denote the cumulative distribution function (CDF) of the distance between $x$ and a random variable $Y$ drawn from the underlying data distribution, where $\mathbb{P}$ denotes the probablity function and $r$ denotes the radius. 
     The Local Intrinsic Dimensionality (LID) of $x$, denoted as $\text{LID}(x)$, is defined as the intrinsic growth rate of the probability measure within the neighborhood of $x$:
     \begin{equation}\label{eq:pid}
         \text{LID}(x) \triangleq \lim_{r \to 0} \frac{r \cdot F'_x(r)}{F_x(r)} = \lim_{r \to 0} \frac{d \ln F_x(r)}{d \ln r},
     \end{equation}
-    provided the limit exists and $F_x(r)$ is continuously differentiable for $r > 0$.
+    provided that the limit exists and $F_x(r)$ is continuously differentiable for $r > 0$.
 \end{definition}
 
 \begin{remark}[Institution of LID]
@@ -173,20 +175,25 @@ We start by briefly introducing the notions of Local Intrinsic Dimensionality (L
 \end{remark}
 
 While Eq.~\refeq{def:lid} provides an intuitive closed-form formula for intrinsic dimensionality, in practice we usually do not have access to the true CDF $F_x(r)$.
-Luckily, we can estimate LID from a finite sample of distances from $x$ to its neighbors using Maximum Likelihood Estimation (MLE) as proposed by~\cite{NIPS2004_74934548}.
+Instead, we can estimate LID from a finite sample of distances from $x$ to its neighbors using Maximum Likelihood Estimation (MLE), as proposed by~\cite{NIPS2004_74934548}.
 According to~\cite{10.1145/2783258.2783405}, LID can be estimated as follows.
 \begin{definition}[LID Maximum Likelihood Estimator]
 \label{def:lid_mle}
-Given a reference point $x$ and its $k$-nearest neighbors determined by the distance measure $d$, let $r_i = d(x, v_i)$ denote the distance to the $i$-th nearest neighbor, sorted such that $r_1 \le \dots \le r_k$. 
-Following the formulation in~\cite{10.1145/2783258.2783405}, which adapts the Hill estimator for intrinsic dimensionality, the LID at $x$ is estimated as:
+Given a reference point $x$ and its $k$-nearest neighbors determined by the distance measure $d$.
+Let $r_i = d(x, v_i)$ denote the distance to the $i$-th nearest neighbor, sorted such that $r_1 \le \dots \le r_k$. 
+Following the formulation in~\cite{10.1145/2783258.2783405}, which adapts the Hill estimator for intrinsic dimensionality, the LID at $x$ can be estimated as:
 \begin{equation}
     \widehat{\text{LID}}(x) = - \left( \frac{1}{k} \sum_{i=1}^{k} \ln \frac{r_i}{r_k} \right)^{-1}.
 \end{equation}
 \end{definition}
 
+\begin{remark}[Intuition behind the LID Estimator]
+The rationale behind this estimator stems from modeling the local distance distribution as a power law. Within a sufficiently small neighborhood bounded by $r_k$, the cumulative distribution of distances $F_x(r)$ grows proportionally to $r^m$, where $m$ is the intrinsic dimensionality. By treating the observed normalized distances $r_i / r_k$ as independent samples drawn from this power law distribution, we can formulate a likelihood function. Solving for the MLE of the exponent $m$ yields exactly the negative inverse of the average log ratios. This elegantly translates the abstract continuous growth rate into a discrete, computationally efficient statistical average.
+\end{remark}
+
 \subsection{Mapping Function}
 \label{subsec:mapping}
-
+\don{TODO}
 The primary goal of Manifold-Consistent Graph Indexing is that the graph topology should adapt to the local geometric complexity. 
 In regions where the Local Intrinsic Dimensionality (LID) is low, the data manifold approximates a flat Euclidean subspace. In such isotropic regions, the Euclidean metric is a reliable proxy for geodesic distance, allowing for aggressive edge pruning (larger $\alpha$ in~\cite{subramanya2019diskann}) to permit long-range direct connections without risking semantic shortcuts.
 Conversely, regions with high LID typically exhibit significant curvature, noise, or singularity. In this case, the Euclidean distance often violates the manifold geodesic structure. To preserve topological fidelity, the indexing algorithm must adopt a conservative pruning strategy (smaller $\alpha$ in~\cite{subramanya2019diskann}), thereby forcing the search to take smaller, safer steps along the manifold surface.
