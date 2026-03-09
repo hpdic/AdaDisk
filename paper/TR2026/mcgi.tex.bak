@@ -1,27 +1,26 @@
-\documentclass{article}
-
-\PassOptionsToPackage{numbers, compress}{natbib}
-\usepackage[preprint]{neurips_2025}
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage{hyperref}
-\usepackage{url}
-\usepackage{booktabs}
-\usepackage{amsfonts}
-\usepackage{nicefrac}
-\usepackage{microtype}
-\usepackage{xcolor}
+\documentclass[sigconf,anonymous,review]{acmart}
+% \documentclass[sigconf,nonacm]{acmart}
 
 \usepackage{amsmath}
 \usepackage{mathtools}
 \usepackage{amsthm}
 \usepackage{algorithmic}
 \usepackage{algorithm}
-\usepackage{graphicx}
-\usepackage{subcaption}
-\usepackage{xspace}
-\usepackage{amssymb}
 
+\usepackage{graphicx}      % 用于插入图片
+\usepackage{subcaption}    % 关键！用于 \begin{subfigure}
+\usepackage{booktabs}      % 关键！用于表格里的 \toprule, \midrule
+\usepackage{amsmath}       % 用于数学公式
+\usepackage{xcolor}        % 颜色支持
+
+% if you use cleveref..
+\usepackage[capitalize,noabbrev]{cleveref}
+
+\newcommand{\don}[1]{\textcolor{blue}{[Dongfang: #1]}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% THEOREMS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \theoremstyle{plain}
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{proposition}[theorem]{Proposition}
@@ -33,33 +32,192 @@
 \theoremstyle{remark}
 \newtheorem{remark}[theorem]{Remark}
 
-\newcommand{\don}[1]{\textcolor{blue}{[Dongfang: #1]}}
+\usepackage[textsize=tiny]{todonotes}
+
+\usepackage{xspace}
 \newcommand{\ours}{MCGI\xspace}
 
-\title{MCGI: Manifold Consistent Graph Indexing\\ for Billion Scale Disk Resident Vector Search}
+%%
+%% \BibTeX command to typeset BibTeX logo in the docs
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    Bib\TeX}}}
 
-\author{
-  Dongfang Zhao \\
-  Tacoma School of Engineering and Technology \\
-  Paul G. Allen School of Computer Science \& Engineering \\
-  University of Washington \\
-  \texttt{dzhao@cs.washington.edu}
+%% Rights management information.  This information is sent to you
+%% when you complete the rights form.  These commands have SAMPLE
+%% values in them; it is your responsibility as an author to replace
+%% the commands and values with those provided to you when you
+%% complete the rights form.
+% \setcopyright{acmlicensed}
+
+\setcopyright{none}
+\settopmatter{printacmref=false}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\pagestyle{plain} % 使用简单页面样式
+\fancypagestyle{firstpagestyle}{
+  \fancyhf{}
+  \renewcommand{\headrulewidth}{0pt}
+  \renewcommand{\footrulewidth}{0pt}
 }
 
+% \copyrightyear{2026}
+% \acmYear{2026}
+% \acmDOI{XXXXXXX.XXXXXXX}
+% %% These commands are for a PROCEEDINGS abstract or paper.
+% \acmConference[Conference acronym 'XX]{Make sure to enter the correct
+%   conference title from your rights confirmation email}{June 03--05,
+%   2018}{Woodstock, NY}
+%%
+%%  Uncomment \acmBooktitle if the title of the proceedings is different
+%%  from ``Proceedings of ...''!
+%%
+%%\acmBooktitle{Woodstock '18: ACM Symposium on Neural Gaze Detection,
+%%  June 03--05, 2018, Woodstock, NY}
+% \acmISBN{978-1-4503-XXXX-X/2018/06}
+
+
+%%
+%% Submission ID.
+%% Use this when submitting an article to a sponsored event. You'll
+%% receive a unique submission ID from the organizers
+%% of the event, and this ID should be used as the parameter to this command.
+%%\acmSubmissionID{123-A56-BU3}
+
+%%
+%% For managing citations, it is recommended to use bibliography
+%% files in BibTeX format.
+%%
+%% You can then either use BibTeX with the ACM-Reference-Format style,
+%% or BibLaTeX with the acmnumeric or acmauthoryear sytles, that include
+%% support for advanced citation of software artefact from the
+%% biblatex-software package, also separately available on CTAN.
+%%
+%% Look at the sample-*-biblatex.tex files for templates showcasing
+%% the biblatex styles.
+%%
+
+%%
+%% The majority of ACM publications use numbered citations and
+%% references.  The command \citestyle{authoryear} switches to the
+%% "author year" style.
+%%
+%% If you are preparing content for an event
+%% sponsored by ACM SIGGRAPH, you must use the "author year" style of
+%% citations and references.
+%% Uncommenting
+%% the next command will enable that style.
+%%\citestyle{acmauthoryear}
+
+
+%%
+%% end of the preamble, start of the body of the document source.
 \begin{document}
 
-\maketitle
+%%
+%% The "title" command has an optional parameter,
+%% allowing the author to define a "short title" to be used in page headers.
+\title{MCGI: Manifold-Consistent Graph Indexing for Billion-Scale Disk-Resident Vector Search}
 
+%%
+%% The "author" command and its associated commands are used to define
+%% the authors and their affiliations.
+%% Of note is the shared affiliation of the first two authors, and the
+%% "authornote" and "authornotemark" commands
+%% used to denote shared contribution to the research.
+\author{Dongfang Zhao}
+% \authornote{Both authors contributed equally to this research.}
+\email{dzhao@uw.edu}
+% \orcid{1234-5678-9012}
+% \author{G.K.M. Tobin}
+% \authornotemark[1]
+% \email{webmaster@marysville-ohio.com}
+\affiliation{%
+  \institution{HPDIC Lab}
+  % \city{Bellevue}
+  % \state{WA}
+  \country{University of Washington, USA}
+}
+
+%%
+%% The abstract is a short summary of the work to be presented in the
+%% article.
 \begin{abstract}
-Graph-based Approximate Nearest Neighbor (ANN) search often suffers from performance degradation in high dimensional spaces due to the Euclidean Geodesic mismatch, where greedy routing diverges from the underlying data manifold.
-To address this challenge, we propose Manifold Consistent Graph Indexing (MCGI), a geometry aware and disk resident indexing method that leverages Local Intrinsic Dimensionality (LID) to dynamically adapt search strategies to the data's intrinsic geometry.
+Graph-based Approximate Nearest Neighbor (ANN) search often suffers from performance degradation in high-dimensional spaces due to the ``Euclidean-Geodesic mismatch,'' where greedy routing diverges from the underlying data manifold.
+To address this challenge, we propose Manifold-Consistent Graph Indexing (MCGI), a geometry-aware and disk-resident indexing method that leverages Local Intrinsic Dimensionality (LID) to dynamically adapt search strategies to the data's intrinsic geometry.
 Unlike standard algorithms that treat dimensions uniformly, MCGI modulates its beam search budget based on in situ geometric analysis, eliminating the dependency on static hyperparameters.
-Theoretical analysis confirms that MCGI enables improved approximation guarantees by preserving manifold consistent topological connectivity.
-We conducted extensive evaluations against three industry standard baselines across five datasets ranging from million to billion scales.
-Empirically, MCGI achieves $5.8\times$ higher throughput at 95\% recall on the high dimensional GIST1M compared to the state of the art DiskANN.
-On the billion scale SIFT1B and T2I 1B datasets, MCGI further validates its scalability by reducing high recall query latency by $3\times$ while maintaining performance parity on standard lower dimensional benchmarks.
+Theoretical analysis confirms that MCGI enables improved approximation guarantees by preserving manifold-consistent topological connectivity.
+We conducted extensive evaluations against three industry-standard baselines across five datasets ranging from million to billion scales.
+Empirically, MCGI achieves $5.8\times$ higher throughput at 95\% recall on the high-dimensional GIST1M compared to the state-of-the-art DiskANN.
+On the billion-scale SIFT1B and T2I-1B datasets, MCGI further validates its scalability by reducing high-recall query latency by $3\times$ while maintaining performance parity on standard lower-dimensional benchmarks.
 \don{Probably need to add SPANN results}
-\end{abstract}
+\end{abstract}%%
+%% The code below is generated by the tool at http://dl.acm.org/ccs.cfm.
+%% Please copy and paste the code instead of the example below.
+%%
+\begin{CCSXML}
+<ccs2012>
+   <concept>
+       <concept_id>10002951.10003317.10003338.10003346</concept_id>
+       <concept_desc>Information systems~Top-k retrieval in databases</concept_desc>
+       <concept_significance>500</concept_significance>
+       </concept>
+ </ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Information systems~Top-k retrieval in databases}
+% \begin{CCSXML}
+% <ccs2012>
+%  <concept>
+%   <concept_id>00000000.0000000.0000000</concept_id>
+%   <concept_desc>Do Not Use This Code, Generate the Correct Terms for Your Paper</concept_desc>
+%   <concept_significance>500</concept_significance>
+%  </concept>
+%  <concept>
+%   <concept_id>00000000.00000000.00000000</concept_id>
+%   <concept_desc>Do Not Use This Code, Generate the Correct Terms for Your Paper</concept_desc>
+%   <concept_significance>300</concept_significance>
+%  </concept>
+%  <concept>
+%   <concept_id>00000000.00000000.00000000</concept_id>
+%   <concept_desc>Do Not Use This Code, Generate the Correct Terms for Your Paper</concept_desc>
+%   <concept_significance>100</concept_significance>
+%  </concept>
+%  <concept>
+%   <concept_id>00000000.00000000.00000000</concept_id>
+%   <concept_desc>Do Not Use This Code, Generate the Correct Terms for Your Paper</concept_desc>
+%   <concept_significance>100</concept_significance>
+%  </concept>
+% </ccs2012>
+% \end{CCSXML}
+
+% \ccsdesc[500]{Do Not Use This Code~Generate the Correct Terms for Your Paper}
+% \ccsdesc[300]{Do Not Use This Code~Generate the Correct Terms for Your Paper}
+% \ccsdesc{Do Not Use This Code~Generate the Correct Terms for Your Paper}
+% \ccsdesc[100]{Do Not Use This Code~Generate the Correct Terms for Your Paper}
+
+%%
+%% Keywords. The author(s) should pick words that accurately describe
+%% the work being presented. Separate the keywords with commas.
+\keywords{Approximate Nearest Neighbor Search, Disk-resident Indexing, Local Intrinsic Dimensionality}
+%% A "teaser" image appears between the author and affiliation
+%% information and the body of the document, and typically spans the
+%% page.
+% \begin{teaserfigure}
+%   \includegraphics[width=\textwidth]{sampleteaser}
+%   \caption{Seattle Mariners at Spring Training, 2010.}
+%   \Description{Enjoying the baseball game from the third-base
+%   seats. Ichiro Suzuki preparing to bat.}
+%   \label{fig:teaser}
+% \end{teaserfigure}
+
+% \received{20 February 2007}
+% \received[revised]{12 March 2009}
+% \received[accepted]{5 June 2009}
+
+%%
+%% This command processes the author and affiliation and title
+%% information and builds the first part of the formatted document.
+\maketitle
 
 \section{Introduction}
 \label{sec:intro}
@@ -135,7 +293,6 @@ While subsequent works have utilized LID for tasks such as query hardness predic
 
 \don{Expand the following paragraph}
 MCGI diverges from this paradigm by employing LID as an active control signal. By dynamically modulating the graph traversal parameters based on local geometry, our method transforms LID from a descriptive metric into a prescriptive mechanism for efficient routing.
-
 
 \section{Methodology} \label{method}
 
@@ -569,6 +726,54 @@ Thus, \ours{} retains all edges present in the RNG (plus additional shortcuts), 
 
 Proposition~\ref{prop:connectivity} ensures that there are no structural dead ends. While Lemma~\ref{lemma:complexity} dictates the \textit{cost} of routing, Proposition~\ref{prop:connectivity} ensures the \textit{possibility} of routing. Even in the worst-case scenario where heuristics fail, a path exists from the entry point to any target via the edges of the underlying EMST, provided the graph traversal algorithm (beam search) has sufficient width to discover these backbone links.
 
+% \section{System Implementation}
+% \label{sec:implementation}
+
+% \don{TODO: remove some implementation details and add more billion-scale experiments}
+
+% We implemented MCGI on top of the official C++ codebase of DiskANN~\cite{subramanya2019diskann}. 
+% \ours{} implementation is open-sourced as a subproject of the \textit{AdaDisk} project, available at: \url{https://github.com/hpdic/AdaDisk}.
+% To ensure fair comparison and production-level efficiency, we integrated the Maximum Likelihood Estimator (MLE) for LID directly into the graph building process. 
+% The core distance computations were optimized using AVX-512 SIMD instructions to maximize hardware utilization. 
+% All latency-critical components, including the dynamic candidate list management and the LID-aware routing logic, were implemented in C++ to avoid the overhead of high-level language interpreters. 
+
+% Unlike standard standalone implementations of ANN indices, MCGI is designed as a modular, agentic orchestration system that automates the entire lifecycle of RAG serving from data ingestion to adaptive indexing and query execution. Our implementation consists of a hybrid codebase spanning core C++ modifications and a comprehensive Python-based control plane.
+
+% \subsection{Agentic Framework}
+% To ensure reproducibility and handle the complexity of billion-scale experiments, we developed a Python-based orchestration layer that manages the interaction between the storage backend and the indexing engine. As shown in the repository structure, the workflow is driven by specific agents:
+
+% \begin{itemize}
+%     \item \textbf{Data Ingestion \& Formatting:} 
+%     Custom pipelines were engineered to handle the conversion of legacy SIFT1B formats (compressed \texttt{.bvecs}, \texttt{.tar.gz}) into memory-mapped binary formats (\texttt{.bin}) optimized for direct disk access. This module includes integrity checks and automatic dimension validation to ensure data consistency before indexing.
+    
+%     \item \textbf{LID Estimation Engine:} 
+%     A standalone module responsible for pre-computing the Local Intrinsic Dimensionality for the raw dataset. This script implements the MLE-based estimator and generates the metadata required by the MCGI construction algorithm, serving as the cognitive input for the adaptive system.
+    
+%     \item \textbf{Adaptive Index Construction:} 
+%     This driver script automates the build process. It dynamically injects the Sigmoid-based pruning parameters (i.e., $\alpha(u)$) into the C++ builder based on the computed LID distribution, removing the need for manual parameter tuning and ensuring the graph topology adapts to local geometric complexity.
+    
+%     \item \textbf{Automated Evaluation Pipeline:} 
+%     To capture the Recall-QPS trade-off, we implemented a batch execution system that automatically sweeps through varying beam widths (i.e., $L_{search}$) and thread counts. This ensures that the performance curves are generated from comprehensive, rather than cherry-picked, data points.
+% \end{itemize}
+
+% \subsection{Kernel Modifications}
+% We extended the foundational DiskANN (Vamana) C++ codebase to support variable-density topology. Key engineering modifications include:
+
+% \begin{itemize}
+%     \item \textbf{Dynamic Pruning Logic:} We rewrote the graph neighbor selection kernel to accept per-node pruning thresholds $\alpha(u)$, replacing the static $\alpha$ parameter found in the original implementation. This allows the index to act conservatively in high-LID regions while remaining aggressive in low-LID areas.
+    
+%     \item \textbf{Hybrid Environment Management:} The system is encapsulated in a Python virtual environment (\texttt{venv}) with automated dependency resolution for critical low-level libraries (\texttt{libaio}, \texttt{tcmalloc}, and \texttt{Intel MKL}). This ensures consistent performance across heterogeneous hardware nodes (e.g., facilitating the transition from Ice Lake to Haswell architectures).
+    
+%     \item \textbf{Low-Level Optimizations:} 
+%     \begin{enumerate}
+%         \item \textbf{SIMD Instructions:} We leverage \textbf{AVX-512} intrinsics for high-performance distance computations ($L_2$ Euclidean distance), maximizing throughput on the Intel Ice Lake architecture.
+%         \item \textbf{Direct I/O:} To bypass the OS page cache during random reads in the search phase, we employ \texttt{O\_DIRECT} flags, ensuring that latency measurements reflect true SSD/HDD performance without OS interference.
+%         \item \textbf{Prefetching:} We explicitly utilize software prefetching (\texttt{\_mm\_prefetch}) to load graph adjacency lists into the cache hierarchy ahead of traversal, masking memory access latency during greedy beam search.
+%     \end{enumerate}
+% \end{itemize}
+
+
+
 \section{Experimental Evaluation}
 \label{sec:experiments}
 
@@ -686,6 +891,7 @@ The advantage of MCGI is even more pronounced in terms of query latency, as show
     \centering
     \includegraphics[width=\linewidth]{figures/sift1b_performance.pdf}
     \caption{Billion-Scale Performance on SIFT1B.}
+    \Description{}
     \label{fig:sift1b}
 \end{figure}
 
@@ -698,6 +904,7 @@ In the critical high-recall regime (Recall@10 $> 90\%$), MCGI demonstrates a cle
   \centering
   \includegraphics[width=\linewidth]{figures/t2i_performance.pdf}
   \caption{Performance on T2I-1B.}
+  \Description{}
   \label{fig:t2i_performance}
 \end{figure}
 
@@ -830,10 +1037,13 @@ Figure~\ref{fig:latency} details the query latency across different recall level
 
 \section{Conclusion}
 
-We presented Manifold Consistent Graph Indexing (MCGI), a framework that fundamentally rethinks vector search by aligning graph routing with the intrinsic geometry of high dimensional data. By resolving the discrepancy between Euclidean and Geodesic distances, MCGI provides a robust theoretical guarantee on connectivity and effectively mitigates the curse of dimensionality. Comprehensive evaluations on billion scale benchmarks, including SIFT1B and T2I 1B, confirm the versatility of MCGI across both I/O intensive and compute intensive scenarios. Our results demonstrate that MCGI reduces query latency by up to $3\times$ compared to the state of the art DiskANN and delivers throughput that approaches the performance of in memory inverted indices.
+We presented Manifold-Consistent Graph Indexing (MCGI), a framework that fundamentally rethinks vector search by aligning graph routing with the intrinsic geometry of high-dimensional data. By resolving the discrepancy between Euclidean and Geodesic distances, MCGI provides a robust theoretical guarantee on connectivity and effectively mitigates the curse of dimensionality. Comprehensive evaluations on billion-scale benchmarks, including SIFT1B and T2I-1B, confirm the versatility of MCGI across both I/O-intensive and compute-intensive scenarios. Our results demonstrate that MCGI reduces query latency by up to $3\times$ compared to the state-of-the-art DiskANN and delivers throughput that approaches the performance of in-memory inverted indices.
+
+% \section*{Acknowledgment}
+% Results presented in this paper were obtained using the Chameleon testbed supported by the National Science Foundation.
 
 \bibliography{ref}
-\bibliographystyle{plain}
+\bibliographystyle{acm}
 
 \newpage
 \appendix
@@ -890,3 +1100,6 @@ T2I-1B    & 18.3 & 7.0 & $10 \to 200$ & 80 \\
 \don{TODO}
 
 \end{document}
+\endinput
+%%
+%% End of file `sample-sigconf.tex'.
