@@ -1,8 +1,8 @@
 \documentclass{article}
 
 \PassOptionsToPackage{numbers, compress}{natbib}
-% \usepackage[preprint]{neurips_2026}
-\usepackage{neurips_2026}
+\usepackage[preprint]{neurips_2026}
+% \usepackage{neurips_2026}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{hyperref}
@@ -46,7 +46,7 @@
   Dongfang Zhao \\
   Tacoma School of Engineering and Technology \\
   Paul G. Allen School of Computer Science \& Engineering \\
-  University of Washington \\
+  University of Washington, USA\\
   \texttt{dzhao@cs.washington.edu}
 }
 
@@ -450,6 +450,12 @@ The search list size parameter $L$ governs the balance between search quality an
 
 We presented Manifold Consistent Graph Indexing (MCGI), a new indexing algorithm that fundamentally rethinks vector search by aligning graph routing with the intrinsic geometry of high-dimensional data. By resolving the discrepancy between Euclidean and geodesic distances, MCGI provides robust theoretical guarantees on connectivity while effectively mitigating the curse of dimensionality. Comprehensive evaluations on billion-scale benchmarks, including SIFT1B and T2I-1B, confirm the versatility of our approach across both I/O-intensive and compute-intensive scenarios. Our results demonstrate that MCGI reduces query latency by up to 3x compared to the state-of-the-art DiskANN, delivering a throughput that rivals the performance of in-memory inverted indices.
 
+\begin{ack}
+Results presented in this paper were obtained using the Chameleon testbed supported by the National Science Foundation.
+
+The authors thank Microsoft Research for merging some of the MCGI source code into the C++ main branch of DiskANN in March 2026.
+\end{ack}
+
 \bibliography{ref}
 \bibliographystyle{plain}
 
@@ -677,18 +683,24 @@ T2I-1B    & 18.3 & 7.0 & $10 \to 200$ & 80 \\
 \end{table}
 
 \paragraph{More Experimental Results}
-As shown in Figure~\ref{fig:t2i_performance}, we further evaluated MCGI on the T2I-1B dataset. Unlike SIFT1B, T2I-1B introduces a distinct challenge characterized by higher dimensionality ($D=200$) and 32-bit floating-point precision. These factors make distance computations significantly more expensive, shifting the system bottleneck from pure I/O latency towards CPU computation.
+We further evaluated MCGI on the T2I-1B dataset. Unlike SIFT1B, T2I-1B introduces a distinct challenge characterized by higher dimensionality ($D=200$) and 32-bit floating-point precision. These factors make distance computations significantly more expensive, shifting the system bottleneck from pure I/O latency towards CPU computation.
 In the critical high-recall regime (Recall@10 $> 90\%$), MCGI demonstrates a clear advantage over DiskANN, delivering higher QPS at reduced latency. Notably, this performance gain persists even though the I/O reduction is less pronounced than on SIFT1B. The advantage stems from MCGI's geometric pruning strategy: by identifying simpler local manifolds, our algorithm aggressively prunes redundant edges, reducing the average node degree without compromising navigability. This optimization translates directly to fewer expensive floating-point operations per hop, highlighting MCGI's versatility in handling both I/O-bound (SIFT1B) and compute-bound (T2I-1B) billion-scale workloads.
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=0.7\linewidth]{figures/t2i_performance.pdf}
-  \caption{Performance on T2I-1B.}
-  \label{fig:t2i_performance}
-\end{figure}
+% \begin{figure}[t]
+%   \centering
+%   \includegraphics[width=0.7\linewidth]{figures/t2i_performance.pdf}
+%   \caption{Performance on T2I-1B.}
+%   \label{fig:t2i_performance}
+% \end{figure}
 
 \subsection{Full Algorithms}
 \label{appendix:alg}
+
+Algorithm~\ref{alg:mcgi} outlines the offline construction process of the indexing structure. The procedure is divided into two sequential phases. 
+\begin{itemize}
+    \item The first phase focuses on geometric calibration by calculating the Local Intrinsic Dimensionality for all vectors in the dataset in parallel. After obtaining the global mean and standard deviation of these estimates, the algorithm assigns a personalized pruning parameter $\alpha_u$ to each node. This parameter is derived using a logistic function that maps the standardized geometric complexity of the local neighborhood into a bounded operational range. 
+    \item The second phase handles topology refinement. Starting from a random graph, the algorithm iteratively optimizes the connections. For each node, it executes a greedy search to identify a pool of candidate neighbors. It then evaluates these candidates alongside existing neighbors using a dynamic occlusion criterion. A candidate is pruned if a previously accepted neighbor falls within a restricted exclusion region defined by the precomputed $\alpha_u$. Survivors are added to the updated neighbor list until the degree limit is reached.
+\end{itemize}
 
 \begin{algorithm}[h!]
    \caption{Manifold-Consistent Graph Indexing (MCGI)}
@@ -733,6 +745,13 @@ In the critical high-recall regime (Recall@10 $> 90\%$), MCGI demonstrates a cle
    \ENDFOR
 \end{algorithmic}
 \end{algorithm}
+
+
+Algorithm~\ref{alg:online_mcgi} presents an optimized online variant designed to handle massive datasets where exhaustive geometric profiling is computationally prohibitive. 
+\begin{itemize}
+    \item It begins with a fast approximation phase that samples a small subset of the data. By evaluating this subset, the algorithm quickly bootstraps the global mean and standard deviation of the underlying probability distribution. This step provides a coarse but efficient estimate of the overall geometric complexity, enabling the algorithm to initialize the pruning parameters without incurring the cost of a full dataset pass.
+    \item The second phase merges the geometric estimation directly into the iterative topology refinement loop. Instead of computing all complexities beforehand, the algorithm dynamically estimates the node specific dimensionality on the fly using the candidate set discovered during the greedy search step. This real time estimate is immediately used to calculate the specific pruning parameter $\alpha_u$. The algorithm then applies this dynamic parameter to the pruning criterion, determining which edges to preserve and which to discard. This approach ensures the graph connectivity adapts to the manifold geometry progressively as the quality of the candidate neighbors improves with each iteration.
+\end{itemize}
 
 \begin{algorithm}[h!]
    \caption{Online Manifold-Consistent Graph Indexing}
