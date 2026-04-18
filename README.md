@@ -2,7 +2,49 @@
 
 ## Documentation
 * [Preprint](https://arxiv.org/pdf/2601.01930)
-  
+
+## Updates on Apr 18, 2026, UChicago A100-80G
+
+### Quick Start
+```bash
+cd ~/AdaDisk
+sudo apt-get update
+sudo apt-get install libopenblas-dev liblapacke-dev cmake libboost-all-dev libaio-dev libgoogle-perftools-dev build-essential libunwind-dev texlive-full latexmk -y
+python3 -m venv venv
+source venv/bin/activate
+pip install numpy scikit-learn h5py tqdm requests
+mkdir -p build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-march=native -O3" .. 
+make -j
+cd ..
+python scripts/hpdic/gen_data.py
+bash scripts/hpdic/run_build_disk_index.sh 
+python scripts/hpdic/compute_lid.py
+bash scripts/hpdic/run_mcgi_sigmoid.sh
+python scripts/hpdic/gen_query_gt.py
+bash scripts/hpdic/run_ab_test.sh
+```
+Example output:
+```bash
+--- Benchmarking: Baseline ---
+L     QPS        Latency(us)     Recall@10 
+------------------------------------------------
+10    73.98      13482.20        35.60     
+20    134.59     7406.16         49.20     
+40    108.68     9173.77         65.40     
+80    81.79      12175.04        81.90     
+100   81.67      12176.80        86.00     
+
+--- Benchmarking: MCGI (Sigmoid) ---
+L     QPS        Latency(us)     Recall@10 
+------------------------------------------------
+10    75.67      13178.77        35.50     
+20    121.07     8219.00         50.50     
+40    101.10     9842.93         67.30     
+80    79.37      12536.64        83.30     
+100   82.05      12123.15        87.30   
+```
+
 ## Some hardware notes on billion-scale experiments
 Here's what I suggest for running the billion-scale experiments on SIFT1B dataset: 80+ CPU cores, 256 GB+ memory (in which 200 GB is budgeted in the parameters such that only three subshards are needed; details see below), and 1 TB NVMe SSD. Then you'll be able to have a full run of index building finished within ~10 hours if your system is relatively new. Detailed usage are as follows: 
 * *CPU* The PQ procedure seems to be parallelizable with ~86 tasks because I observed almost always full CPU utilization on a 64-core machine while almost always 67% utilization on a 128-core machine. So, it's advisable to deploy this implementation on a 90+ core machine for best performance. When building the index, I saw all of 128 cores are working. So, having more cores is always better.
