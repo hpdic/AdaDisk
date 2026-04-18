@@ -55,7 +55,8 @@
 \maketitle 
 
 \begin{abstract}
-Graph-based Approximate Nearest Neighbor (ANN) search often suffers from performance degradation in high-dimensional spaces due to the Euclidean-Geodesic mismatch, where greedy routing diverges from the underlying data manifold. To address this challenge, we propose Manifold-Consistent Graph Indexing (MCGI), a geometry-aware and disk-resident indexing method that leverages Local Intrinsic Dimensionality (LID) to dynamically adapt search strategies to the intrinsic geometry of the data. Unlike standard algorithms that treat dimensions uniformly, MCGI modulates its beam search budget based on in situ geometric analysis, eliminating the dependency on static hyperparameters. Theoretical analysis confirms that MCGI provides robust approximation guarantees by preserving manifold-consistent topological connectivity. Extensive evaluations against three industry-standard baselines across five datasets, ranging from million to billion scales, demonstrate the superiority of our approach. Empirically, MCGI achieves 5.8x higher throughput at 95\% recall on the high-dimensional GIST1M dataset compared to the state-of-the-art DiskANN. On the billion-scale SIFT1B and T2I-1B datasets, MCGI further validates its scalability by reducing high-recall query latency by 3x, while maintaining performance parity on standard lower-dimensional benchmarks.
+Graph-based Approximate Nearest Neighbor (ANN) search often suffers from performance degradation in high-dimensional spaces due to the Euclidean-Geodesic mismatch, where greedy routing diverges from the underlying data manifold. To address this challenge, we propose Manifold-Consistent Graph Indexing (MCGI), a geometry-aware and disk-resident indexing method that leverages Local Intrinsic Dimensionality (LID) to dynamically adapt search strategies to the intrinsic geometry of the data. Unlike standard algorithms that treat dimensions uniformly, MCGI modulates its beam search budget based on in-situ geometric analysis, which eliminates the dependency on static hyperparameters. Theoretical analysis confirms that MCGI provides robust approximation guarantees by preserving manifold-consistent topological connectivity. Extensive evaluations against three industry-standard baselines across five datasets, ranging from million to billion scales, demonstrate the superiority of our approach: 
+MCGI achieves 5.8x higher throughput at 95\% recall on the high-dimensional GIST1M dataset compared to the state-of-the-art; on the billion-scale SIFT1B and T2I-1B datasets, MCGI demonstrates its scalability by reducing high-recall query latency by 3.0x while maintaining performance parity on low-dimensional benchmarks.
 \end{abstract}
 
 \section{Introduction}
@@ -779,7 +780,7 @@ In the critical high-recall regime (Recall@10 $> 90\%$), MCGI demonstrates a cle
 \end{algorithmic}
 \end{algorithm}
 
-\clearpage
-\input{checklist.tex}
+% \clearpage
+% \input{checklist.tex}
 
 \end{document}
