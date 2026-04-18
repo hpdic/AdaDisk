@@ -1,8 +1,8 @@
 \documentclass{article}
 
 \PassOptionsToPackage{numbers, compress}{natbib}
-\usepackage[preprint]{neurips_2025}
-% \usepackage{neurips_2025}
+% \usepackage[preprint]{neurips_2026}
+\usepackage{neurips_2026}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{hyperref}
@@ -55,7 +55,6 @@
 \maketitle 
 
 \begin{abstract}
-\don{Disk-based ANN is not a `real' problem. Suspend it for now. Also, the results are not very impressive: disk-based indexing is still way slower than in-memory ones. (Memory is cheap)}
 Graph-based Approximate Nearest Neighbor (ANN) search often suffers from performance degradation in high-dimensional spaces due to the Euclidean-Geodesic mismatch, where greedy routing diverges from the underlying data manifold. To address this challenge, we propose Manifold-Consistent Graph Indexing (MCGI), a geometry-aware and disk-resident indexing method that leverages Local Intrinsic Dimensionality (LID) to dynamically adapt search strategies to the intrinsic geometry of the data. Unlike standard algorithms that treat dimensions uniformly, MCGI modulates its beam search budget based on in situ geometric analysis, eliminating the dependency on static hyperparameters. Theoretical analysis confirms that MCGI provides robust approximation guarantees by preserving manifold-consistent topological connectivity. Extensive evaluations against three industry-standard baselines across five datasets, ranging from million to billion scales, demonstrate the superiority of our approach. Empirically, MCGI achieves 5.8x higher throughput at 95\% recall on the high-dimensional GIST1M dataset compared to the state-of-the-art DiskANN. On the billion-scale SIFT1B and T2I-1B datasets, MCGI further validates its scalability by reducing high-recall query latency by 3x, while maintaining performance parity on standard lower-dimensional benchmarks.
 \end{abstract}
 
@@ -453,10 +452,11 @@ We presented Manifold Consistent Graph Indexing (MCGI), a new indexing algorithm
 \bibliography{ref}
 \bibliographystyle{plain}
 
-\newpage
 \appendix
 
-\section{Complete Proofs}
+\section{Technical appendices and supplementary material}
+
+\subsection{Complete Proofs}
 \label{appendix:proofs}
 
 \begin{proposition}[Monotonicity]\label{proof:mono}
@@ -608,7 +608,7 @@ The expected number of distance evaluations follows $\mathbb{E}[N_{dist}] = 1/P_
 This confirms that the routing cost is dominated by the exponential term $\exp(\lambda \cdot \text{LID}(q))$, necessitating the adaptive beam width design in MCGI.
 \end{proof}
 
-\section{Experimental Details}
+\subsection{Additional Experimental Details}
 \label{appendix:setup}
 
 \paragraph{Datasets.} 
@@ -675,7 +675,7 @@ T2I-1B    & 18.3 & 7.0 & $10 \to 200$ & 80 \\
 \end{tabular}
 \end{table}
 
-\paragraph{Additional Experimental Results}
+\paragraph{More Experimental Results}
 As shown in Figure~\ref{fig:t2i_performance}, we further evaluated MCGI on the T2I-1B dataset. Unlike SIFT1B, T2I-1B introduces a distinct challenge characterized by higher dimensionality ($D=200$) and 32-bit floating-point precision. These factors make distance computations significantly more expensive, shifting the system bottleneck from pure I/O latency towards CPU computation.
 In the critical high-recall regime (Recall@10 $> 90\%$), MCGI demonstrates a clear advantage over DiskANN, delivering higher QPS at reduced latency. Notably, this performance gain persists even though the I/O reduction is less pronounced than on SIFT1B. The advantage stems from MCGI's geometric pruning strategy: by identifying simpler local manifolds, our algorithm aggressively prunes redundant edges, reducing the average node degree without compromising navigability. This optimization translates directly to fewer expensive floating-point operations per hop, highlighting MCGI's versatility in handling both I/O-bound (SIFT1B) and compute-bound (T2I-1B) billion-scale workloads.
 
@@ -686,7 +686,7 @@ In the critical high-recall regime (Recall@10 $> 90\%$), MCGI demonstrates a cle
   \label{fig:t2i_performance}
 \end{figure}
 
-\section{Full Algorithms}
+\subsection{Full Algorithms}
 \label{appendix:alg}
 
 \begin{algorithm}[h!]
@@ -778,5 +778,8 @@ In the critical high-recall regime (Recall@10 $> 90\%$), MCGI demonstrates a cle
    \ENDFOR
 \end{algorithmic}
 \end{algorithm}
+
+\clearpage
+\input{checklist.tex}
 
 \end{document}
