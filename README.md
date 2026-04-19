@@ -3,9 +3,10 @@
 ## Documentation
 * [Preprint](https://arxiv.org/pdf/2601.01930)
 
-## Updates on Apr 18, 2026, UChicago A100-80G
+## Updates in April 2026, UChicago A100-80G
 
 ### Quick Start
+For a synthetic 10K toy dataset, you can run the following commands to get a quick start of AdaDisk.
 ```bash
 cd ~/AdaDisk
 sudo apt-get update
@@ -43,6 +44,16 @@ L     QPS        Latency(us)     Recall@10
 40    101.10     9842.93         67.30     
 80    79.37      12536.64        83.30     
 100   82.05      12123.15        87.30   
+```
+
+For more serious experiments on million-scale standard benchmarks:
+```bash
+echo 'export MKL_THREADING_LAYER=GNU' >> ~/.bashrc
+source ~/.bashrc
+conda activate fluxvec # or whatever conda environment you have set up for AdaDisk
+cd ~/hpdic/AdaDisk/experiments/script
+python get_data.py
+ls -lh ../data -R
 ```
 
 ## Some hardware notes on billion-scale experiments

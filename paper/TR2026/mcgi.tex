@@ -412,7 +412,7 @@ HNSW \cite{malkov2018efficient} & memory & 2,165 \\
 
 Real world applications typically demand strict accuracy guarantees, such as Recall@10 being greater than or equal to 95\%. As summarized in Table~\ref{tab:high_recall}, while in memory methods like HNSW and IVF Flat establish high performance ceilings of 2,165 QPS and 590.5 QPS respectively, traditional disk resident indices face severe bottlenecks. For instance, the state of the art DiskANN plateaus at 64.7 QPS due to excessive random I/O from static routing in sparse high dimensional spaces. \ours{} effectively bridges this divide by delivering 375.1 QPS at 95\% recall, outperforming DiskANN by a factor of $5.8\times$ and reaching approximately $64\%$ of the memory resident IVF Flat index performance. This demonstrates that optimized manifold aware I/O management can push disk based indexing speeds into a range previously reserved for in memory structures.
 
-\paragraph{Billion Scale Scalability (RQ3)}
+\paragraph{Billion Scales (RQ3)}
 To validate scalability, we conducted evaluations on billion-scale datasets including SIFT1B. Figure~\ref{fig:sift1b} illustrates the recall QPS trade-off and latency comparisons. While DiskANN maintains competitive performance at moderate recall levels, its throughput degrades sharply as retrieval requirements tighten. At a strict recall target of 90\%, DiskANN drops to 2,597 QPS and incurs a mean latency of 49.06 ms due to excessive redundant I/O operations. Conversely, MCGI maintains a robust throughput of 3,436 QPS and reduces the mean latency to 16.20 ms, representing a 3x reduction. This confirms that our manifold-consistent pruning strategy effectively identifies optimal neighbors with significantly fewer disk accesses.
 
 \begin{figure*}[t]

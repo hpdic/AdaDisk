@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# 获取数据集名称 (默认 sift)
-DATASET="${1:-sift}"
+# Default dataset is gist if not provided as an argument
+DATASET="${1:-gist}"
 
 # ==========================================
-# 1. 动态参数配置
+# Set local parameters with environment variable overrides
 # ==========================================
 R="${R:-32}"
 L="${L:-50}"

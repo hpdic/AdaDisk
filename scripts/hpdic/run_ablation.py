@@ -33,7 +33,7 @@ EXPERIMENTS = {
     },
     'MCGI_Static': {
         'dir': os.path.join(DATA_ROOT, 'exp_mcgi_static'),
-        'build_flags': ['--use_mcgi', '--lid_path', LID_DATA, '--alpha_min', '1.0', '--alpha_max', '1.5']
+        'build_flags': ['--use_mcgi', '--lid_path', LID_DATA, '--alpha_min', '1.0', '--alpha_max', '1.35']
     },
     'MCGI_Dynamic': {
         'dir': os.path.join(DATA_ROOT, 'exp_mcgi_dynamic'),
