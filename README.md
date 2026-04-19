@@ -54,7 +54,43 @@ conda activate fluxvec # or whatever conda environment you have set up for AdaDi
 cd ~/hpdic/AdaDisk/experiments/script
 python get_data.py
 ls -lh ../data -R
+bash run_exp_single.sh
 ```
+Example output:
+```bash
+(fluxvec) cc@uc-a100:~/hpdic/AdaDisk/experiments/scripts$ bash run_exp_single.sh
+==========================================================
+Grid Search Task: gist
+Params: R=32, L=50, Alpha=[1.0, 1.2]
+Shared Baseline: /home/cc/hpdic/AdaDisk/experiments/results/gist_R32_L50_baseline_shared
+Current MCGI:    /home/cc/hpdic/AdaDisk/experiments/results/gist_R32_L50_min1.0_max1.2
+==========================================================
+=== [Cache Miss] Building Shared Baseline ===
+=== Building MCGI ===
+=== Benchmarking ===
+--- Baseline ---
+L     QPS        Lat(us)    Recall    
+50    138.70     230312.07  72.86     
+100   653.40     48438.14   83.92     
+150   373.83     77155.08   88.30     
+200   333.87     94807.85   91.13     
+
+--- MCGI ---
+L     QPS        Lat(us)    Recall    
+50    237.61     133022.53  72.12     
+100   237.88     132193.58  83.56     
+150   200.49     157510.14  88.29     
+200   180.73     174900.60  91.26     
+
+=== Experiment Complete ===
+=== Cleaning up large index files ===
+Cleanup done. Large binaries removed.
+```
+More results can be found e.g., in `~/hpdic/AdaDisk/experiments/fullscan/`.
+If you want to see which parameters could lead to the best performance, you can run `python find_best_params.py` to analyze the results of the full scan and find the best parameters for each dataset:
+```bash
+python find_best_params.py 
+``` 
 
 ## Some hardware notes on billion-scale experiments
 Here's what I suggest for running the billion-scale experiments on SIFT1B dataset: 80+ CPU cores, 256 GB+ memory (in which 200 GB is budgeted in the parameters such that only three subshards are needed; details see below), and 1 TB NVMe SSD. Then you'll be able to have a full run of index building finished within ~10 hours if your system is relatively new. Detailed usage are as follows: 
