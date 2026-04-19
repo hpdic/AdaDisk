@@ -91,6 +91,10 @@ If you want to see which parameters could lead to the best performance, you can 
 ```bash
 python find_best_params.py 
 ``` 
+Or you want to do an ablation study on the parameters, you can run `python run_ablation.py` to analyze the results of the full scan and find the best parameters for each dataset:
+```bash
+python run_ablation.py 
+```
 
 ## Some hardware notes on billion-scale experiments
 Here's what I suggest for running the billion-scale experiments on SIFT1B dataset: 80+ CPU cores, 256 GB+ memory (in which 200 GB is budgeted in the parameters such that only three subshards are needed; details see below), and 1 TB NVMe SSD. Then you'll be able to have a full run of index building finished within ~10 hours if your system is relatively new. Detailed usage are as follows: 
