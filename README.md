@@ -91,9 +91,9 @@ If you want to see which parameters could lead to the best performance, you can 
 ```bash
 python find_best_params.py 
 ``` 
-Or you want to do a sensitivity study on the parameters, you can run `python run_sensitivity.py` to analyze the results of the full scan and find the best parameters for each dataset:
+Or you want to do a sensitivity/ablation study on the parameters:
 ```bash
-python run_sensitivity.py 
+bash run_ablation.sh 
 ```
 
 ## Some hardware notes on billion-scale experiments
