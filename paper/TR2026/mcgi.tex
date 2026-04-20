@@ -362,7 +362,7 @@ Furthermore, evaluations on lower-dimensional datasets like SIFT1M and GloVe-100
     \label{fig:main_results}
 \end{figure*}
 
-\subsection{High Recall Efficiency}
+\subsection{High-recall Efficiency}
 
 \begin{wraptable}{r}{0.4\textwidth}
 \centering
@@ -374,6 +374,8 @@ Furthermore, evaluations on lower-dimensional datasets like SIFT1M and GloVe-100
 \toprule
 Algorithm & Locality & QPS \\
 \midrule
+PipeANN-R32~\cite{osdi25pipeann} & disk & 52.2 \\
+PipeANN-R48~\cite{osdi25pipeann} & disk & 60.3 \\
 DiskANN~\cite{subramanya2019diskann} & disk & 64.7 \\
 MCGI (this work) & disk & 375.1 \\
 IVF Flat~\cite{johnson2019billion} & memory & 590.5 \\
@@ -383,11 +385,15 @@ HNSW~\cite{malkov2018efficient} & memory & 2,165 \\
 \bottomrule
 \end{tabular}
 \end{wraptable}
-Real world applications typically demand strict accuracy guarantees, such as Recall@10 being greater than or equal to 95\%. As summarized in Table~\ref{tab:high_recall}, while in memory methods like HNSW and IVF Flat establish high performance ceilings of 2,165 QPS and 590.5 QPS respectively, traditional disk resident indices face severe bottlenecks. For instance, the state of the art DiskANN plateaus at 64.7 QPS due to excessive random I/O from static routing in sparse high dimensional spaces. \ours{} effectively bridges this divide by delivering 375.1 QPS at 95\% recall, outperforming DiskANN by a factor of $5.8\times$ and reaching approximately $64\%$ of the memory resident IVF Flat index performance. This demonstrates that optimized manifold aware I/O management can push disk based indexing speeds into a range previously reserved for in memory structures.
+Real-world applications may demand strict accuracy guarantees, such as Recall@10 $\geq$ 95\%. As summarized in Table~\ref{tab:high_recall}, traditional disk-resident indices face severe latency bottlenecks when forced to meet this rigorous threshold. For instance, the foundational DiskANN plateaus at a mere 64.7 QPS. More strikingly, the recent system variants of PipeANN optimized for low-dimensional vectors drop to 52.2 QPS for R = 32 and 60.3 QPS for R = 48. This confirms that aggressive I/O parallelization alone cannot salvage the excessive random reads caused by suboptimal graph routing in high-dimensional spaces. In contrast, \ours{} breaks this disk-based ceiling by delivering 375.1 QPS at 95\% recall, outperforming DiskANN by a factor of 5.8$\times$ and surpassing the PipeANN-R48 configuration by over 6.2$\times$.
+
+Beyond dominating the disk based category, \ours{} effectively bridges the historical performance divide between secondary storage and in-memory indices. Unconstrained memory resident methods naturally establish the absolute performance ceilings, with HNSW reaching 2,165 QPS and the highly optimized CSPG variants scaling up to 1,029 QPS. However, \ours{} demonstrates remarkable competitiveness for a disk-resident system by reaching 64\% of the throughput of the memory-resident IVF Flat index (which achieves 590.5 QPS). This result shows that by integrating LID-aware routing to maintain topological consistency, manifold-aware I/O management can push disk-based indexing speeds into a range that was previously achieved exclusively for in-memory structures.
 
 \subsection{Billion Scales}
 
-To validate scalability, we conducted evaluations on billion-scale datasets including SIFT1B. Figure~\ref{fig:sift1b} illustrates the recall QPS trade-off and latency comparisons. While DiskANN maintains competitive performance at moderate recall levels, its throughput degrades sharply as retrieval requirements tighten. At a strict recall target of 90\%, DiskANN drops to 2,597 QPS and incurs a mean latency of 49.06 ms due to excessive redundant I/O operations. Conversely, MCGI maintains a robust throughput of 3,436 QPS and reduces the mean latency to 16.20 ms, representing a 3x reduction. This confirms that our manifold-consistent pruning strategy effectively identifies optimal neighbors with significantly fewer disk accesses. 
+To validate scalability, we first conducted evaluations on billion-scale datasets including SIFT1B. Figure~\ref{fig:sift1b} illustrates the recall QPS trade-off and latency comparisons. While DiskANN maintains competitive performance at moderate recall levels, its throughput degrades sharply as retrieval requirements tighten. At a strict recall target of 90\%, DiskANN drops to 2,597 QPS and incurs a mean latency of 49.06 ms due to excessive redundant I/O operations. Conversely, MCGI maintains a robust throughput of 3,436 QPS and reduces the mean latency to 16.20 ms, representing a 3x reduction. This confirms that our manifold-consistent pruning strategy effectively identifies optimal neighbors with significantly fewer disk accesses. 
+The search list size parameter $L$ governs the balance between search quality and computational cost. As shown in Figure~\ref{fig:sensitivity}, MCGI exhibits a recall trajectory that closely mirrors DiskANN across the tested range. This parity demonstrates that our geometry-aware routing is robust, retaining high recall capabilities without degrading search quality under standard $L$ configurations. 
+Furthermore, Figure~\ref{fig:latency} details the query latency on GIST1M, showing that MCGI significantly reduces tail latency in the high recall range. By minimizing the random I/O required to escape local minima in high-dimensional spaces, MCGI translates manifold-aware routing into tangible lower I/O overhead for resource constrained deployments.
 
 \begin{figure*}[t]
     \centering
@@ -415,10 +421,6 @@ To validate scalability, we conducted evaluations on billion-scale datasets incl
     \label{fig:combined_eval}
 \end{figure*}
 
-The search list size parameter $L$ governs the balance between search quality and computational cost. As shown in Figure~\ref{fig:sensitivity}, MCGI exhibits a recall trajectory that closely mirrors DiskANN across the tested range. This parity demonstrates that our geometry-aware routing is robust, retaining high recall capabilities without degrading search quality under standard $L$ configurations. 
-
-Furthermore, Figure~\ref{fig:latency} details the query latency on GIST1M, showing that MCGI significantly reduces tail latency in the high recall range. By minimizing the random I/O required to escape local minima in high-dimensional spaces, MCGI translates manifold-aware routing into tangible lower I/O overhead for resource constrained deployments.
-
 We further evaluated MCGI on the T2I-1B dataset, reported in Figure~\ref{fig:t2i_performance}.
 On T2I-1B, the performance gap narrows compared to SIFT1B, as expected: the I/O bottleneck is less pronounced when the compute cost per hop dominates. Nevertheless, MCGI maintains a consistent advantage at high-recall operating points (Recall@10 > 90\%), confirming that manifold-aware pruning reduces redundant distance computations even in CPU-bound regimes.
 
@@ -434,7 +436,7 @@ On T2I-1B, the performance gap narrows compared to SIFT1B, as expected: the I/O 
   \begin{minipage}{0.55\linewidth}
     \centering
     \includegraphics[width=\linewidth]{figures/cmp_pipeann.pdf}
-    \caption{Performance comparison between \ours{}, CSPG, and PipeANN on GIST1M under fixed degree constraints.}
+    \caption{Performance comparison between \ours{}, CSPG, and PipeANN on GIST1M under fixed degree constraints ($L$).}
     \label{fig:cmp_pipeann}
   \end{minipage}
 \end{figure*}
@@ -444,7 +446,7 @@ On T2I-1B, the performance gap narrows compared to SIFT1B, as expected: the I/O 
 
 To position \ours{} within the landscape of state-of-the-art graph indexing, we conduct a head-to-head comparison with CSPG~\cite{NEURIPS2024_bab1486c} and PipeANN~\cite{osdi25pipeann, fast26odinann}. As illustrated in Figure~\ref{fig:cmp_pipeann}, we evaluate these systems under identical storage budgets by fixing the maximum out-degree at $R=32$ and $R=48$. 
 
-The results reveal a fundamental performance gap between \ours{} and existing baselines on the high-dimensional GIST1M manifold. Specifically, while PipeANN employs aggressive I/O pipeline parallelism via $io\_uring$ to mask SSD latency, its search performance suffers a catastrophic collapse due to a fragmented topology. Under the $R=32$ configuration, PipeANN struggles to surpass an 80\% recall ceiling even with an enlarged search pool ($L=200$), incurring excessive I/O overhead (averaging $>220$ IOs per query). In contrast, \ours{} achieves a near-perfect recall of 96.02\% under the same constraint, outperforming PipeANN in both accuracy and throughput by a substantial margin. 
+The results reveal a fundamental performance gap between \ours{} and existing baselines on the high-dimensional GIST1M manifold. Specifically, while PipeANN employs aggressive I/O pipeline parallelism via $io\_uring$ to mask SSD latency, its search performance suffers a catastrophic collapse due to a fragmented topology. Under the $R=32$ configuration, PipeANN struggles to surpass an 80\% recall ceiling even with an enlarged search pool ($L=200$), incurring excessive I/O overhead (averaging $>220$ IOs per query). In contrast, \ours{} achieves a near-perfect recall of 96.02\% under the same constraint, outperforming PipeANN in both accuracy and throughput. 
 
 
 % \subsection{Resource Efficiency}
@@ -457,7 +459,7 @@ The results reveal a fundamental performance gap between \ours{} and existing ba
 \subsection{Ablation and Parameter Sensitivity}
 \label{subsec:parameter_sensitivity}
 
-We evaluate the sensitivity of our proposed routing mechanism to the dynamic pruning upper bound, $\alpha_{max}$, which governs the trade-off between graph connectivity and distance computation overhead. As depicted in Figure~\ref{fig:ablation_and_sensitivity}(a), tuning $\alpha_{max}$ from 1.2 to 1.7 provides a smooth and predictable Pareto frontier for the QPS-Recall tradeoff. While a lower bound ($\alpha_{max} = 1.2$) limits connectivity, increasing the bound allows MCGI to preserve critical manifold paths that are otherwise prematurely pruned. Specifically, at $\alpha_{max} = 1.7$, MCGI successfully breaks the baseline's recall ceiling (reaching 96.45\%) while maintaining more than double the search throughput ($>$130 QPS) of the baseline. This progression demonstrates that our dynamic alpha strategy effectively balances topological integrity with computational efficiency.
+We evaluate the sensitivity of our proposed routing mechanism to the dynamic pruning upper bound, $\alpha_{max}$, which governs the trade-off between graph connectivity and distance computation overhead. As depicted in Figure~\ref{fig:ablation_and_sensitivity}(a), tuning $\alpha_{max}$ from 1.2 to 1.7 provides a smooth and predictable Pareto frontier for the QPS-Recall tradeoff. While a lower bound ($\alpha_{max} = 1.2$) limits connectivity, increasing the bound allows MCGI to preserve critical manifold paths that are otherwise prematurely pruned. Specifically, at $\alpha_{max} = 1.7$, MCGI successfully breaks the baseline's recall ceiling (reaching 96.45\%) while maintaining more than double the search throughput ($>$130 QPS) of the baseline. 
 
 To further validate the mathematical necessity of our non-linear density mapping, we conduct an ablation study comparing our proposed LID-aware Sigmoid transformation against a vanilla Linear mapping. As shown in Figures~\ref{fig:ablation_and_sensitivity}(b)-(d) across three distinct topological configurations, replacing the Sigmoid function with a naive Linear scaling results in a severe performance collapse in the extreme high-recall setup. For instance, under the $R=48$ configuration, the Linear mapping suffers a nearly 50\% drop in QPS and a noticeable degradation in recall compared to the Sigmoid variant. This confirms our theoretical analysis: high-dimensional manifolds exhibit localized, extreme density variations. A rigid linear transformation fails to adequately buffer these spikes, leading to indiscriminate edge pruning or redundant distance calculations. The Sigmoid function smoothly mitigates these topological irregularities, proving indispensable for breaking the baseline's accuracy ceiling without sacrificing query latency.
 
@@ -489,7 +491,7 @@ To further validate the mathematical necessity of our non-linear density mapping
 
 \section{Conclusion}
 
-We presented Manifold Consistent Graph Indexing (MCGI), a new indexing algorithm that fundamentally rethinks vector search by aligning graph routing with the intrinsic geometry of high-dimensional data. By resolving the discrepancy between Euclidean and geodesic distances, MCGI provides robust theoretical guarantees on connectivity while effectively mitigating the curse of dimensionality. Comprehensive evaluations on billion-scale benchmarks, including SIFT1B and T2I-1B, confirm the versatility of our approach across both I/O-intensive and compute-intensive scenarios. Our results demonstrate that MCGI reduces query latency by up to 3x compared to the state-of-the-art DiskANN, delivering a throughput that rivals the performance of in-memory inverted indices.
+We presented Manifold Consistent Graph Indexing (MCGI), a new indexing method that rethinks vector search by aligning graph routing with the intrinsic geometry of high-dimensional data. By resolving the discrepancy between Euclidean and geodesic distances, MCGI provides theoretical guarantees on connectivity while effectively mitigating the curse of dimensionality. Comprehensive evaluations on billion-scale benchmarks, including SIFT1B and T2I-1B, confirm the versatility of our approach across both I/O-intensive and compute-intensive scenarios. Our results demonstrate that MCGI reduces query latency by up to 3x compared to the state-of-the-art disk-resident indexing methods such as PipeANN and DiskANN, delivering a throughput that rivals the performance of in-memory inverted indices.
 
 \begin{ack}
 Results presented in this paper were obtained using the Chameleon testbed supported by the National Science Foundation.
