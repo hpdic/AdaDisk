@@ -47,7 +47,7 @@ bool LoadLIDBinary(const std::string& path, std::vector<float>& lid_values) {
 
 // --- 实现全局接口 ---
 
-void InitMCGIContext(const std::string &lid_path, float alpha_min, float alpha_max)
+void InitMCGIContext(const std::string &lid_path, float alpha_min, float alpha_max, bool use_linear)
 {
     if (lid_path.empty())
         return;
@@ -62,53 +62,53 @@ void InitMCGIContext(const std::string &lid_path, float alpha_min, float alpha_m
         return;
     }
 
-    // ================= [MCGI ALGO] Sigmoid Mapping Strategy =================
-
-    // 1. 计算均值 (Mean)
-    double sum = 0.0;
-    for (float v : lid_values)
-        sum += v;
-    double mean = sum / lid_values.size();
-
-    // 2. 计算标准差 (StdDev)
-    double sq_sum = 0.0;
-    for (float v : lid_values)
-        sq_sum += (v - mean) * (v - mean);
-    double std_dev = std::sqrt(sq_sum / lid_values.size());
-
-    // 防止标准差过小导致除以零（极罕见情况）
-    if (std_dev < 1e-6)
-        std_dev = 1.0;
-
-    std::cout << "[MCGI] LID Stats -> Mean: " << mean << ", StdDev: " << std_dev << std::endl;
-
-    // 3. 生成 Alpha 表 (使用 Sigmoid 函数)
-    // 公式: alpha = min + (max - min) * Sigmoid( (lid - mean) / std_dev )
     g_mcgi_ctx.alpha_table.resize(lid_values.size());
 
-    // 控制 Sigmoid 的陡峭程度，k 越大，在均值附近的突变越剧烈
-    // k=1.0 是标准正态分布的平滑度
-    const double k = 1.0;
+    if (use_linear) {
+        std::cout << "[MCGI ALGO] Using Ablation Mode: LINEAR Mapping" << std::endl;
+        
+        double lid_min = *std::min_element(lid_values.begin(), lid_values.end());
+        double lid_max = *std::max_element(lid_values.begin(), lid_values.end());
+        double lid_range = lid_max - lid_min;
 
-    for (size_t i = 0; i < lid_values.size(); ++i)
-    {
-        // Z-score: 将数据中心化到 0
-        double z_score = (lid_values[i] - mean) / std_dev;
+        if (lid_range < 1e-6)
+            lid_range = 1.0;
 
-        // Sigmoid: 映射到 (0, 1)
-        double sigmoid_val = 1.0 / (1.0 + std::exp(-k * z_score));
+        std::cout << "[MCGI] LID Stats -> Min: " << lid_min << ", Max: " << lid_max << std::endl;
 
-        // 映射到目标区间 [alpha_min, alpha_max]
-        float alpha = alpha_min + (float)(sigmoid_val * (alpha_max - alpha_min));
+        for (size_t i = 0; i < lid_values.size(); ++i) {
+            double ratio = (lid_values[i] - lid_min) / lid_range;
+            g_mcgi_ctx.alpha_table[i] = alpha_min + (float)(ratio * (alpha_max - alpha_min));
+        }
+    } else {
+        std::cout << "[MCGI ALGO] Using Full Mode: SIGMOID Mapping" << std::endl;
+        
+        double sum = 0.0;
+        for (float v : lid_values)
+            sum += v;
+        double mean = sum / lid_values.size();
 
-        g_mcgi_ctx.alpha_table[i] = alpha;
+        double sq_sum = 0.0;
+        for (float v : lid_values)
+            sq_sum += (v - mean) * (v - mean);
+        double std_dev = std::sqrt(sq_sum / lid_values.size());
+
+        if (std_dev < 1e-6)
+            std_dev = 1.0;
+
+        std::cout << "[MCGI] LID Stats -> Mean: " << mean << ", StdDev: " << std_dev << std::endl;
+
+        const double k = 1.0;
+        for (size_t i = 0; i < lid_values.size(); ++i) {
+            double z_score = (lid_values[i] - mean) / std_dev;
+            double sigmoid_val = 1.0 / (1.0 + std::exp(-k * z_score));
+            g_mcgi_ctx.alpha_table[i] = alpha_min + (float)(sigmoid_val * (alpha_max - alpha_min));
+        }
     }
-    // ========================================================================
 
     g_mcgi_ctx.enabled = true;
     std::cout << "[MCGI] Global Context Ready. Table Size: " << g_mcgi_ctx.alpha_table.size() << std::endl;
 
-    // 打印几个样本看看效果
     if (lid_values.size() > 5)
     {
         std::cout << "[MCGI Debug] Sample Alphas (First 5): ";
@@ -117,6 +117,77 @@ void InitMCGIContext(const std::string &lid_path, float alpha_min, float alpha_m
         std::cout << std::endl;
     }
 }
+
+// void InitMCGIContext(const std::string &lid_path, float alpha_min, float alpha_max)
+// {
+//     if (lid_path.empty())
+//         return;
+
+//     std::cout << "[MCGI] Initializing Global Context..." << std::endl;
+//     std::cout << "[MCGI] Param Alpha Range: [" << alpha_min << ", " << alpha_max << "]" << std::endl;
+
+//     std::vector<float> lid_values;
+//     if (!LoadLIDBinary(lid_path, lid_values))
+//     {
+//         std::cerr << "[MCGI Error] Failed to load LID file. MCGI disabled." << std::endl;
+//         return;
+//     }
+
+//     // ================= [MCGI ALGO] Sigmoid Mapping Strategy =================
+
+//     // 1. 计算均值 (Mean)
+//     double sum = 0.0;
+//     for (float v : lid_values)
+//         sum += v;
+//     double mean = sum / lid_values.size();
+
+//     // 2. 计算标准差 (StdDev)
+//     double sq_sum = 0.0;
+//     for (float v : lid_values)
+//         sq_sum += (v - mean) * (v - mean);
+//     double std_dev = std::sqrt(sq_sum / lid_values.size());
+
+//     // 防止标准差过小导致除以零（极罕见情况）
+//     if (std_dev < 1e-6)
+//         std_dev = 1.0;
+
+//     std::cout << "[MCGI] LID Stats -> Mean: " << mean << ", StdDev: " << std_dev << std::endl;
+
+//     // 3. 生成 Alpha 表 (使用 Sigmoid 函数)
+//     // 公式: alpha = min + (max - min) * Sigmoid( (lid - mean) / std_dev )
+//     g_mcgi_ctx.alpha_table.resize(lid_values.size());
+
+//     // 控制 Sigmoid 的陡峭程度，k 越大，在均值附近的突变越剧烈
+//     // k=1.0 是标准正态分布的平滑度
+//     const double k = 1.0;
+
+//     for (size_t i = 0; i < lid_values.size(); ++i)
+//     {
+//         // Z-score: 将数据中心化到 0
+//         double z_score = (lid_values[i] - mean) / std_dev;
+
+//         // Sigmoid: 映射到 (0, 1)
+//         double sigmoid_val = 1.0 / (1.0 + std::exp(-k * z_score));
+
+//         // 映射到目标区间 [alpha_min, alpha_max]
+//         float alpha = alpha_min + (float)(sigmoid_val * (alpha_max - alpha_min));
+
+//         g_mcgi_ctx.alpha_table[i] = alpha;
+//     }
+//     // ========================================================================
+
+//     g_mcgi_ctx.enabled = true;
+//     std::cout << "[MCGI] Global Context Ready. Table Size: " << g_mcgi_ctx.alpha_table.size() << std::endl;
+
+//     // 打印几个样本看看效果
+//     if (lid_values.size() > 5)
+//     {
+//         std::cout << "[MCGI Debug] Sample Alphas (First 5): ";
+//         for (int i = 0; i < 5; ++i)
+//             std::cout << g_mcgi_ctx.alpha_table[i] << " ";
+//         std::cout << std::endl;
+//     }
+// }
 
 float GetGlobalMCGIAlpha(unsigned node_id)
 {

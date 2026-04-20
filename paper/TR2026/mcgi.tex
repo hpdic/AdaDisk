@@ -236,6 +236,7 @@ The full description of this online algorithm can be found in Appendix~\ref{appe
 
 \section{Theoretical Analysis}
 \label{sec:theory}
+\don{Probably need to move this entire section into the Appendix.}
 
 In this section, we establish the theoretical foundation for Manifold Consistent Graph Indexing (MCGI) by addressing two fundamental aspects of proximity graph search: routing complexity and topological connectivity. 
 First, we formalize the relationship between local geometric complexity and search efficiency. We prove that the expected cost of greedy routing grows exponentially with LID, which mathematically justifies our adaptive resource allocation strategy. It demonstrates that the search budget must scale exponentially with local dimensionality to guarantee uniform recall across heterogeneous manifolds. 
@@ -446,19 +447,19 @@ To validate scalability, we conducted evaluations on billion-scale datasets incl
 
 The search list size parameter $L$ governs the balance between search quality and computational cost. As shown in Figure~\ref{fig:sensitivity}, MCGI exhibits a recall trajectory that closely mirrors DiskANN across the tested range. This parity demonstrates that our geometry-aware routing is robust, retaining high recall capabilities without degrading search quality under standard $L$ configurations. Furthermore, Figure~\ref{fig:latency} details the query latency on GIST1M, showing that MCGI significantly reduces tail latency in the high recall range. By minimizing the random I/O required to escape local minima in high-dimensional spaces, MCGI translates manifold-aware routing into tangible lower I/O overhead for resource constrained deployments.
 
-\paragraph{Parameter Sensitivity (RQ5)}
+\paragraph{Ablation and Parameter Sensitivity (RQ5)}
 \label{subsec:parameter_sensitivity}
 
-We evaluate the sensitivity of our proposed routing mechanism to the dynamic pruning upper bound, $\alpha_{max}$, which governs the trade-off between graph connectivity and distance computation overhead. As depicted in Figure~\ref{fig:ablation_qps_vs_recall}, tuning $\alpha_{max}$ from 1.2 to 1.7 provides a smooth and predictable Pareto frontier for the QPS-Recall tradeoff. While a lower bound ($\alpha_{max} = 1.2$) limits connectivity, increasing the bound to 1.5 and 1.7 allows MCGI to preserve critical manifold paths that are otherwise prematurely pruned. Specifically, at $\alpha_{max} = 1.7$, MCGI successfully breaks the baseline's recall ceiling (reaching 96.45\%) while maintaining more than double the search throughput ($>$130 QPS) of the baseline. This progression demonstrates that our dynamic alpha strategy effectively balances topological integrity with computational efficiency in high-precision retrieval regimes.
+We evaluate the sensitivity of our proposed routing mechanism to the dynamic pruning upper bound, $\alpha_{max}$, which governs the trade-off between graph connectivity and distance computation overhead. As depicted in Figure~\ref{fig:ablation_and_sensitivity}(a), tuning $\alpha_{max}$ from 1.2 to 1.7 provides a smooth and predictable Pareto frontier for the QPS-Recall tradeoff. While a lower bound ($\alpha_{max} = 1.2$) limits connectivity, increasing the bound allows MCGI to preserve critical manifold paths that are otherwise prematurely pruned. Specifically, at $\alpha_{max} = 1.7$, MCGI successfully breaks the baseline's recall ceiling (reaching 96.45\%) while maintaining more than double the search throughput ($>$130 QPS) of the baseline. This progression demonstrates that our dynamic alpha strategy effectively balances topological integrity with computational efficiency.
 
-\begin{figure}[htbp]
+To further validate the mathematical necessity of our non-linear density mapping, we conduct an ablation study comparing our proposed LID-aware Sigmoid transformation against a vanilla Linear mapping. As shown in Figures~\ref{fig:ablation_and_sensitivity}(b)-(d) across three distinct topological configurations, replacing the Sigmoid function with a naive Linear scaling results in a severe performance collapse in the extreme high-recall setup. For instance, under the $R=48$ configuration, the Linear mapping suffers a nearly 50\% drop in QPS and a noticeable degradation in recall compared to the Sigmoid variant. This confirms our theoretical analysis: high-dimensional manifolds exhibit localized, extreme density variations. A rigid linear transformation fails to adequately buffer these spikes, leading to indiscriminate edge pruning or redundant distance calculations. The Sigmoid function smoothly mitigates these topological irregularities, proving indispensable for breaking the baseline's accuracy ceiling without sacrificing query latency.
+
+\begin{figure*}[t]
     \centering
-    \includegraphics[width=0.6\linewidth]{figures/ablation_qps_vs_recall.pdf}
-    \caption{Parameter sensitivity analysis on the GIST dataset. 
-    % The Pareto frontier illustrates the QPS versus Recall@10 trade-off by varying the dynamic pruning upper bound $\alpha_{max}$. MCGI (e.g., $\alpha_{max} = 1.7$) successfully breaks the baseline's recall ceiling while maintaining over 2$\times$ search throughput in the extreme high-recall regime.
-    }
-    \label{fig:ablation_qps_vs_recall}
-\end{figure}
+    \includegraphics[width=\linewidth]{figures/combined_ablation.pdf}
+    \caption{Ablation and sensitivity analysis (on the GIST1M)}
+    \label{fig:ablation_and_sensitivity}
+\end{figure*}
 
 \section{Conclusion}
 

@@ -1662,7 +1662,7 @@ int build_disk_index(const char *dataFilePath, const char *indexFilePathPrefix, 
                      const std::string &label_file, const std::string &universal_label, const uint32_t filter_threshold,
                      const uint32_t Lf,
                      // MCGI 参数
-                     const std::string &lid_file_path, float alpha_min, float alpha_max)
+                     const std::string &lid_file_path, float alpha_min, float alpha_max, bool use_linear)
 {
     // 1. 解析参数
     std::stringstream ss(indexBuildParameters);
@@ -1709,7 +1709,7 @@ int build_disk_index(const char *dataFilePath, const char *indexFilePathPrefix, 
     // 5. [MCGI] 注入 MCGI 参数
     if (!lid_file_path.empty())
     {
-        diskann::InitMCGIContext(lid_file_path, alpha_min, alpha_max);
+        diskann::InitMCGIContext(lid_file_path, alpha_min, alpha_max, use_linear);
     }
 
     // 6. 执行构建
@@ -1794,26 +1794,26 @@ int build_disk_index(const char *dataFilePath, const char *indexFilePathPrefix, 
 // 2. 新接口 (MCGI) 的实例化
 template int build_disk_index<float>(const char *, const char *, const char *, diskann::Metric, bool,
                                      const std::string &, bool, const std::string &, const std::string &,
-                                     const uint32_t, const uint32_t, const std::string &, float, float);
+                                     const uint32_t, const uint32_t, const std::string &, float, float, bool);
 template int build_disk_index<int8_t>(const char *, const char *, const char *, diskann::Metric, bool,
                                       const std::string &, bool, const std::string &, const std::string &,
-                                      const uint32_t, const uint32_t, const std::string &, float, float);
+                                      const uint32_t, const uint32_t, const std::string &, float, float, bool);
 template int build_disk_index<uint8_t>(const char *, const char *, const char *, diskann::Metric, bool,
                                        const std::string &, bool, const std::string &, const std::string &,
-                                       const uint32_t, const uint32_t, const std::string &, float, float);
+                                       const uint32_t, const uint32_t, const std::string &, float, float, bool);
 
 // [FIX] 补充 uint16_t (unsigned short) 的实例化，解决链接错误
 template int build_disk_index<float, uint16_t>(const char *, const char *, const char *, diskann::Metric, bool,
                                                const std::string &, bool, const std::string &, const std::string &,
-                                               const uint32_t, const uint32_t, const std::string &, float, float);
+                                               const uint32_t, const uint32_t, const std::string &, float, float, bool);
 
 template int build_disk_index<int8_t, uint16_t>(const char *, const char *, const char *, diskann::Metric, bool,
                                                 const std::string &, bool, const std::string &, const std::string &,
-                                                const uint32_t, const uint32_t, const std::string &, float, float);
+                                                const uint32_t, const uint32_t, const std::string &, float, float, bool);
 
 template int build_disk_index<uint8_t, uint16_t>(const char *, const char *, const char *, diskann::Metric, bool,
                                                  const std::string &, bool, const std::string &, const std::string &,
-                                                 const uint32_t, const uint32_t, const std::string &, float, float);
+                                                 const uint32_t, const uint32_t, const std::string &, float, float, bool);
 
 // ========================= T, Default Tag =========================
 // 注意：去掉原本中间的 const std::string & (即 lid_path)，改成 4 个 float

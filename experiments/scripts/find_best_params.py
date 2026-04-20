@@ -89,3 +89,29 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+#
+# Example output:
+#
+# (fluxvec) cc@uc-a100:~/hpdic/AdaDisk/experiments/scripts$ python find_best_params.py 
+# Found the following configurations where MCGI significantly outperforms Baseline in Recall:
+
+# File: gist_R48_min1.1_max1.7.txt
+#   Search Depth L: 150
+#   Baseline Recall: 93.97
+#   MCGI Recall: 94.5
+#   Improvement: +0.53%
+
+# File: gist_R32_min1.0_max2.0.txt
+#   Search Depth L: 150
+#   Baseline Recall: 90.52
+#   MCGI Recall: 91.03
+#   Improvement: +0.51%
+
+# File: gist_R32_min1.1_max2.0.txt
+#   Search Depth L: 150
+#   Baseline Recall: 90.52
+#   MCGI Recall: 91.02
+#   Improvement: +0.5%
+
+# (fluxvec) cc@uc-a100:~/hpdic/AdaDisk/experiments/scripts$ 

@@ -7,8 +7,7 @@
  * @details This tool is used to create an index that can be stored on disk and used for efficient
  * search on large datasets. It supports various data types and distance functions, and can be
  * configured to optimize for different use cases.
- * 
- * Update 2025-12-16: update string initialization from {} to =.
+ * * Update 2025-12-16: update string initialization from {} to =.
  */
 
 #include <omp.h>
@@ -31,6 +30,7 @@ int main(int argc, char **argv)
     // [HPDIC MOD: MCGI START]
     bool use_mcgi = false;
     bool use_amcgi = false;
+    bool use_linear = false;
     std::string lid_path;
     float lid_avg = 19.5f;
     float lid_std = 7.9f;
@@ -108,6 +108,8 @@ int main(int argc, char **argv)
         // [HPDIC MOD: MCGI START]
         optional_configs.add_options()("use_mcgi", po::bool_switch()->default_value(false),
                                        "Enable Manifold-Consistent Graph Indexing (MCGI).");
+        optional_configs.add_options()("use_linear", po::bool_switch()->default_value(false),
+                                       "MCGI Ablation: Use linear mapping instead of sigmoid.");
         optional_configs.add_options()("lid_path", po::value<std::string>(&lid_path)->default_value(""),
                                        "Path to pre-computed LID file (required if use_mcgi is true).");
         optional_configs.add_options()("alpha_min", po::value<float>(&alpha_min)->default_value(1.0f),
@@ -148,8 +150,12 @@ int main(int argc, char **argv)
                 std::cerr << "Error: --lid_path is required when --use_mcgi is enabled." << std::endl;
                 return -1;
             }
+            if (vm["use_linear"].as<bool>())
+            {
+                use_linear = true;
+            }
             std::cout << "[MCGI] Enabled. LID Path: " << lid_path << ", Alpha Range: [" << alpha_min << ", "
-                      << alpha_max << "]" << std::endl;
+                      << alpha_max << "], Linear Mode: " << (use_linear ? "True" : "False") << std::endl;
         }
 
         if (vm["use_amcgi"].as<bool>())
@@ -214,12 +220,12 @@ int main(int argc, char **argv)
                     return diskann::build_disk_index<T, uint16_t>(
                         data_path.c_str(), index_path_prefix.c_str(), params.c_str(), metric, use_opq, codebook_prefix,
                         use_filters, label_file, universal_label, filter_threshold, Lf, lid_path.c_str(), alpha_min,
-                        alpha_max);
+                        alpha_max, use_linear);
                 else
                     return diskann::build_disk_index<T>(data_path.c_str(), index_path_prefix.c_str(), params.c_str(),
                                                         metric, use_opq, codebook_prefix, use_filters, label_file,
                                                         universal_label, filter_threshold, Lf, lid_path.c_str(),
-                                                        alpha_min, alpha_max);
+                                                        alpha_min, alpha_max, use_linear);
             } else if (use_amcgi)
             {
                 if (use_u16_label)
@@ -261,46 +267,6 @@ int main(int argc, char **argv)
         diskann::cerr << "Error. Unsupported data type" << std::endl;
         return -1;
 
-        // if (label_file != "" && label_type == "ushort")
-        // {
-        //     if (data_type == std::string("int8"))
-        //         return diskann::build_disk_index<int8_t>(data_path.c_str(), index_path_prefix.c_str(), params.c_str(),
-        //                                                  metric, use_opq, codebook_prefix, use_filters, label_file,
-        //                                                  universal_label, filter_threshold, Lf);
-        //     else if (data_type == std::string("uint8"))
-        //         return diskann::build_disk_index<uint8_t, uint16_t>(
-        //             data_path.c_str(), index_path_prefix.c_str(), params.c_str(), metric, use_opq, codebook_prefix,
-        //             use_filters, label_file, universal_label, filter_threshold, Lf);
-        //     else if (data_type == std::string("float"))
-        //         return diskann::build_disk_index<float, uint16_t>(
-        //             data_path.c_str(), index_path_prefix.c_str(), params.c_str(), metric, use_opq, codebook_prefix,
-        //             use_filters, label_file, universal_label, filter_threshold, Lf);
-        //     else
-        //     {
-        //         diskann::cerr << "Error. Unsupported data type" << std::endl;
-        //         return -1;
-        //     }
-        // }
-        // else
-        // {
-        //     if (data_type == std::string("int8"))
-        //         return diskann::build_disk_index<int8_t>(data_path.c_str(), index_path_prefix.c_str(), params.c_str(),
-        //                                                  metric, use_opq, codebook_prefix, use_filters, label_file,
-        //                                                  universal_label, filter_threshold, Lf);
-        //     else if (data_type == std::string("uint8"))
-        //         return diskann::build_disk_index<uint8_t>(data_path.c_str(), index_path_prefix.c_str(), params.c_str(),
-        //                                                   metric, use_opq, codebook_prefix, use_filters, label_file,
-        //                                                   universal_label, filter_threshold, Lf);
-        //     else if (data_type == std::string("float"))
-        //         return diskann::build_disk_index<float>(data_path.c_str(), index_path_prefix.c_str(), params.c_str(),
-        //                                                 metric, use_opq, codebook_prefix, use_filters, label_file,
-        //                                                 universal_label, filter_threshold, Lf);
-        //     else
-        //     {
-        //         diskann::cerr << "Error. Unsupported data type" << std::endl;
-        //         return -1;
-        //     }
-        // }
     }
     catch (const std::exception &e)
     {
