@@ -336,7 +336,7 @@ We implemented MCGI on top of the official C++ codebase of DiskANN~\cite{subrama
 % The core distance computations were optimized using AVX SIMD instructions to maximize hardware utilization. 
 % All latency-critical components, including the dynamic candidate list management and the LID-aware routing logic, were implemented in C++ to avoid the overhead of high-level language interpreters. 
 % We evaluate the performance of \ours{} against state-of-the-art disk-based and memory-mapped approximate nearest neighbor (ANN) search algorithms. 
-We focus on answering the following four research questions.
+We focus on answering the following five research questions.
 
 (1) RQ1 (High-Dimensional Effectiveness): How does \ours{} perform compared to baselines on high-dimensional data (e.g., GIST1M) where the curse of dimensionality typically degrades the efficiency of graph-based indices?
 
@@ -345,6 +345,8 @@ We focus on answering the following four research questions.
 (3) RQ3 (Billion-Scale Scalability): Does the proposed method scale effectively to billion-scale datasets, including SIFT1B and T2I-1B, and demonstrate superiority over industry-standard baselines across both I/O-bound and compute-bound workloads?
    
 (4) RQ4 (Resource Efficiency): Does the manifold-aware routing strategy translate to lower I/O overhead and reduced query latency on modern hardware (e.g., NVMe SSDs and AVX2 enabled CPUs)?
+
+(5) RQ5 (Recall Performance vs. Advanced Graph Indexing): How does \ours{} compare to in-memory ANN algorithms like CSPG and PipeANN?
 
 \subsection{Experimental Setup}
 \label{subsec:setup}
