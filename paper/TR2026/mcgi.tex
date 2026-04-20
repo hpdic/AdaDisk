@@ -300,8 +300,8 @@ Proposition~\ref{prop:connectivity} ensures that there are no structural dead en
 \section{Evaluation}
 \label{sec:experiments}
 
-We implemented MCGI on top of the official C++ codebase of DiskANN~\cite{subramanya2019diskann}. 
-\ours{} implementation is open-sourced available at: \url{https://github.com/}.
+We have implemented MCGI with C++ and integrated it into the codebase of DiskANN~\cite{subramanya2019diskann}, i.e., the C++ main branch before the new Rust migration. 
+The anonymized implementation of \ours{} is available at: \url{https://github.com/}\don{TODO}.
 % To ensure fair comparison and production-level efficiency, we integrated the Maximum Likelihood Estimator (MLE) for LID directly into the graph building process. 
 % The core distance computations were optimized using AVX SIMD instructions to maximize hardware utilization. 
 % All latency-critical components, including the dynamic candidate list management and the LID-aware routing logic, were implemented in C++ to avoid the overhead of high-level language interpreters. 
