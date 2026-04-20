@@ -267,7 +267,7 @@ int main(int argc, char** argv) {
     idx.build_index(R, 1.2, 150);
     
     std::cout << "=== Testing Search Performance ===\n";
-    for(int l : {50, 100, 150, 200}) {
+    for(int l : {50, 100, 150, 200, 300, 400, 500, 600, 700, 800, 900, 1000}) {
         idx.test(l);
     }
 
@@ -275,6 +275,8 @@ int main(int argc, char** argv) {
 }
 
 /* Example output:
+(fluxvec) cc@uc-a100:~/hpdic/AdaDisk/experiments/CSPG$ g++ -O3 -march=native -fopenmp cspg_clean.cpp -o cspg_clean.bin
+
 (fluxvec) cc@uc-a100:~/hpdic/AdaDisk/experiments/CSPG$ ./cspg_clean.bin 
 === CSPG Baseline Testing ===
 [CONFIG] Target R = 32
@@ -288,10 +290,19 @@ Starting index build...
 Index built.
 
 === Testing Search Performance ===
-L=50 | Recall: 0.6603 | QPS: 9394.68
-L=100 | Recall: 0.7579 | QPS: 3704.55
-L=150 | Recall: 0.8086 | QPS: 2695.63
-L=200 | Recall: 0.8411 | QPS: 1988.23
+L=50 | Recall: 0.6603 | QPS: 8699.02
+L=100 | Recall: 0.7579 | QPS: 3509.74
+L=150 | Recall: 0.8086 | QPS: 2551.23
+L=200 | Recall: 0.8411 | QPS: 2088.68
+L=300 | Recall: 0.8801 | QPS: 1831.63
+L=400 | Recall: 0.9003 | QPS: 1394.35
+L=500 | Recall: 0.9148 | QPS: 1192.18
+L=600 | Recall: 0.9272 | QPS: 1015.85
+L=700 | Recall: 0.9354 | QPS: 931.188
+L=800 | Recall: 0.9413 | QPS: 912.583
+L=900 | Recall: 0.9474 | QPS: 724.203
+L=1000 | Recall: 0.9517 | QPS: 738.2
+
 (fluxvec) cc@uc-a100:~/hpdic/AdaDisk/experiments/CSPG$ ./cspg_clean.bin 48
 === CSPG Baseline Testing ===
 [CONFIG] Target R = 48
@@ -305,9 +316,18 @@ Starting index build...
 Index built.
 
 === Testing Search Performance ===
-L=50 | Recall: 0.7821 | QPS: 6112.87
-L=100 | Recall: 0.8669 | QPS: 3356.49
-L=150 | Recall: 0.9012 | QPS: 2409.9
-L=200 | Recall: 0.9238 | QPS: 1689.24
+L=50 | Recall: 0.7821 | QPS: 5603.49
+L=100 | Recall: 0.8669 | QPS: 2402.59
+L=150 | Recall: 0.9012 | QPS: 2284.44
+L=200 | Recall: 0.9238 | QPS: 1757.6
+L=300 | Recall: 0.9513 | QPS: 1029.92
+L=400 | Recall: 0.9643 | QPS: 968.19
+L=500 | Recall: 0.9717 | QPS: 800.033
+L=600 | Recall: 0.9766 | QPS: 793.674
+L=700 | Recall: 0.9805 | QPS: 801.321
+L=800 | Recall: 0.9832 | QPS: 614.258
+L=900 | Recall: 0.986 | QPS: 566.277
+L=1000 | Recall: 0.9874 | QPS: 527.08
 (fluxvec) cc@uc-a100:~/hpdic/AdaDisk/experiments/CSPG$ 
+
 */
