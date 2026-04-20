@@ -346,7 +346,9 @@ We focus on answering the following five research questions.
    
 (4) RQ4 (Resource Efficiency): Does the manifold-aware routing strategy translate to lower I/O overhead and reduced query latency on modern hardware (e.g., NVMe SSDs and AVX2 enabled CPUs)?
 
-(5) RQ5 (Recall Performance vs. Advanced Graph Indexing): How does \ours{} compare to in-memory ANN algorithms like CSPG and PipeANN?
+(5) RQ5 (Parameter Sensitivity and Ablation): How sensitive is \ours{} to the choice of mapping function parameters ($\alpha_{\min}, \alpha_{\max}$)? How does the performance degrade if we disable the adaptive mechanism and use a simpler approach like a linear mapping?
+
+(6) RQ6 (Recall Performance vs. Advanced Graph Indexing): How does \ours{} compare to in-memory ANN algorithms like CSPG~\cite{NEURIPS2024_bab1486c} and PipeANN~\cite{fast26odinann,osdi25pipeann}?
 
 \subsection{Experimental Setup}
 \label{subsec:setup}
@@ -448,15 +450,27 @@ The search list size parameter $L$ governs the balance between search quality an
 \label{subsec:parameter_sensitivity}
 
 We evaluate the sensitivity of our proposed routing mechanism to the dynamic pruning upper bound, $\alpha_{max}$, which governs the trade-off between graph connectivity and distance computation overhead. As depicted in Figure~\ref{fig:ablation_and_sensitivity}(a), tuning $\alpha_{max}$ from 1.2 to 1.7 provides a smooth and predictable Pareto frontier for the QPS-Recall tradeoff. While a lower bound ($\alpha_{max} = 1.2$) limits connectivity, increasing the bound allows MCGI to preserve critical manifold paths that are otherwise prematurely pruned. Specifically, at $\alpha_{max} = 1.7$, MCGI successfully breaks the baseline's recall ceiling (reaching 96.45\%) while maintaining more than double the search throughput ($>$130 QPS) of the baseline. This progression demonstrates that our dynamic alpha strategy effectively balances topological integrity with computational efficiency.
-
 To further validate the mathematical necessity of our non-linear density mapping, we conduct an ablation study comparing our proposed LID-aware Sigmoid transformation against a vanilla Linear mapping. As shown in Figures~\ref{fig:ablation_and_sensitivity}(b)-(d) across three distinct topological configurations, replacing the Sigmoid function with a naive Linear scaling results in a severe performance collapse in the extreme high-recall setup. For instance, under the $R=48$ configuration, the Linear mapping suffers a nearly 50\% drop in QPS and a noticeable degradation in recall compared to the Sigmoid variant. This confirms our theoretical analysis: high-dimensional manifolds exhibit localized, extreme density variations. A rigid linear transformation fails to adequately buffer these spikes, leading to indiscriminate edge pruning or redundant distance calculations. The Sigmoid function smoothly mitigates these topological irregularities, proving indispensable for breaking the baseline's accuracy ceiling without sacrificing query latency.
 
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\linewidth]{figures/combined_ablation.pdf}
-    \caption{Ablation and sensitivity analysis (on the GIST1M)}
+    \caption{Ablation and sensitivity analysis of the mapping function and pruning parameters.}
     \label{fig:ablation_and_sensitivity}
 \end{figure*}
+
+\paragraph{Comparison with Advanced Graph Baselines (RQ6)} 
+\label{subsec:baseline_comparison}
+
+To position \ours{} within the landscape of state-of-the-art graph indexing, we conduct a head-to-head comparison with CSPG~\cite{NEURIPS2024_bab1486c} and PipeANN~\cite{osdi25pipeann, fast26odinann}. As illustrated in Figure~\ref{fig:cmp_pipeann}, we evaluate these systems under identical storage budgets by fixing the maximum out-degree at $R=32$ and $R=48$. 
+The results reveal a fundamental performance gap between \ours{} and existing baselines on the high-dimensional GIST1M manifold. Specifically, while PipeANN employs aggressive I/O pipeline parallelism via $io\_uring$ to mask SSD latency, its search performance suffers a catastrophic collapse due to a fragmented topology. Under the $R=32$ configuration, PipeANN struggles to surpass an 80\% recall ceiling even with an enlarged search pool ($L=200$), incurring excessive I/O overhead (averaging $>220$ IOs per query). In contrast, \ours{} achieves a near-perfect recall of 96.02\% under the same constraint, outperforming PipeANN in both accuracy and throughput by a substantial margin. 
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{figures/cmp_pipeann.pdf}
+    \caption{Performance comparison between \ours{}, CSPG, and PipeANN on GIST1M under fixed degree constraints.}
+    \label{fig:cmp_pipeann}
+\end{figure}
 
 \section{Conclusion}
 
