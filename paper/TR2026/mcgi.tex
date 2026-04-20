@@ -55,7 +55,7 @@
 \maketitle 
 
 \begin{abstract}
-Graph-based Approximate Nearest Neighbor (ANN) search often suffers from performance degradation in high-dimensional spaces due to the Euclidean-Geodesic mismatch, where greedy routing diverges from the underlying data manifold. To address this challenge, we propose Manifold-Consistent Graph Indexing (MCGI), a geometry-aware and disk-resident indexing method that leverages Local Intrinsic Dimensionality (LID) to dynamically adapt search strategies to the intrinsic geometry of the data. Unlike standard algorithms that treat dimensions uniformly, MCGI modulates its beam search budget based on in-situ geometric analysis, which eliminates the dependency on static hyperparameters. Theoretical analysis confirms that MCGI provides robust approximation guarantees by preserving manifold-consistent topological connectivity. Extensive evaluations against three industry-standard baselines across five datasets, ranging from million to billion scales, demonstrate the superiority of our approach: 
+Graph-based Approximate Nearest Neighbor (ANN) search often suffers from performance degradation in high-dimensional spaces due to the Euclidean-Geodesic mismatch, where greedy routing diverges from the underlying data manifold. To address this challenge, we propose Manifold-Consistent Graph Indexing (MCGI), a geometry-aware and disk-resident indexing method that leverages Local Intrinsic Dimensionality (LID) to dynamically adapt search strategies to the intrinsic geometry of the data. Unlike standard algorithms that treat dimensions uniformly, MCGI modulates its beam search budget based on in-situ geometric analysis, which eliminates the dependency on static hyperparameters. Theoretical analysis confirms that MCGI provides robust approximation guarantees by preserving manifold-consistent topological connectivity. Extensive evaluations against five industry-standard baselines across five datasets, ranging from million to billion scales, demonstrate the superiority of our approach: 
 MCGI achieves 5.8x higher throughput at 95\% recall on the high-dimensional GIST1M dataset compared to the state-of-the-art; on the billion-scale SIFT1B and T2I-1B datasets, MCGI demonstrates its scalability by reducing high-recall query latency by 3.0x while maintaining performance parity on low-dimensional benchmarks.
 \end{abstract}
 
@@ -76,9 +76,9 @@ Our contributions are as follows:
 \begin{itemize}
     \item We establish a theoretical method linking local intrinsic dimensionality to graph navigability, offering a rigorous justification for adaptive beam search on non-Euclidean manifolds.
     
-    \item We develop a lightweight adaptive routing algorithm that dynamically modulates the search budget based on real-time geometric analysis. This design eliminates the dependency on static and manually tuned hyperparameters that often limit the adaptability of existing methods.
+    \item We develop an adaptive routing algorithm that dynamically modulates the search budget based on real-time geometric analysis. This design eliminates the dependency on static and manually tuned hyperparameters that often limit the adaptability of existing methods.
     
-    \item We conduct comprehensive empirical evaluations against three industry-standard baselines across five datasets ranging from million to billion scales. Results demonstrate that MCGI achieves up to 5.8x higher throughput on high-dimensional vectors (e.g., 960-dimensional GIST1M) and reduces query latency by 3x on the billion-scale SIFT1B compared to the state-of-the-art baselines, confirming its robustness in mitigating both I/O and computational bottlenecks across diverse production environments.
+    \item We conduct comprehensive empirical evaluations against five industry-standard baselines across five datasets ranging from million to billion scales. Results demonstrate that MCGI achieves up to 5.8x higher throughput on high-dimensional vectors (e.g., 960-dimensional GIST1M) and reduces query latency by 3x on the billion-scale SIFT1B compared to the state-of-the-art baselines, confirming its robustness in mitigating both I/O and computational bottlenecks across diverse production environments.
 \end{itemize}
 
 \section{Related Work}
@@ -267,27 +267,12 @@ To maintain a uniform bound on the routing failure probability $\delta$ across t
 \end{proposition}
 
 \begin{proof}
-Consider a beam search with width $L$. The probability of failing to find a descent step in one round is approximately $(1 - P_{success})^L$. To guarantee a recall target, we enforce a constant upper bound $\delta$ on the failure probability:
-\begin{equation}
-    (1 - P_{success})^L \le \delta.
-\end{equation}
-Taking the natural logarithm and using the approximation $\ln(1-x) \approx -x$ for small $P_{success}$, we require:
-\begin{equation}
-    -L \cdot P_{success} \le \ln \delta \implies L \ge \frac{-\ln \delta}{P_{success}}.
-\end{equation}
-Substituting the relationship $P_{success} = 1 / \mathbb{E}[N_{dist}]$ established in Lemma~\ref{lemma:complexity}, we obtain the asymptotic upper bound $P_{success} \le \mathcal{O}( \sqrt{d} \cdot \exp(-\lambda \cdot d) )$, where $d = \text{LID}(q)$. To satisfy the recall constraint in the worst case scenario, the search budget $L$ must grow inversely to $P_{success}$:
-\begin{equation}
-    L \ge \frac{-\ln \delta}{\mathcal{O}( \sqrt{d} \cdot \exp(-\lambda \cdot d) )} = \Omega\left( \frac{1}{\sqrt{d}} \cdot \exp(\lambda \cdot d) \right).
-\end{equation}
-In high-dimensional spaces ($d \gg 1$), the exponential growth term strictly dominates the polynomial decay factor $1 / \sqrt{d}$. By absorbing the lower-order polynomial variations and the confidence factor $-\ln \delta$ into a generalized constant $C_{\delta}$, the necessary budget asymptotically simplifies to:
-\begin{equation}
-    L(q) \ge C_{\delta} \cdot \exp(\lambda \cdot \text{LID}(q)).
-\end{equation}
+See Appendix~\ref{appendix:proofs}, Proof~\ref{proof:oba}.
 \end{proof}
 
 While Proposition~\ref{thm:oba} establishes that the search budget $L$ must theoretically adapt to local geometric complexity, dynamically modulating $L$ per node during online serving disrupts memory alignment and degrades SIMD parallel efficiency. Therefore, in practical system deployments, $L$ is strictly bounded as a constant. 
 
-To satisfy the uniform performance bound $(1 - P_{success})^L \le \delta$ under a fixed search budget, the indexing algorithm must elevate the routing success probability $P_{success}$ in high LID regions. \ours{} achieves this through a topological dual approach: instead of expanding the dynamic search budget $L$, it modulates the static pruning parameter $\alpha(u)$. By assigning a stricter parameter ($\alpha$ approaching 1.0) to high LID nodes, the occlusion condition becomes harder to trigger. This preserves a denser, manifold consistent local connectivity structure. Such structural compensation prevents premature routing termination and effectively boosts the local probability $P_{success}$. This strategy fulfills the mathematical requirements of Proposition~\ref{thm:oba} by adapting the graph topology itself, circumventing the excessive system overhead of dynamic beam widths.
+% To satisfy the uniform performance bound $(1 - P_{success})^L \le \delta$ under a fixed search budget, the indexing algorithm must elevate the routing success probability $P_{success}$ in high LID regions. \ours{} achieves this through a topological dual approach: instead of expanding the dynamic search budget $L$, it modulates the static pruning parameter $\alpha(u)$. By assigning a stricter parameter ($\alpha$ approaching 1.0) to high LID nodes, the occlusion condition becomes harder to trigger. This preserves a denser, manifold consistent local connectivity structure. Such structural compensation prevents premature routing termination and effectively boosts the local probability $P_{success}$. This strategy fulfills the mathematical requirements of Proposition~\ref{thm:oba} by adapting the graph topology itself, circumventing the excessive system overhead of dynamic beam widths.
 
 \subsubsection{Topological Fidelity and Connectivity}
 \label{subsec:connectivity}
@@ -307,22 +292,7 @@ Consequently, $G_{MCGI}$ is connected.
 \end{proposition}
 
 \begin{proof}
-The proof proceeds in two steps. First, we invoke the classical result established by Toussaint~\cite{TOUSSAINT1980261}, which proves that the Relative Neighborhood Graph (RNG) is a supergraph of the Euclidean Minimum Spanning Tree (EMST) for any finite set of points in a metric space:
-\begin{equation}
-    E_{EMST} \subseteq E_{RNG}.
-\end{equation}
-Since the EMST connects all vertices in a single component, $G_{RNG}$ is necessarily connected.
-
-Second, we show that $E_{RNG} \subseteq E_{MCGI}$. In the RNG, an edge between $u$ and $v$ is pruned if and only if a witness node falls within the intersection of two spheres centered at $u$ and $v$ with radius $d(u, v)$. We denote this geometric intersection as the exclusion region $\mathcal{R}_{RNG}$. Therefore, an edge exists in the RNG if and only if $\mathcal{R}_{RNG}$ contains no data points.
-In \ours{}, the pruning condition requires the witness node to be within a distance of $\frac{1}{\alpha(u)} d(u, v)$ from $v$. Because the algorithm enforces $\alpha(u) \ge 1.0$, the pruning radius in \ours{} is strictly less than or equal to the pruning radius of the RNG. Consequently, the exclusion region of \ours{} is a geometric subset of the RNG exclusion region:
-\begin{equation}
-    \mathcal{R}_{MCGI} \subseteq \mathcal{R}_{RNG}.
-\end{equation}
-This subset relationship of exclusion regions creates an inverse superset relationship for the preserved edges. If an edge survives the RNG condition, its $\mathcal{R}_{RNG}$ is empty. Since $\mathcal{R}_{MCGI}$ is contained entirely within $\mathcal{R}_{RNG}$, it must also be empty. Thus, any edge present in the RNG is guaranteed to be preserved in \ours{}, yielding the inclusion hierarchy of edge sets:
-\begin{equation}
-    E_{RNG} \subseteq E_{MCGI}.
-\end{equation}
-By combining this with the classical result that $E_{EMST} \subseteq E_{RNG}$ derived in \cite{TOUSSAINT1980261}, we establish the complete global connectivity chain.
+See Appendix~\ref{appendix:proofs}, Proof~\ref{proof:connectivity}.
 \end{proof}
 
 Proposition~\ref{prop:connectivity} ensures that there are no structural dead ends. While Lemma~\ref{lemma:complexity} dictates the \textit{cost} of routing, Proposition~\ref{prop:connectivity} ensures the \textit{possibility} of routing. Even in the worst-case scenario where heuristics fail, a path exists from the entry point to any target via the edges of the underlying EMST, provided the graph traversal algorithm has sufficient width to discover these backbone links.
@@ -353,12 +323,10 @@ We focus on answering the following five research questions.
 \subsection{Experimental Setup}
 \label{subsec:setup}
 
-\paragraph{Platform and Environment.} 
 All experiments were conducted on the Chameleon Cloud~\cite{keahey2020lessons} platform using a compute node equipped with dual-socket Intel Xeon Platinum 8380 CPUs (Ice Lake architecture, 2.30GHz, 80 cores total) and 256 GiB of RAM. To simulate a cost-effective large-scale retrieval scenario, the indices are stored on a single 480 GB Micron 5300 PRO Enterprise SSD. The operating system is Ubuntu 24.04 LTS. All algorithms were compiled using GCC 11.4 with -O3 and AVX2 optimizations enabled to fully utilize the hardware instruction set.
 
-\paragraph{Datasets and Baselines.} 
 We evaluate our method on five standard benchmarks ranging from million-scale to billion-scale: SIFT1M~\cite{jegou2011product}, GloVe-100~\cite{pennington2014glove}, GIST1M~\cite{jegou2011product}, SIFT1B~\cite{jegou2011searching}, and T2I-1B~\cite{simhadri2025results}.
-Our evaluation compares MCGI against three state-of-the-art baselines: DiskANN (Vamana)~\cite{subramanya2019diskann}, IVF-Flat (Faiss)~\cite{johnson2019billion}, and HNSW~\cite{malkov2018efficient}.
+Our evaluation compares MCGI against five state-of-the-art baselines: PipeANN~\cite{fast26odinann,osdi25pipeann}, CSPG~\cite{NEURIPS2024_bab1486c}, DiskANN (Vamana)~\cite{subramanya2019diskann}, IVF-Flat (Faiss)~\cite{johnson2019billion}, and HNSW~\cite{malkov2018efficient}.
 More details of these datasets and baselines are provided in Appendix~\ref{appendix:setup}.
 
 \subsection{Experimental Results}
@@ -467,7 +435,7 @@ The results reveal a fundamental performance gap between \ours{} and existing ba
 
 \begin{figure}[t]
     \centering
-    \includegraphics[width=\linewidth]{figures/cmp_pipeann.pdf}
+    \includegraphics[width=0.8\linewidth]{figures/cmp_pipeann.pdf}
     \caption{Performance comparison between \ours{}, CSPG, and PipeANN on GIST1M under fixed degree constraints.}
     \label{fig:cmp_pipeann}
 \end{figure}
@@ -640,6 +608,61 @@ The expected number of distance evaluations follows $\mathbb{E}[N_{dist}] = 1/P_
 This confirms that the routing cost is dominated by the exponential term $\exp(\lambda \cdot \text{LID}(q))$, necessitating the adaptive beam width design in MCGI.
 \end{proof}
 
+\begin{proposition}[Optimal Budget Allocation]
+\label{proof:oba}
+To maintain a uniform bound on the routing failure probability $\delta$ across the manifold (i.e., $\mathbb{P}(\text{fail}\;|\;q) \le \delta$ for all $q \in \mathcal{M}$), the search beam width $L(q)$ must scale exponentially with the local intrinsic dimensionality:
+\begin{equation}
+    L(q) \propto \exp\left( \lambda \cdot \text{LID}(q) \right).
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+Consider a beam search with width $L$. The probability of failing to find a descent step in one round is approximately $(1 - P_{success})^L$. To guarantee a recall target, we enforce a constant upper bound $\delta$ on the failure probability:
+\begin{equation}
+    (1 - P_{success})^L \le \delta.
+\end{equation}
+Taking the natural logarithm and using the approximation $\ln(1-x) \approx -x$ for small $P_{success}$, we require:
+\begin{equation}
+    -L \cdot P_{success} \le \ln \delta \implies L \ge \frac{-\ln \delta}{P_{success}}.
+\end{equation}
+Substituting the relationship $P_{success} = 1 / \mathbb{E}[N_{dist}]$ established in Lemma~\ref{lemma:complexity}, we obtain the asymptotic upper bound $P_{success} \le \mathcal{O}( \sqrt{d} \cdot \exp(-\lambda \cdot d) )$, where $d = \text{LID}(q)$. To satisfy the recall constraint in the worst case scenario, the search budget $L$ must grow inversely to $P_{success}$:
+\begin{equation}
+    L \ge \frac{-\ln \delta}{\mathcal{O}( \sqrt{d} \cdot \exp(-\lambda \cdot d) )} = \Omega\left( \frac{1}{\sqrt{d}} \cdot \exp(\lambda \cdot d) \right).
+\end{equation}
+In high-dimensional spaces ($d \gg 1$), the exponential growth term strictly dominates the polynomial decay factor $1 / \sqrt{d}$. By absorbing the lower-order polynomial variations and the confidence factor $-\ln \delta$ into a generalized constant $C_{\delta}$, the necessary budget asymptotically simplifies to:
+\begin{equation}
+    L(q) \ge C_{\delta} \cdot \exp(\lambda \cdot \text{LID}(q)).
+\end{equation}
+\end{proof}
+
+\begin{proposition}[Connectivity Preservation]
+\label{proof:connectivity}
+Let $G_{EMST}$ and $G_{RNG}$ denote the Euclidean Minimum Spanning Tree and the Relative Neighborhood Graph, respectively. For any configuration of points in general position, provided that $\alpha(u) \ge 1.0$ for all $u \in V$, the graph $G_{MCGI}$ satisfies the strict inclusion hierarchy:
+\begin{equation}
+    E_{EMST} \subseteq E_{RNG} \subseteq E_{MCGI}.
+\end{equation}
+Consequently, $G_{MCGI}$ is connected.
+\end{proposition}
+
+\begin{proof}
+The proof proceeds in two steps. First, we invoke the classical result established by Toussaint~\cite{TOUSSAINT1980261}, which proves that the Relative Neighborhood Graph (RNG) is a supergraph of the Euclidean Minimum Spanning Tree (EMST) for any finite set of points in a metric space:
+\begin{equation}
+    E_{EMST} \subseteq E_{RNG}.
+\end{equation}
+Since the EMST connects all vertices in a single component, $G_{RNG}$ is necessarily connected.
+
+Second, we show that $E_{RNG} \subseteq E_{MCGI}$. In the RNG, an edge between $u$ and $v$ is pruned if and only if a witness node falls within the intersection of two spheres centered at $u$ and $v$ with radius $d(u, v)$. We denote this geometric intersection as the exclusion region $\mathcal{R}_{RNG}$. Therefore, an edge exists in the RNG if and only if $\mathcal{R}_{RNG}$ contains no data points.
+In \ours{}, the pruning condition requires the witness node to be within a distance of $\frac{1}{\alpha(u)} d(u, v)$ from $v$. Because the algorithm enforces $\alpha(u) \ge 1.0$, the pruning radius in \ours{} is strictly less than or equal to the pruning radius of the RNG. Consequently, the exclusion region of \ours{} is a geometric subset of the RNG exclusion region:
+\begin{equation}
+    \mathcal{R}_{MCGI} \subseteq \mathcal{R}_{RNG}.
+\end{equation}
+This subset relationship of exclusion regions creates an inverse superset relationship for the preserved edges. If an edge survives the RNG condition, its $\mathcal{R}_{RNG}$ is empty. Since $\mathcal{R}_{MCGI}$ is contained entirely within $\mathcal{R}_{RNG}$, it must also be empty. Thus, any edge present in the RNG is guaranteed to be preserved in \ours{}, yielding the inclusion hierarchy of edge sets:
+\begin{equation}
+    E_{RNG} \subseteq E_{MCGI}.
+\end{equation}
+By combining this with the classical result that $E_{EMST} \subseteq E_{RNG}$ derived in \cite{TOUSSAINT1980261}, we establish the complete global connectivity chain.
+\end{proof}
+
 \subsection{Additional Experimental Details}
 \label{appendix:setup}
 
@@ -656,8 +679,10 @@ We evaluate our method on four standard benchmarks, ranging from million-scale t
 \paragraph{Baselines.} 
 We compare MCGI against two baselines, each serving a distinct role:
 \begin{itemize}
-    \item DiskANN (Vamana)~\cite{subramanya2019diskann}: The state-of-the-art disk-based graph index. Since MCGI builds upon the Vamana architecture, this comparison isolates the specific gains derived from our manifold-aware routing strategy.
-    \item IVF-Flat (Faiss)~\cite{johnson2019billion}: An industry-standard inverted index serving as a performance roofline. Although running in memory-mapped mode, its sequential scanning pattern allows aggressive OS caching, effectively simulating in-memory performance. We include it to benchmark how closely our disk-resident solution approaches the throughput limits of memory-resident systems.
+    \item PipeANN~\cite{osdi25pipeann, fast26odinann}: A recent state-of-the-art disk-based system that optimizes search throughput via aggressive I/O pipeline parallelism. We include it to evaluate whether system-level asynchronous I/O optimizations can compensate for topological deficiencies in high-dimensional spaces.
+    \item CSPG~\cite{NEURIPS2024_bab1486c}: A high-performance C++ implementation of proximity graphs designed for efficiency. It serves as a rigorous algorithmic baseline to benchmark our LID-aware pruning strategy against standard graph construction techniques.
+    \item DiskANN (Vamana)~\cite{subramanya2019diskann}: The standard disk-based graph index in Faiss. Since MCGI builds upon the Vamana architecture, this comparison isolates the specific gains derived from our manifold-aware routing strategy.
+    \item IVF-Flat (Faiss)~\cite{johnson2019billion}: An in-memory inverted index serving as a performance roofline. Although running in memory-mapped mode, its sequential scanning pattern allows aggressive OS caching, effectively simulating in-memory performance. We include it to benchmark how closely our disk-resident solution approaches the throughput limits of memory-resident systems.
     \item HNSW~\cite{malkov2018efficient}: The state-of-the-art in-memory graph index known for its superior recall-latency trade-off. Unlike disk-resident approaches, HNSW maintains the entire hierarchical graph topology in DRAM, completely eliminating I/O latency. We include it to establish a performance ceiling for graph-based search, allowing us to quantify the gap between our disk-resident solution and the theoretical limit of unconstrained memory-resident traversal. 
 \end{itemize}
 
