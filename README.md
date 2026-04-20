@@ -108,6 +108,11 @@ bash run_ablation.sh
     ./cspg_clean.bin
     ./cspg_clean.bin 48
     ```
+* PipeANN OSDI-25:
+    ```bash
+    cd ~/hpdic/AdaDisk/experiments/PipeANN
+    bash setup.sh
+    ```
 
 ## Some hardware notes on billion-scale experiments
 Here's what I suggest for running the billion-scale experiments on SIFT1B dataset: 80+ CPU cores, 256 GB+ memory (in which 200 GB is budgeted in the parameters such that only three subshards are needed; details see below), and 1 TB NVMe SSD. Then you'll be able to have a full run of index building finished within ~10 hours if your system is relatively new. Detailed usage are as follows: 

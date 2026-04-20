@@ -1,4 +1,12 @@
-# After installing PipeANN with the C++ interface, on the root directory of PipeANN, run the following commands to prepare the data for GIST1M experiments. Make sure to adjust the paths according to your setup.
+cd ~/hpdic
+git clone https://github.com/hpdic/PipeANN.git
+cd PipeANN
+
+cd third_party/liburing
+./configure && make -j
+cd ../..
+
+bash ./build.sh  # Binaries in build/
 
 # 转换 base 文件
 build/tests/utils/vecs_to_bin float /home/cc/hpdic/AdaDisk/experiments/data/gist/gist_base.fvecs data_gist.bin
