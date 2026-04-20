@@ -46,6 +46,7 @@ L     QPS        Latency(us)     Recall@10
 100   82.05      12123.15        87.30   
 ```
 
+### Million-scale Benchmarks
 For more serious experiments on million-scale standard benchmarks:
 ```bash
 echo 'export MKL_THREADING_LAYER=GNU' >> ~/.bashrc
@@ -87,6 +88,9 @@ L     QPS        Lat(us)    Recall
 Cleanup done. Large binaries removed.
 ```
 More results can be found e.g., in `~/hpdic/AdaDisk/experiments/fullscan/`.
+
+### Parameter Sensitivity and Ablation
+
 If you want to see which parameters could lead to the best performance, you can run `python find_best_params.py` to analyze the results of the full scan and find the best parameters for each dataset:
 ```bash
 python find_best_params.py 
@@ -95,6 +99,15 @@ Or you want to do a sensitivity/ablation study on the parameters:
 ```bash
 bash run_ablation.sh 
 ```
+
+### Comparison with more recent baselines
+* CSPG NeurIPS-24:
+    ```bash
+    cd ~/hpdic/AdaDisk/experiments/CSPG
+    g++ -O3 -march=native -fopenmp cspg_clean.cpp -o cspg_clean.bin
+    ./cspg_clean.bin
+    ./cspg_clean.bin 48
+    ```
 
 ## Some hardware notes on billion-scale experiments
 Here's what I suggest for running the billion-scale experiments on SIFT1B dataset: 80+ CPU cores, 256 GB+ memory (in which 200 GB is budgeted in the parameters such that only three subshards are needed; details see below), and 1 TB NVMe SSD. Then you'll be able to have a full run of index building finished within ~10 hours if your system is relatively new. Detailed usage are as follows: 

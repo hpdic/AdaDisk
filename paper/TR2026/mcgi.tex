@@ -234,15 +234,10 @@ While the initial estimates may be noisy, they progressively converge to the tru
 This approach allows the pruning parameter $\alpha_u$ to dynamically adapt to local geometric complexity without incurring the prohibitive cost of offline global analysis.
 The full description of this online algorithm can be found in Appendix~\ref{appendix:alg}, Algorithm~\ref{alg:online_mcgi}. 
 
-\section{Theoretical Analysis}
+\subsection{Theoretical Analysis}
 \label{sec:theory}
-\don{Probably need to move this entire section into the Appendix.}
 
-In this section, we establish the theoretical foundation for Manifold Consistent Graph Indexing (MCGI) by addressing two fundamental aspects of proximity graph search: routing complexity and topological connectivity. 
-First, we formalize the relationship between local geometric complexity and search efficiency. We prove that the expected cost of greedy routing grows exponentially with LID, which mathematically justifies our adaptive resource allocation strategy. It demonstrates that the search budget must scale exponentially with local dimensionality to guarantee uniform recall across heterogeneous manifolds. 
-Second, we analyze the structural integrity of the resulting graph. We prove that despite the dynamic edge pruning guided by local geometry, the constructed index strictly encompasses both the Relative Neighborhood Graph and the Euclidean Minimum Spanning Tree. This topological preservation guarantees global reachability, ensuring that the algorithm maintains a viable path to any target without structural dead ends.
-
-\subsection{Geometric Complexity and Adaptive Routing}
+\subsubsection{Geometric Complexity and Adaptive Routing}
 \label{subsec:geometric_complexity}
 
 The efficiency of greedy routing on a proximity graph is intrinsically tied to the local geometric properties of the underlying data manifold $\mathcal{M}$. Under the Manifold Hypothesis, the search space is locally characterized by the Local Intrinsic Dimensionality (LID) at query $q$. 
@@ -294,7 +289,7 @@ While Proposition~\ref{thm:oba} establishes that the search budget $L$ must theo
 
 To satisfy the uniform performance bound $(1 - P_{success})^L \le \delta$ under a fixed search budget, the indexing algorithm must elevate the routing success probability $P_{success}$ in high LID regions. \ours{} achieves this through a topological dual approach: instead of expanding the dynamic search budget $L$, it modulates the static pruning parameter $\alpha(u)$. By assigning a stricter parameter ($\alpha$ approaching 1.0) to high LID nodes, the occlusion condition becomes harder to trigger. This preserves a denser, manifold consistent local connectivity structure. Such structural compensation prevents premature routing termination and effectively boosts the local probability $P_{success}$. This strategy fulfills the mathematical requirements of Proposition~\ref{thm:oba} by adapting the graph topology itself, circumventing the excessive system overhead of dynamic beam widths.
 
-\subsection{Topological Fidelity and Connectivity}
+\subsubsection{Topological Fidelity and Connectivity}
 \label{subsec:connectivity}
 
 A primary theoretical concern with aggressive edge pruning is the potential fracture of the connectivity backbone~\cite{dzhao_pami09}. We prove that \ours{} guarantees global reachability by strictly preserving the underlying manifold skeleton.
