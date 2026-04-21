@@ -74,7 +74,7 @@ To demonstrate the above hypothesis, we introduce Manifold-Consistent Graph Inde
 This work presents the following contributions:
 
 \begin{itemize}
-    \item We establish a unified theoretical framework linking local intrinsic dimensionality to graph navigability. This includes: (i) a robustness guarantee showing that the Sigmoid mapping attenuates LID estimation noise by a factor of at most $\nicefrac{1}{4}$ (Proposition~\ref{prop:robustness}); (ii) a formal proof that fixed-beam search incurs an exponentially widening recall gap in high-LID regions (Proposition~\ref{prop:fixed_beam}); and (iii) a theoretical justification that construction-time manifold adaptation approximates the oracle query-time beam schedule (Corollary~\ref{cor:construction_approx}).
+    \item We establish a theoretical framework linking local intrinsic dimensionality to graph navigability. This includes: (i) a robustness guarantee showing that the Sigmoid mapping attenuates LID estimation noise by a factor of at most $\nicefrac{1}{4}$ (Proposition~\ref{prop:robustness}); (ii) a formal proof that fixed-beam search incurs an exponentially widening recall gap in high-LID regions (Proposition~\ref{prop:fixed_beam}); and (iii) a theoretical justification that construction-time manifold adaptation monotonically dominates fixed-$\alpha$ baselines under any fixed beam width, providing structural compensation for high-LID regions without dynamic beam allocation (Corollary~\ref{cor:construction_approx}).
     
     \item We develop an adaptive routing algorithm that dynamically modulates the search budget based on real-time geometric analysis. This design eliminates the dependency on static and manually tuned hyperparameters that often limit the adaptability of existing methods.
     
@@ -343,7 +343,7 @@ required $k$ during the geometric calibration phase, and explains
 the empirical stability observed in \S\ref{subsec:parameter_sensitivity}
 across varying dataset geometries.
 
-\subsubsection{Theoretical Optimality of Construction-time Adaptation}
+\subsubsection{Theoretical Justification of Construction-time Adaptation}
 \label{subsec:optimality}
 
 While Proposition~\ref{thm:oba} establishes that an \emph{ideal}
@@ -397,17 +397,10 @@ recall deficit is not a constant offset but an
 justification for geometry-aware adaptation that goes beyond
 empirical motivation.
 
-\begin{corollary}[Construction-time Approximation of the
-Iso-Recall Schedule]
+\begin{corollary}[Construction-time Structural Compensation for Fixed Beam Width]
 \label{cor:construction_approx}
-By modulating $\alpha(u)$ during index construction according to
-$\Phi(\widehat{\mathrm{LID}}(u))$, \ours{} implicitly encodes the
-structure of $L^*(q)$ into the graph topology. Specifically, nodes
-in high-LID regions receive conservative pruning (small $\alpha$),
-preserving additional navigational edges that structurally compensate
-for the fixed beam width at query time. This construction-time
-adaptation achieves a recall guarantee that approximates the
-Iso-Recall Schedule without incurring dynamic beam allocation overhead.
+Under any fixed beam width $\bar{L}$, modulating $\alpha(u)$ during index construction according to $\Phi(\widehat{\mathrm{LID}}(u))$ monotonically reduces $P(\mathrm{fail} \mid q)$ for all queries in high-LID regions compared to any static-$\alpha$ baseline operating under the same $\bar{L}$. Specifically, nodes in high-LID regions receive conservative pruning (small $\alpha$), preserving a strictly larger navigational edge set that structurally compensates for the shortfall of $\bar{L}$ relative to the oracle schedule $L^*(q)$. This guarantee is monotone but not tight: it establishes that \ours{}
+dominates fixed-$\alpha$ baselines, rather than quantifying the residual gap to the Iso-Recall Schedule $L^*(q)$ (Definition~\ref{def:iso_recall}) directly.
 \end{corollary}
 \begin{proof}
 See Appendix~\ref{appendix:proofs}, Proof~\ref{proof:construction_approx}.
@@ -451,7 +444,6 @@ More details of these datasets and baselines are provided in Appendix~\ref{appen
 
 \subsection{High-Dimensional Effectiveness}
 While the in-memory Faiss baseline establishes a theoretical throughput upper-bound, disk-resident indices face severe constraints from SSD random I/O latency. As illustrated in Figure~\ref{fig:gist}, \ours{} mitigates this bottleneck on the high-dimensional GIST1M dataset by leveraging manifold-aware routing to minimize necessary disk reads, achieving 375 QPS at 95\% recall and delivering a 5.8$\times$ speedup over the baseline DiskANN. 
-
 Furthermore, evaluations on lower-dimensional datasets like SIFT1M and GloVe-100 (Figures~\ref{fig:sift} and \ref{fig:glove}) confirm that \ours{} achieves performance parity with DiskANN. These results indicate that our adaptive mechanism robustly reduces to standard greedy search on simpler geometries without incurring any computational overhead, bridging the gap between disk-based scalability and in-memory efficiency.
 
 \begin{figure*}[t]
@@ -481,10 +473,11 @@ Furthermore, evaluations on lower-dimensional datasets like SIFT1M and GloVe-100
 \subsection{High-recall Efficiency}
 
 \begin{wraptable}{r}{0.4\textwidth}
+\vspace{-4mm}
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\caption{Peak QPS at $\ge$ 95\% recall.}
+\caption{Peak QPS at $\ge$ 95\% recall. $^\dagger$memory-resident, as upper bounds.}
 \label{tab:high_recall}
 \begin{tabular}{lcc}
 \toprule
@@ -494,10 +487,11 @@ PipeANN-R32~\cite{osdi25pipeann} & disk & 52.2 \\
 PipeANN-R48~\cite{osdi25pipeann} & disk & 60.3 \\
 DiskANN~\cite{subramanya2019diskann} & disk & 64.7 \\
 MCGI (this work) & disk & 375.1 \\
-IVF Flat~\cite{johnson2019billion} & memory & 590.5 \\
-CSPG-R32~\cite{NEURIPS2024_bab1486c} & memory & 738.2 \\
-CSPG-R48~\cite{NEURIPS2024_bab1486c} & memory & 1,029 \\
-HNSW~\cite{malkov2018efficient} & memory & 2,165 \\
+\midrule
+IVF Flat$^\dagger$~\cite{johnson2019billion} & memory & 590.5 \\
+CSPG-R32$^\dagger$~\cite{NEURIPS2024_bab1486c} & memory & 738.2 \\
+CSPG-R48$^\dagger$~\cite{NEURIPS2024_bab1486c} & memory & 1,029 \\
+HNSW$^\dagger$~\cite{malkov2018efficient} & memory & 2,165 \\
 \bottomrule
 \end{tabular}
 \end{wraptable}
@@ -609,7 +603,7 @@ To further validate the mathematical necessity of our non-linear density mapping
 
 \section{Conclusion}
 
-We presented MCGI, a geometry-aware disk-resident index that resolves the Euclidean-Geodesic mismatch by adapting graph topology to local intrinsic dimensionality. Our unified theoretical framework establishes estimation robustness, quantifies the suboptimality of fixed-beam search, and proves that construction-time adaptation is a principled approximation to the oracle query-time beam schedule (Corollary~\ref{cor:construction_approx}). Empirically, MCGI achieves 5.8$\times$ higher throughput at 95\% recall on GIST1M and 3$\times$ lower latency on billion-scale SIFT1B, bridging the performance gap between disk-resident and in-memory indices.
+We presented MCGI, a geometry-aware disk-resident index that resolves the Euclidean-Geodesic mismatch by adapting graph topology to local intrinsic dimensionality. Our unified theoretical framework establishes estimation robustness, quantifies the suboptimality of fixed-beam search, and proves that construction-time adaptation monotonically reduces routing failure probability over fixed-$\alpha$ baselines in high-LID regions (Corollary~\ref{cor:construction_approx}). Empirically, MCGI achieves 5.8$\times$ higher throughput at 95\% recall on GIST1M and 3$\times$ lower latency on billion-scale SIFT1B, bridging the performance gap between disk-resident and in-memory indices.
 
 \begin{ack}
 Results presented in this paper were obtained using the Chameleon testbed supported by the National Science Foundation.
@@ -922,41 +916,21 @@ is monotonically increasing in $\mathrm{LID}(q)$, confirming the
 exponential widening of the recall gap.
 \end{proof}
 
-\begin{corollary}[Construction-time Approximation]
+\begin{corollary}[Construction-time Structural Compensation]
 \label{proof:construction_approx}
-The adaptive pruning in \ours{} monotonically reduces
-$P(\mathrm{fail} \mid q)$ for queries in high-LID regions compared
-to any static-$\alpha$ baseline operating under the same fixed
-beam width $\bar{L}$.
+Under any fixed beam width $\bar{L}$, the adaptive pruning in \ours{} monotonically reduces $P(\mathrm{fail} \mid q)$ for queries in high-LID regions compared to any static-$\alpha$ baseline operating under the same $\bar{L}$.
 \end{corollary}
 
 \begin{proof}
-Let $\mathcal{P}(u, q)$ denote the set of graph paths from the
-entry point to query target $q$ passing through node $u$. Under a
-fixed pruning parameter $\bar{\alpha}$, the expected path diversity
-is $|\mathcal{P}| = f(\bar{\alpha})$ for some monotone function $f$.
+We proceed in two steps: first showing that MCGI preserves a strictly larger edge set in high-LID regions, then connecting this to a lower failure probability under fixed beam search.
 
-Under \ours{}, nodes with
-$\mathrm{LID}(u) > \mathrm{LID}_{\mathrm{avg}}$ receive
-$\alpha(u) < \bar{\alpha}$ by Proposition~\ref{proof:mono}.
-By Proposition~\ref{proof:connectivity}, this preserves a strictly
-larger edge set in those regions:
-$\mathcal{E}_{\mathrm{MCGI}} \supseteq \mathcal{E}_{\bar{\alpha}}$.
-The increased edge density in high-LID regions directly increases
-$|\mathcal{P}(u,q)|$, which from Proof~\ref{proof:oba} is
-equivalent to increasing the effective beam coverage. Formally,
-for any fixed $\bar{L}$:
+\textbf{Step 1: Edge set inclusion.} The pruning criterion in \ours{} discards an edge $(u, v)$ if and only if there exists a witness node $n$ such that $\alpha(u) \cdot d(n, v) \leq d(u, v)$. For nodes where $\mathrm{LID}(u) > \mathrm{LID}_{\mathrm{avg}}$, Proposition~\ref{proof:mono} guarantees $\alpha(u) < \bar{\alpha}$. Since $\alpha(u) < \bar{\alpha}$ strictly shrinks the left-hand side of the pruning condition, any edge that would be pruned under $\alpha(u)$ is also pruned under $\bar{\alpha}$, but not vice versa. Therefore $\mathcal{E}_{\mathrm{MCGI}} \supseteq \mathcal{E}_{\bar{\alpha}}$ in high-LID regions, with strict inclusion whenever at least one edge survives $\alpha(u)$ but not $\bar{\alpha}$.
+
+\textbf{Step 2: Failure probability.} Under beam search with fixed width $\bar{L}$, the failure probability at query $q$ is governed by $P_{\mathrm{success}}(q)$, the probability of finding a descent step from any node on the routing path (Proof~\ref{proof:oba}). A strictly larger outgoing edge set at each high-LID node monotonically increases the number of candidate directions evaluated per beam step, which by the same geometric argument in Proof~\ref{proof:oba} yields a weakly higher $P_{\mathrm{success}}(q)$ and thus:
 \begin{equation}
-    P(\mathrm{fail} \mid q, \mathrm{MCGI}) \leq
-    P(\mathrm{fail} \mid q, \bar{\alpha}),
-    \quad \forall\, q \;\text{s.t.}\;
-    \mathrm{LID}(q) > \mathrm{LID}_{\mathrm{avg}},
+    P(\mathrm{fail} \mid q, \mathrm{MCGI}) \leq P(\mathrm{fail} \mid q, \bar{\alpha}), \quad \forall\, q \;\text{s.t.}\; \mathrm{LID}(q) > \mathrm{LID}_{\mathrm{avg}},
 \end{equation}
-with equality only when $\alpha(u) = \bar{\alpha}$ for all $u$
-on the routing path, i.e., when the data is geometrically uniform.
-This establishes that \ours{}'s construction-time adaptation
-monotonically approximates the recall guarantee of the oracle
-schedule $L^*(q)$ without dynamic beam allocation.
+with equality only when $\alpha(u) = \bar{\alpha}$ for all $u$ on the routing path, i.e., when the data is geometrically uniform. This establishes a monotone improvement over fixed-$\alpha$ baselines; quantifying the residual gap to the Iso-Recall Schedule $L^*(q)$ (Definition~\ref{def:iso_recall}) is left for future work.
 \end{proof}
 
 \subsection{Additional Experimental Details}

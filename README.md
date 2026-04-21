@@ -111,7 +111,8 @@ bash run_ablation.sh
 * PipeANN OSDI-25:
     ```bash
     cd ~/hpdic/AdaDisk/experiments/PipeANN
-    bash setup.sh
+    bash setup.sh # GIST1M
+    bash setup_SIFT1B.sh # SIFT1B, download time: 50 minutes, unzip time: 20 minutes
     ```
 
 ## Some hardware notes on billion-scale experiments
