@@ -8,6 +8,8 @@
 ### Quick Start
 For a synthetic 10K toy dataset, you can run the following commands to get a quick start of AdaDisk.
 ```bash
+git config --global user.name "Dongfang Zhao"
+git config --global user.email "dzhao@uw.edu"
 cd ~/AdaDisk
 sudo apt-get update
 sudo apt-get install libopenblas-dev liblapacke-dev cmake libboost-all-dev libaio-dev libgoogle-perftools-dev build-essential libunwind-dev texlive-full latexmk -y
