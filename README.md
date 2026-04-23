@@ -3,7 +3,7 @@
 ## Documentation
 * [Preprint](https://arxiv.org/pdf/2601.01930)
 
-## Updates in April 2026, UChicago A100-80G
+## Updates in April 2026, UChicago NVMe 7TB SSD
 
 ### Quick Start
 For a synthetic 10K toy dataset, you can run the following commands to get a quick start of AdaDisk.
