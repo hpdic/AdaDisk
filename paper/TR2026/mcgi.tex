@@ -433,19 +433,19 @@ Furthermore, evaluations on lower-dimensional datasets like SIFT1M and GloVe-100
 
 \begin{figure*}[t]
     \centering
-    \begin{subfigure}[b]{0.3\textwidth}
+    \begin{subfigure}[b]{0.32\textwidth}
         \includegraphics[width=\textwidth]{figures/gist_recall_qps.pdf} 
         \caption{GIST1M (960-dim)}
         \label{fig:gist}
     \end{subfigure}
     \hfill
-    \begin{subfigure}[b]{0.3\textwidth}
+    \begin{subfigure}[b]{0.32\textwidth}
         \includegraphics[width=\textwidth]{figures/sift_recall_qps.pdf}
         \caption{SIFT1M (128-dim)}
         \label{fig:sift}
     \end{subfigure}
     \hfill
-    \begin{subfigure}[b]{0.3\textwidth}
+    \begin{subfigure}[b]{0.32\textwidth}
         \includegraphics[width=\textwidth]{figures/glove_recall_qps.pdf}
         \caption{GloVe-100 (100-dim)}
         \label{fig:glove}
@@ -490,7 +490,7 @@ HNSW$^\dagger$~\cite{malkov2018efficient} & memory & 2,165 \\
 \bottomrule
 \end{tabular}
 \end{wraptable}
-We restrict billion-scale comparisons to PipeANN and DiskANN, which share the same Vamana backbone as \ours{} and thus isolate the contribution of manifold-aware routing. As shown in Figure~\ref{fig:sift1b}, at 90\% recall \ours{} maintains 3,436 QPS with 16.20 ms latency versus DiskANN's 2,597 QPS and 49.06 ms---a 3$\times$ latency reduction driven by fewer redundant disk accesses. Figure~\ref{fig:sensitivity} confirms that \ours{} matches DiskANN's recall trajectory across all tested beam widths $L$, while Figure~\ref{fig:latency} shows substantially reduced tail latency at high-recall operating points on GIST1M.
+We restrict billion-scale comparisons to PipeANN and DiskANN, which share the same Vamana backbone as \ours{} and thus isolate the contribution of manifold-aware routing. As shown in Figure~\ref{fig:sift1b}, at 90\% recall \ours{} maintains 3,436 QPS with 16.20 ms latency versus DiskANN's 2,597 QPS and 49.06 ms---a 3$\times$ latency reduction driven by fewer redundant disk accesses. Figure~\ref{fig:sensitivity} confirms that \ours{} matches DiskANN's recall trajectory across all tested beam widths $L$, while Figure~\ref{fig:latency} shows reduced tail latency at high-recall operating points on GIST1M.
 
 \begin{figure*}[t]
     \centering
@@ -518,8 +518,8 @@ We restrict billion-scale comparisons to PipeANN and DiskANN, which share the sa
     \label{fig:combined_eval}
 \end{figure*}
 
-We further evaluated MCGI on the T2I-1B dataset, reported in Figure~\ref{fig:t2i_performance}.
-On T2I-1B, the performance gap narrows compared to SIFT1B, as expected: the I/O bottleneck is less pronounced when the compute cost per hop dominates. Nevertheless, MCGI maintains a consistent advantage at high-recall operating points (Recall@10 > 90\%), confirming that manifold-aware pruning reduces redundant distance computations even in CPU-bound regimes.
+We further evaluated MCGI on the T2I-1B dataset in Figure~\ref{fig:t2i_performance}.
+The performance gap narrows compared to SIFT1B as expected: the I/O bottleneck is less pronounced when the compute cost per hop dominates. Nevertheless, MCGI maintains a consistent advantage at high-recall operating points (Recall@10 > 90\%), confirming that manifold-aware pruning reduces redundant distance computations in CPU-bound regimes.
 
 \begin{figure*}[t]
   \centering
