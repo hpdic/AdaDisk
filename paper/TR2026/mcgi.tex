@@ -55,8 +55,7 @@
 \maketitle 
 
 \begin{abstract}
-Graph-based Approximate Nearest Neighbor (ANN) search often suffers from performance degradation in high-dimensional spaces due to the Euclidean-Geodesic mismatch, where greedy routing diverges from the underlying data manifold. To address this challenge, we propose Manifold-Consistent Graph Indexing (MCGI), a geometry-aware and disk-resident indexing method that leverages Local Intrinsic Dimensionality (LID) to dynamically adapt search strategies to the intrinsic geometry of the data. Unlike standard algorithms that treat dimensions uniformly, MCGI modulates its beam search budget based on in-situ geometric analysis, which decouples the search strategy from dataset-specific static hyperparameters, replacing a single brittle scalar with a geometry-informed range that is robust to cross-dataset variation. Theoretical analysis confirms that MCGI provides robust approximation guarantees by preserving manifold-consistent topological connectivity. Extensive evaluations against five industry-standard baselines across five datasets, ranging from million to billion scales, demonstrate the superiority of the proposed approach.
-% MCGI achieves 5.8x higher throughput at 95\% recall on the high-dimensional GIST1M dataset compared to the state-of-the-art; on the billion-scale SIFT1B and T2I-1B datasets, MCGI demonstrates its scalability by reducing high-recall query latency by 3.0x while maintaining performance parity on low-dimensional benchmarks.
+Graph-based Approximate Nearest Neighbor (ANN) search often suffers from performance degradation in high-dimensional spaces due to the Euclidean-Geodesic mismatch, where greedy routing diverges from the underlying data manifold. To address this challenge, we propose Manifold-Consistent Graph Indexing (MCGI), a geometry-aware and disk-resident indexing method that leverages Local Intrinsic Dimensionality (LID) to dynamically adapt search strategies to the intrinsic geometry of the data. Unlike standard algorithms that treat dimensions uniformly, MCGI modulates its beam search budget based on in-situ geometric analysis, which decouples the search strategy from dataset-specific static hyperparameters, replacing a single brittle scalar with a geometry-informed range that is robust to cross-dataset variation. Theoretical analysis confirms that MCGI provides robust approximation guarantees by preserving manifold-consistent topological connectivity. Extensive evaluations against five industry-standard baselines across five datasets up to billion scales demonstrate the superiority of the proposed approach.
 \end{abstract}
 
 \section{Introduction}
@@ -71,15 +70,7 @@ Our humble opinion is that high-dimensional real-world data is rarely uniformly 
 
 To demonstrate the above hypothesis, we introduce Manifold-Consistent Graph Indexing (MCGI), a geometry-aware disk-based indexing method designed to align Euclidean search with the underlying data manifold. By incorporating LID estimation directly into the routing logic, MCGI, we hope, is able to adapt its traversal strategy to the local topology of the underlying data. 
 
-This work presents the following contributions:
-
-\begin{itemize}
-    \item We establish a theoretical framework linking local intrinsic dimensionality to graph navigability. This includes: (i) a robustness guarantee showing that the Sigmoid mapping attenuates LID estimation noise by a factor of at most $\nicefrac{1}{4}$ (Proposition~\ref{prop:robustness}); (ii) a formal proof that fixed-beam search incurs an exponentially widening recall gap in high-LID regions (Proposition~\ref{prop:fixed_beam}); and (iii) a theoretical justification that construction-time manifold adaptation monotonically dominates fixed-$\alpha$ baselines under any fixed beam width, providing structural compensation for high-LID regions without dynamic beam allocation (Corollary~\ref{cor:construction_approx}).
-    
-    \item We develop an adaptive routing algorithm that dynamically modulates the search budget based on real-time geometric analysis. This design eliminates the dependency on static and manually tuned hyperparameters that often limit the adaptability of existing methods.
-    
-   \item We conduct comprehensive empirical evaluations against five industry-standard baselines across five datasets from million to billion scales, achieving up to 5.8$\times$ higher throughput on GIST1M (960-dim) and 3$\times$ lower latency on billion-scale SIFT1B.
-\end{itemize}
+\emph{This work presents the following contributions:} (1) A theoretical framework linking LID to graph navigability with formal guarantees on estimation robustness, fixed-beam suboptimality, and construction-time adaptation; (2) A geometry-aware index that adapts pruning parameter $\alpha(u)$ per node via LID estimation without dataset-specific hyperparameter tuning; and (3) Up to $5.8\times$ higher throughput on GIST1M and $3\times$ lower latency on billion-scale SIFT1B against five baselines.
 
 \section{Related Work}
 \label{sec:related_work}
@@ -96,7 +87,8 @@ Theoretical metrics such as the doubling dimension \cite{gupta2003bounded} and e
 \section{Methodology} 
 \label{method}
 
-\subsection{Notations and Definitions}
+\subsection{Mapping Function from LID to Pruning Parameter}
+\label{subsec:mapping}
 
 We start by briefly introducing the notions of Local Intrinsic Dimensionality (LID) in the words of analysis. A full treatment can be found, for example, in Houle~\cite{DBLP:conf/sisap/Houle17}.
 
@@ -110,28 +102,8 @@ We start by briefly introducing the notions of Local Intrinsic Dimensionality (L
     provided that the limit exists and $F_x(r)$ is continuously differentiable for $r > 0$.
 \end{definition}
 
-% \begin{remark}[Institution of LID]
-%     The definition of LID can be understood as a measure of the multiplicative growth rate of the volume of a ball centered at $x$ with radius $r$ as $r$ approaches 0.
-%     Let $D$ denote the dimensionality of the ambient space.
-%     If the data lies on a local $D$-dimensional manifold, then the CDF around an infinitely small neighborhood of $x$ satisfies:
-%     \begin{equation}\label{eq:Fx}
-%         F_x(r) \approx C \cdot r^D,
-%     \end{equation}
-%     where $C$ is a constant.
-%     Thus, the following holds:
-%     \begin{equation}\label{eq:FxD}
-%         F'_x(r) \approx C \cdot D \cdot r^{D-1}.
-%     \end{equation}
-%     Combining equations~\eqref{eq:Fx} and~\eqref{eq:FxD}, we get:
-%     \begin{equation}
-%         D \approx \frac{F'_x(r)}{F_x(r)} \cdot r,
-%     \end{equation}
-%     thus Eq.~\eqref{eq:pid}.
-% \end{remark}
-
-While Eq.~\eqref{eq:pid} provides an intuitive closed-form formula for intrinsic dimensionality, in practice we usually do not have access to the true CDF $F_x(r)$.
-Instead, we can estimate LID from a finite sample of distances from $x$ to its neighbors using Maximum Likelihood Estimation (MLE), as proposed by~\cite{NIPS2004_74934548}.
 According to~\cite{10.1145/2783258.2783405}, LID can be estimated as follows.
+
 \begin{definition}[LID Maximum Likelihood Estimator]
 \label{def:lid_mle}
 Given a reference point $x$ and its $k$-nearest neighbors determined by the distance measure $d$.
@@ -142,17 +114,8 @@ Following the formulation in~\cite{10.1145/2783258.2783405}, which adapts the Hi
 \end{equation}
 \end{definition}
 
-% \begin{remark}[Intuition behind the LID Estimator]
-% The rationale behind this estimator stems from modeling the local distance distribution as a power law. Within a sufficiently small neighborhood bounded by $r_k$, the cumulative distribution of distances $F_x(r)$ grows proportionally to $r^m$, where $m$ is the intrinsic dimensionality. By treating the observed normalized distances $r_i / r_k$ as independent samples drawn from this power law distribution, we can formulate a likelihood function. Solving for the MLE of the exponent $m$ yields exactly the negative inverse of the average log ratios. This elegantly translates the abstract continuous growth rate into a discrete, computationally efficient statistical average.
-% \end{remark}
-
-\subsection{Mapping Function from LID to Pruning Parameter}
-\label{subsec:mapping}
-
 The primary hypothesis of the proposed Manifold-Consistent Graph Indexing (MCGI) is that the graph topology should adapt to the local geometric complexity, rather than being a static vertex-edge structure. 
-While the following formulation may seem technical, MCGI is conceptually straightforward: it uses the estimated LID to determine how aggressively to prune edges during graph construction.
-That is, in regions where the Local Intrinsic Dimensionality (LID) is low, the data manifold approximates a flat Euclidean subspace. In such isotropic regions, the Euclidean metric is a reliable proxy for geodesic distance, allowing for aggressive edge pruning (larger $\alpha$ in~\cite{subramanya2019diskann}) to permit long-range direct connections without risking semantic shortcuts.
-Conversely, regions with high LID typically exhibit significant curvature, noise, or singularity. In this case, the Euclidean distance often violates the manifold geodesic structure. To preserve topological fidelity, the indexing algorithm must adopt a conservative pruning strategy (smaller $\alpha$ in~\cite{subramanya2019diskann}), thereby forcing the search to take smaller, safer steps along the manifold surface.
+To preserve topological fidelity, the indexing algorithm must adopt a conservative pruning strategy (smaller $\alpha$ in~\cite{subramanya2019diskann}), thereby forcing the search to take smaller, safer steps along the manifold surface.
 The question then becomes how to quantitatively map the estimated LID to the pruning parameter $\alpha$ that controls the edge selection during graph construction.
 We refer to such a function as the \textit{mapping function} $\Phi: \mathbb{R}^+ \to [\alpha_{\min}, \alpha_{\max}]$, which translates the geometric complexity of the local neighborhood into a corresponding pruning constraint.
 
@@ -171,19 +134,24 @@ We then formulate $\Phi$ using a logistic function to smoothly map the Z-score t
 \begin{equation}
     \Phi(\widehat{\text{LID}}(u)) = \alpha_{\min} + \frac{\alpha_{\max} - \alpha_{\min}}{1 + \exp(z(u))}.
 \end{equation}
-We employ a logistic function rather than a linear mapping to mitigate the impact of extreme outliers inherent in LID estimations. Because LID distributions are typically heavy tailed, a linear scaling would be severely skewed by a few extreme values, compressing the $\alpha$ assignments for the vast majority of nodes into a narrow, indistinguishable band. The logistic function resolves this by acting as a smooth squashing mechanism. Centered on the Z score, it allocates its steepest and most sensitive region to the bulk of the population near the mean. Simultaneously, it safely clamps outlier nodes to the operational boundaries without distorting the global mapping resolution. In experiments~(\S\ref{sec:experiments}), we set $\alpha_{\min}=1.0$ and $\alpha_{\max}=1.5$ following standard practices in graph indexing~\cite{subramanya2019diskann}, unless otherwise stated. This formulation ensures that nodes with average complexity ($z(u) \approx 0$) receive an intermediate parameter ($\alpha \approx 1.25$), while those in highly complex regions ($z(u) > 0$) are smoothly penalized toward the strict routing limit of 1.0.
 
-The mapping function $\Phi$ satisfies the following geometric properties that are essential for stable graph construction: Monotonicity and Boundedness. We state these properties formally as propositions and provide proofs in the Appendix.
+% We employ a logistic function rather than a linear mapping to mitigate the impact of extreme outliers inherent in LID estimations. Because LID distributions are typically heavy tailed, a linear scaling would be severely skewed by a few extreme values, compressing the $\alpha$ assignments for the vast majority of nodes into a narrow, indistinguishable band. The logistic function resolves this by acting as a smooth squashing mechanism. Centered on the Z score, it allocates its steepest and most sensitive region to the bulk of the population near the mean. Simultaneously, it safely clamps outlier nodes to the operational boundaries without distorting the global mapping resolution. In experiments~(\S\ref{sec:experiments}), we set $\alpha_{\min}=1.0$ and $\alpha_{\max}=1.5$ following standard practices in graph indexing~\cite{subramanya2019diskann}, unless otherwise stated. This formulation ensures that nodes with average complexity ($z(u) \approx 0$) receive an intermediate parameter ($\alpha \approx 1.25$), while those in highly complex regions ($z(u) > 0$) are smoothly penalized toward the strict routing limit of 1.0.
+
+The mapping function $\Phi$ satisfies the following geometric properties that are essential for stable graph construction: Monotonicity and Boundedness. We state these properties formally as propositions with proof sketches and provide full proofs in the Appendix.
 
 \begin{proposition}[Monotonicity]
+\label{prop:monotonicity}
 The mapping function $\Phi$ is strictly decreasing with respect to the estimated local intrinsic dimensionality. Formally, given that the standard deviation of the LID estimates $\sigma_{\widehat{\text{LID}}} > 0$ and the pruning range $\alpha_{\max} > \alpha_{\min}$, the derivative satisfies:
 \begin{equation}
     \frac{d \Phi}{d \widehat{\text{LID}}(u)} < 0.
 \end{equation}
 \end{proposition}
 
-\begin{proof}
-See Appendix~\ref{appendix:proofs}, Proof~\ref{proof:mono}.
+\begin{proof}[Proof Sketch]
+By the chain rule, $\frac{d\Phi}{d\widehat{\text{LID}}(u)} = \frac{d\Phi}{dz} \cdot \frac{dz}{d\widehat{\text{LID}}(u)}$, where the Z-score satisfies $\frac{dz}{d\widehat{\text{LID}}(u)} = \frac{1}{\sigma_{\widehat{\text{LID}}}} > 0$.
+The derivative of the logistic component evaluates to $\frac{d\Phi}{dz} = -(\alpha_{\max} - \alpha_{\min}) \cdot \frac{e^z}{(1+e^z)^2}$, which is strictly negative since $\alpha_{\max} > \alpha_{\min}$ and $e^z > 0$ for all $z \in \mathbb{R}$.
+Combining these two terms yields a strictly negative derivative: $\alpha(u)$ decreases monotonically as geometric complexity increases.
+% The full proof can be found in Appendix~\ref{appendix:proofs}, Proof~\ref{proof:mono}.
 \end{proof}
 
 \begin{proposition}[Boundedness]
@@ -193,8 +161,10 @@ The pruning parameter $\alpha(u)$ derived from the mapping function is strictly 
 \end{equation}
 \end{proposition}
 
-\begin{proof}
-See Appendix~\ref{appendix:proofs}, Proof~\ref{proof:bound}.
+\begin{proof}[Proof Sketch]
+For any finite $\widehat{\text{LID}}(u)$, the Z-score $z(u)$ is finite, and the logistic function satisfies $S(u) = \frac{1}{1+e^{z(u)}} \in (0, 1)$ strictly, since $e^{z(u)} \in (0, \infty)$.
+Substituting into $\alpha(u) = \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) \cdot S(u)$ and applying the strict bounds on $S(u)$ directly yields $\alpha_{\min} < \alpha(u) < \alpha_{\max}$.
+% The complete proof can be found in Appendix~\ref{appendix:proofs}, Proof~\ref{proof:bound}.
 \end{proof}
 
 \subsection{Indexing Algorithms}
@@ -252,8 +222,11 @@ Consistent with the complexity bounds established for growth-restricted metrics~
 where $\lambda > 0$ is a geometric constant derived from the required convergence rate.
 \end{lemma}
 
-\begin{proof}
-See Appendix~\ref{appendix:proofs}, Proof~\ref{proof:complexity}.
+\begin{proof}[Proof Sketch]
+At a node $u$ with distance $r$ to query $q$, a greedy step succeeds only if a neighbor $v$ falls within a cone of half-angle $\theta_{\max}$ around the direction of $q$; the probability of this event corresponds to the ratio of a spherical cap to the full hypersphere $\mathcal{S}^{d-1}$.
+Asymptotic analysis of this ratio via the regularized incomplete beta function yields $P_{\text{success}} \propto d^{-1/2} \exp(-\lambda \cdot d)$, where the exponential decay arises from the concentration of measure on high-dimensional spheres and $\lambda = -\ln(\sin\theta_{\max}) > 0$.
+Since $\mathbb{E}[N_{dist}] = 1/P_{\text{success}}$, the lower bound follows directly.
+% The complete proof can be found in Appendix~\ref{appendix:proofs}, Proof~\ref{proof:complexity}.
 \end{proof}
 
 Lemma~\ref{lemma:complexity} reveals a fundamental geometric barrier: for a fixed budget $L$, the probability of routing failure grows exponentially in high-LID regions. To address this, \ours{} adopts an \textit{Iso-Recall} strategy, aiming to homogenize the search reliability across the heterogeneous manifold.
@@ -266,8 +239,10 @@ To maintain a uniform bound on the routing failure probability $\delta$ across t
 \end{equation}
 \end{proposition}
 
-\begin{proof}
-See Appendix~\ref{appendix:proofs}, Proof~\ref{proof:oba}.
+\begin{proof}[Proof Sketch]
+For a beam of width $L$, the failure probability is $(1 - P_{\text{success}})^L \leq \delta$, which via the approximation $\ln(1-x) \approx -x$ requires $L \geq -\ln\delta / P_{\text{success}}$.
+Substituting the bound $P_{\text{success}} \propto d^{-1/2}\exp(-\lambda \cdot d)$ from Lemma~\ref{lemma:complexity} and absorbing the polynomial and confidence factors into a constant $C_\delta$ yields $L(q) \geq C_\delta \cdot \exp(\lambda \cdot \text{LID}(q))$.
+% The complete proof can be found in Appendix~\ref{appendix:proofs}, Proof~\ref{proof:oba}.
 \end{proof}
 
 While Proposition~\ref{thm:oba} establishes that the search budget $L$ must theoretically adapt to local geometric complexity, dynamically modulating $L$ per node during online serving disrupts memory alignment and degrades SIMD parallel efficiency. Therefore, in practical system deployments, $L$ is strictly bounded as a constant. 
@@ -291,8 +266,11 @@ Let $G_{EMST}$ and $G_{RNG}$ denote the Euclidean Minimum Spanning Tree (EMST) a
 Consequently, $G_{MCGI}$ is connected.
 \end{proposition}
 
-\begin{proof}
-See Appendix~\ref{appendix:proofs}, Proof~\ref{proof:connectivity}.
+\begin{proof}[Proof Sketch]
+The first inclusion $E_{EMST} \subseteq E_{RNG}$ follows from the classical result of Toussaint~\cite{TOUSSAINT1980261}, which holds for any finite point set in a metric space.
+For the second inclusion $E_{RNG} \subseteq E_{MCGI}$, note that MCGI prunes an edge $(u,v)$ only if a witness node falls within a exclusion region of radius $\frac{1}{\alpha(u)}d(u,v)$ around $v$; since $\alpha(u) \geq 1.0$, this exclusion region is a strict geometric subset of the RNG exclusion region, so any edge surviving the RNG pruning condition is guaranteed to survive MCGI pruning.
+Connectivity of $G_{MCGI}$ follows immediately from the inclusion hierarchy, since $G_{EMST}$ spans all vertices by definition.
+% The complete proof can be found in Appendix~\ref{appendix:proofs}, Proof~\ref{proof:connectivity}.
 \end{proof}
 
 Proposition~\ref{prop:connectivity} ensures that there are no structural dead ends. While Lemma~\ref{lemma:complexity} dictates the \textit{cost} of routing, Proposition~\ref{prop:connectivity} ensures the \textit{possibility} of routing. Even in the worst-case scenario where heuristics fail, a path exists from the entry point to any target via the edges of the underlying EMST, provided the graph traversal algorithm has sufficient width to discover these backbone links.
@@ -328,8 +306,12 @@ parameter satisfies:
     \label{eq:robustness_bound}
 \end{equation}
 \end{proposition}
-\begin{proof}
-See Appendix~\ref{appendix:proofs}, Proof~\ref{proof:robustness}.
+
+\begin{proof}[Proof Sketch]
+By a first-order Taylor expansion, $|\Delta\alpha(u)|$ is bounded by $\sup_L \left|\frac{d\Phi}{dL}\right| \cdot |\epsilon|$, where $\epsilon = \widehat{\mathrm{LID}}(u) - \mathrm{LID}(u)$ is the estimation error.
+The gradient magnitude is bounded by $\frac{\alpha_{\max}-\alpha_{\min}}{4\,\sigma_{\widehat{\mathrm{LID}}}}$, since the logistic derivative $\frac{e^z}{(1+e^z)^2}$ achieves its global maximum of $\frac{1}{4}$ at $z=0$, providing an intrinsic noise attenuation factor regardless of LID magnitude.
+Substituting the known asymptotic MLE error $|\epsilon| = O\!\left(\mathrm{LID}(u)/\sqrt{k}\right)$~\cite{NIPS2004_74934548} yields the bound directly, confirming that $|\Delta\alpha(u)|$ decays as $O(1/\sqrt{k})$ and even modest $k$ suffices for stable $\alpha$ assignments.
+% The complete proof can be found in Appendix~\ref{appendix:proofs}, Proof~\ref{proof:robustness}.
 \end{proof}
 
 Proposition~\ref{prop:robustness} reveals two structural properties.
@@ -386,8 +368,23 @@ regions satisfies:
 which grows exponentially with the deviation of $\mathrm{LID}(q)$
 from the dataset mean $\mathrm{LID}_{\mathrm{avg}}$.
 \end{proposition}
-\begin{proof}
-See Appendix~\ref{appendix:proofs}, Proof~\ref{proof:fixed_beam}.
+
+\begin{proof}[Proof Sketch]
+For a fixed beam width $\bar{L}$, the failure probability is
+$(1-P_{\text{success}})^{\bar{L}}$, while the oracle schedule
+$L^*(q) = C_\delta \exp(\lambda \cdot \text{LID}(q))$
+(Definition~\ref{def:iso_recall}) achieves exactly $\delta$ by
+construction; the recall gap is thus the difference between these
+two quantities.
+In high-LID regions where $\text{LID}(q) > \text{LID}_{\text{avg}}$,
+the shortfall $\Delta L(q) = L^*(q) - \bar{L} > 0$ grows
+exponentially with $\text{LID}(q)$, and applying the inequality
+$1 - e^{-x} \leq x$ to the resulting expression yields the
+closed-form lower bound in Eq.~\eqref{eq:recall_gap}.
+The right-hand side is monotonically increasing in $\text{LID}(q)$,
+so the recall deficit grows exponentially, creating a widening gap that cannot be compensated by any
+fixed-parameter strategy.
+% The complete derivation can be found in Appendix~\ref{appendix:proofs}, Proof~\ref{proof:fixed_beam}.
 \end{proof}
 
 Proposition~\ref{prop:fixed_beam} quantifies precisely why
@@ -402,8 +399,22 @@ empirical motivation.
 Under any fixed beam width $\bar{L}$, modulating $\alpha(u)$ during index construction according to $\Phi(\widehat{\mathrm{LID}}(u))$ monotonically reduces $P(\mathrm{fail} \mid q)$ for all queries in high-LID regions compared to any static-$\alpha$ baseline operating under the same $\bar{L}$. Specifically, nodes in high-LID regions receive conservative pruning (small $\alpha$), preserving a strictly larger navigational edge set that structurally compensates for the shortfall of $\bar{L}$ relative to the oracle schedule $L^*(q)$. This guarantee is monotone but not tight: it establishes that \ours{}
 dominates fixed-$\alpha$ baselines, rather than quantifying the residual gap to the Iso-Recall Schedule $L^*(q)$ (Definition~\ref{def:iso_recall}) directly.
 \end{corollary}
-\begin{proof}
-See Appendix~\ref{appendix:proofs}, Proof~\ref{proof:construction_approx}.
+
+\begin{proof}[Proof Sketch]
+For nodes where $\mathrm{LID}(u) > \mathrm{LID}_{\mathrm{avg}}$,
+Proposition~\ref{prop:monotonicity} guarantees $\alpha(u) < \bar{\alpha}$,
+which strictly shrinks the pruning exclusion region and thus preserves
+a superset of edges relative to any static-$\bar{\alpha}$ baseline,
+i.e., $E_{\mathrm{MCGI}} \supseteq E_{\bar{\alpha}}$ in high-LID regions.
+A strictly larger outgoing edge set monotonically increases
+$P_{\mathrm{success}}(q)$ at each beam step by the same geometric
+argument as Proposition~\ref{thm:oba}, yielding
+$P(\mathrm{fail} \mid q, \mathrm{MCGI}) \leq P(\mathrm{fail} \mid q,
+\bar{\alpha})$ for all $q$ with $\mathrm{LID}(q) > \mathrm{LID}_{\mathrm{avg}}$.
+Note that this guarantee is monotone but not tight: quantifying the
+residual gap to the oracle schedule $L^*(q)$ (Definition~\ref{def:iso_recall})
+is left for future work.
+% The complete derivation can be found in Appendix~\ref{appendix:proofs}, Proof~\ref{proof:construction_approx}.
 \end{proof}
 
 \section{Evaluation}
@@ -411,36 +422,10 @@ See Appendix~\ref{appendix:proofs}, Proof~\ref{proof:construction_approx}.
 
 We have implemented MCGI with C++ and integrated it into the codebase of DiskANN~\cite{subramanya2019diskann}, i.e., the C++ main branch before the new Rust migration. 
 The anonymized implementation of \ours{} is available at: \url{https://anonymous.4open.science/r/MCGI/}.
-% To ensure fair comparison and production-level efficiency, we integrated the Maximum Likelihood Estimator (MLE) for LID directly into the graph building process. 
-% The core distance computations were optimized using AVX SIMD instructions to maximize hardware utilization. 
-% All latency-critical components, including the dynamic candidate list management and the LID-aware routing logic, were implemented in C++ to avoid the overhead of high-level language interpreters. 
-% We evaluate the performance of \ours{} against state-of-the-art disk-based and memory-mapped approximate nearest neighbor (ANN) search algorithms. 
-
-% We focus on answering the following research questions.
-
-% High-Dimensional Effectiveness: How does \ours{} perform compared to baselines on high-dimensional data (e.g., GIST1M) where the curse of dimensionality typically degrades the efficiency of graph-based indices?
-
-% High-Recall Efficiency: Can \ours{} maintain high query throughput (QPS) under strict recall requirements (e.g., Recall@10 $\ge$ 95\%), making it suitable for latency-critical production environments?
-
-% Billion Scales: Does the proposed method scale effectively to billion-scale datasets, including SIFT1B and T2I-1B, and demonstrate superiority over industry-standard baselines across both I/O-bound and compute-bound workloads?
-   
-% Recall Performance vs. Advanced Graph Indexing: How does \ours{} compare to in-memory ANN algorithms like CSPG~\cite{NEURIPS2024_bab1486c} and PipeANN~\cite{fast26odinann,osdi25pipeann}?
-
-% Resource Efficiency: Does the manifold-aware routing strategy translate to lower I/O overhead and reduced query latency on modern hardware (e.g., NVMe SSDs and AVX2 enabled CPUs)?
-
-% Parameter Sensitivity and Ablation: How sensitive is \ours{} to the choice of mapping function parameters ($\alpha_{\min}, \alpha_{\max}$)? How does the performance degrade if we disable the adaptive mechanism and use a simpler approach like a linear mapping?
-
-
-\subsection{Experimental Setup}
-\label{subsec:setup}
-
-All experiments were conducted on the Chameleon Cloud~\cite{keahey2020lessons} platform using a compute node equipped with dual-socket Intel Xeon Platinum 8380 CPUs (Ice Lake architecture, 2.30GHz, 80 cores total) and 256 GiB of RAM. To simulate a cost-effective large-scale retrieval scenario, the indices are stored on a single 480 GB Micron 5300 PRO Enterprise SSD. The operating system is Ubuntu 24.04 LTS. All algorithms were compiled using GCC 11.4 with -O3 and AVX2 optimizations enabled to fully utilize the hardware instruction set.
-
+All experiments were conducted on the Chameleon Cloud~\cite{keahey2020lessons}, details provided in Appendix~\ref{appendix:setup}.
 We evaluate our method on five standard benchmarks ranging from million-scale to billion-scale: SIFT1M~\cite{jegou2011product}, GloVe-100~\cite{pennington2014glove}, GIST1M~\cite{jegou2011product}, SIFT1B~\cite{jegou2011searching}, and T2I-1B~\cite{simhadri2025results}.
 Our evaluation compares MCGI against five state-of-the-art baselines: PipeANN~\cite{fast26odinann,osdi25pipeann}, CSPG~\cite{NEURIPS2024_bab1486c}, DiskANN (Vamana)~\cite{subramanya2019diskann}, IVF-Flat (Faiss)~\cite{johnson2019billion}, and HNSW~\cite{malkov2018efficient}.
 More details of these datasets and baselines are provided in Appendix~\ref{appendix:setup}.
-
-% \subsection{Experimental Results}
 
 \subsection{High-Dimensional Effectiveness}
 While the in-memory Faiss baseline establishes a theoretical throughput upper-bound, disk-resident indices face severe constraints from SSD random I/O latency. As illustrated in Figure~\ref{fig:gist}, \ours{} mitigates this bottleneck on the high-dimensional GIST1M dataset by leveraging manifold-aware routing to minimize necessary disk reads, achieving 375 QPS at 95\% recall and delivering a 5.8$\times$ speedup over the baseline DiskANN. 
@@ -448,19 +433,19 @@ Furthermore, evaluations on lower-dimensional datasets like SIFT1M and GloVe-100
 
 \begin{figure*}[t]
     \centering
-    \begin{subfigure}[b]{0.32\textwidth}
+    \begin{subfigure}[b]{0.3\textwidth}
         \includegraphics[width=\textwidth]{figures/gist_recall_qps.pdf} 
         \caption{GIST1M (960-dim)}
         \label{fig:gist}
     \end{subfigure}
     \hfill
-    \begin{subfigure}[b]{0.32\textwidth}
+    \begin{subfigure}[b]{0.3\textwidth}
         \includegraphics[width=\textwidth]{figures/sift_recall_qps.pdf}
         \caption{SIFT1M (128-dim)}
         \label{fig:sift}
     \end{subfigure}
     \hfill
-    \begin{subfigure}[b]{0.32\textwidth}
+    \begin{subfigure}[b]{0.3\textwidth}
         \includegraphics[width=\textwidth]{figures/glove_recall_qps.pdf}
         \caption{GloVe-100 (100-dim)}
         \label{fig:glove}
@@ -471,6 +456,16 @@ Furthermore, evaluations on lower-dimensional datasets like SIFT1M and GloVe-100
 \end{figure*}
 
 \subsection{High-recall Efficiency}
+
+Table~\ref{tab:high_recall} reports peak QPS of different indexing methods on high-dimensional vectors (i.e., 960-dimensinal GIST1M) at Recall@10 $\geq$ 95\%, where $R$ denotes the maximum out-degree of each graph node. Disk-resident baselines plateau well below 100 QPS: DiskANN reaches only 64.7 QPS, and PipeANN's aggressive I/O parallelism yields at most 60.3 QPS at $R=48$, confirming that system-level optimizations cannot compensate for topologically suboptimal routing in high-dimensional spaces. \ours{} delivers 375.1 QPS, a 5.8$\times$ gain over DiskANN and 6.2$\times$ over PipeANN-R48. Notably, \ours{} reaches 64\% of the throughput of the memory-resident IVF Flat index, bridging the historical performance gap between disk-resident and in-memory indices without sacrificing the storage efficiency of SSD-based deployment.
+
+\subsection{Billion Scales}
+
+% To validate scalability, we first conducted evaluations on billion-scale datasets including SIFT1B. 
+% Due to the prohibitive index construction time at billion scale, we restrict the billion-scale comparison to DiskANN, which shares the same Vamana backbone as MCGI and thus provides the most controlled ablation of our manifold-aware routing contribution in isolation.
+% Figure~\ref{fig:sift1b} illustrates the recall QPS trade-off and latency comparisons. While DiskANN maintains competitive performance at moderate recall levels, its throughput degrades sharply as retrieval requirements tighten. At a strict recall target of 90\%, DiskANN drops to 2,597 QPS and incurs a mean latency of 49.06 ms due to excessive redundant I/O operations. Conversely, MCGI maintains a robust throughput of 3,436 QPS and reduces the mean latency to 16.20 ms, representing a 3x reduction. This confirms that our manifold-consistent pruning strategy effectively identifies optimal neighbors with significantly fewer disk accesses. 
+% The search list size parameter $L$ governs the balance between search quality and computational cost. As shown in Figure~\ref{fig:sensitivity}, MCGI exhibits a recall trajectory that closely mirrors DiskANN across the tested range. This parity demonstrates that our geometry-aware routing is robust, retaining high recall capabilities without degrading search quality under standard $L$ configurations. 
+% Furthermore, Figure~\ref{fig:latency} details the query latency on GIST1M, showing that MCGI significantly reduces tail latency in the high recall range. By minimizing the random I/O required to escape local minima in high-dimensional spaces, MCGI translates manifold-aware routing into tangible lower I/O overhead for resource constrained deployments.
 
 \begin{wraptable}{r}{0.4\textwidth}
 \vspace{-4mm}
@@ -495,17 +490,7 @@ HNSW$^\dagger$~\cite{malkov2018efficient} & memory & 2,165 \\
 \bottomrule
 \end{tabular}
 \end{wraptable}
-Table~\ref{tab:high_recall} reports peak QPS of different indexing methods on high-dimensional vectors (i.e., 960-dimensinal GIST1M) at Recall@10 $\geq$ 95\%, where $R$ denotes the maximum out-degree of each graph node. Disk-resident baselines plateau well below 100 QPS: DiskANN reaches only 64.7 QPS, and PipeANN's aggressive I/O parallelism yields at most 60.3 QPS at $R=48$, confirming that system-level optimizations cannot compensate for topologically suboptimal routing in high-dimensional spaces. \ours{} delivers 375.1 QPS, a 5.8$\times$ gain over DiskANN and 6.2$\times$ over PipeANN-R48. Notably, \ours{} reaches 64\% of the throughput of the memory-resident IVF Flat index, bridging the historical performance gap between disk-resident and in-memory indices without sacrificing the storage efficiency of SSD-based deployment.
-
-\subsection{Billion Scales}
-
-% To validate scalability, we first conducted evaluations on billion-scale datasets including SIFT1B. 
-% Due to the prohibitive index construction time at billion scale, we restrict the billion-scale comparison to DiskANN, which shares the same Vamana backbone as MCGI and thus provides the most controlled ablation of our manifold-aware routing contribution in isolation.
-% Figure~\ref{fig:sift1b} illustrates the recall QPS trade-off and latency comparisons. While DiskANN maintains competitive performance at moderate recall levels, its throughput degrades sharply as retrieval requirements tighten. At a strict recall target of 90\%, DiskANN drops to 2,597 QPS and incurs a mean latency of 49.06 ms due to excessive redundant I/O operations. Conversely, MCGI maintains a robust throughput of 3,436 QPS and reduces the mean latency to 16.20 ms, representing a 3x reduction. This confirms that our manifold-consistent pruning strategy effectively identifies optimal neighbors with significantly fewer disk accesses. 
-% The search list size parameter $L$ governs the balance between search quality and computational cost. As shown in Figure~\ref{fig:sensitivity}, MCGI exhibits a recall trajectory that closely mirrors DiskANN across the tested range. This parity demonstrates that our geometry-aware routing is robust, retaining high recall capabilities without degrading search quality under standard $L$ configurations. 
-% Furthermore, Figure~\ref{fig:latency} details the query latency on GIST1M, showing that MCGI significantly reduces tail latency in the high recall range. By minimizing the random I/O required to escape local minima in high-dimensional spaces, MCGI translates manifold-aware routing into tangible lower I/O overhead for resource constrained deployments.
-
-We restrict billion-scale comparisons to DiskANN, which shares the same Vamana backbone as \ours{} and thus isolates the contribution of manifold-aware routing. As shown in Figure~\ref{fig:sift1b}, at 90\% recall \ours{} maintains 3,436 QPS with 16.20 ms latency versus DiskANN's 2,597 QPS and 49.06 ms---a 3$\times$ latency reduction driven by fewer redundant disk accesses. Figure~\ref{fig:sensitivity} confirms that \ours{} matches DiskANN's recall trajectory across all tested beam widths $L$, while Figure~\ref{fig:latency} shows substantially reduced tail latency at high-recall operating points on GIST1M.
+We restrict billion-scale comparisons to PipeANN and DiskANN, which share the same Vamana backbone as \ours{} and thus isolate the contribution of manifold-aware routing. As shown in Figure~\ref{fig:sift1b}, at 90\% recall \ours{} maintains 3,436 QPS with 16.20 ms latency versus DiskANN's 2,597 QPS and 49.06 ms---a 3$\times$ latency reduction driven by fewer redundant disk accesses. Figure~\ref{fig:sensitivity} confirms that \ours{} matches DiskANN's recall trajectory across all tested beam widths $L$, while Figure~\ref{fig:latency} shows substantially reduced tail latency at high-recall operating points on GIST1M.
 
 \begin{figure*}[t]
     \centering
@@ -557,7 +542,6 @@ On T2I-1B, the performance gap narrows compared to SIFT1B, as expected: the I/O 
 \label{subsec:baseline_comparison}
 
 To position \ours{} within the landscape of state-of-the-art graph indexing, we conduct a head-to-head comparison with CSPG~\cite{NEURIPS2024_bab1486c} and PipeANN~\cite{osdi25pipeann, fast26odinann}. As illustrated in Figure~\ref{fig:cmp_pipeann}, we evaluate these systems under identical storage budgets by fixing the maximum out-degree at $R=32$ and $R=48$. 
-
 The results reveal a fundamental performance gap between \ours{} and existing baselines on the high-dimensional GIST1M manifold. Specifically, while PipeANN employs aggressive I/O pipeline parallelism via $io\_uring$ to mask SSD latency, its search performance suffers a catastrophic collapse due to a fragmented topology. Under the $R=32$ configuration, PipeANN struggles to surpass an 80\% recall ceiling even with an enlarged search pool ($L=200$), incurring excessive I/O overhead (averaging $>220$ IOs per query). In contrast, \ours{} achieves a near-perfect recall of 96.02\% under the same constraint, outperforming PipeANN in both accuracy and throughput. 
 
 
@@ -573,7 +557,8 @@ The results reveal a fundamental performance gap between \ours{} and existing ba
 
 We evaluate the sensitivity of our proposed routing mechanism to the dynamic pruning upper bound, $\alpha_{max}$, which governs the trade-off between graph connectivity and distance computation overhead. As depicted in Figure~\ref{fig:ablation_and_sensitivity}(a), tuning $\alpha_{max}$ from 1.2 to 1.7 provides a smooth and predictable Pareto frontier for the QPS-Recall tradeoff. While a lower bound ($\alpha_{max} = 1.2$) limits connectivity, increasing the bound allows MCGI to preserve critical manifold paths that are otherwise prematurely pruned. Specifically, at $\alpha_{max} = 1.7$, MCGI successfully breaks the baseline's recall ceiling (reaching 96.45\%) while maintaining more than double the search throughput ($>$130 QPS) of the baseline. 
 
-To further validate the mathematical necessity of our non-linear density mapping, we conduct an ablation study comparing our proposed LID-aware Sigmoid transformation against a vanilla Linear mapping. As shown in Figures~\ref{fig:ablation_and_sensitivity}(b)-(d) across three distinct topological configurations, replacing the Sigmoid function with a naive Linear scaling results in a severe performance collapse in the extreme high-recall setup. For instance, under the $R=48$ configuration, the Linear mapping suffers a nearly 50\% drop in QPS and a noticeable degradation in recall compared to the Sigmoid variant. This confirms our theoretical analysis: high-dimensional manifolds exhibit localized, extreme density variations. A rigid linear transformation fails to adequately buffer these spikes, leading to indiscriminate edge pruning or redundant distance calculations. The Sigmoid function smoothly mitigates these topological irregularities, proving indispensable for breaking the baseline's accuracy ceiling without sacrificing query latency.
+To further validate the mathematical necessity of our non-linear density mapping, we conduct an ablation study comparing our proposed LID-aware Sigmoid transformation against a vanilla Linear mapping. As shown in Figures~\ref{fig:ablation_and_sensitivity}(b)-(d) across three distinct topological configurations, replacing the Sigmoid function with a naive Linear scaling results in a severe performance collapse in the extreme high-recall setup. For instance, under the $R=48$ configuration, the Linear mapping suffers a nearly 50\% drop in QPS and a noticeable degradation in recall compared to the Sigmoid variant. 
+% This confirms our theoretical analysis: high-dimensional manifolds exhibit localized, extreme density variations. A rigid linear transformation fails to adequately buffer these spikes, leading to indiscriminate edge pruning or redundant distance calculations. The Sigmoid function smoothly mitigates these topological irregularities, proving indispensable for breaking the baseline's accuracy ceiling without sacrificing query latency.
 
 \begin{figure*}[t]
     \centering
@@ -603,7 +588,9 @@ To further validate the mathematical necessity of our non-linear density mapping
 
 \section{Conclusion}
 
-We presented MCGI, a geometry-aware disk-resident index that resolves the Euclidean-Geodesic mismatch by adapting graph topology to local intrinsic dimensionality. Our unified theoretical framework establishes estimation robustness, quantifies the suboptimality of fixed-beam search, and proves that construction-time adaptation monotonically reduces routing failure probability over fixed-$\alpha$ baselines in high-LID regions (Corollary~\ref{cor:construction_approx}). Empirically, MCGI achieves 5.8$\times$ higher throughput at 95\% recall on GIST1M and 3$\times$ lower latency on billion-scale SIFT1B, bridging the performance gap between disk-resident and in-memory indices.
+We presented MCGI, a geometry-aware disk-resident index that resolves the Euclidean-Geodesic mismatch by adapting graph topology to local intrinsic dimensionality. Unlike existing methods that treat all regions of the data manifold uniformly, MCGI dynamically allocates graph connectivity based on local geometric complexity, achieving what static-parameter approaches fundamentally cannot: manifold-consistent routing that remains efficient as dimensionality scales. Our theoretical framework formalizes this advantage with provable guarantees, and our empirical results confirm it dramatically: $5.8\times$ higher throughput at 95\% recall on GIST1M and $3\times$ lower latency on billion-scale SIFT1B, bridging the long-standing performance gap between disk-resident and in-memory indices. 
+
+Our future work will explore several promising directions. First, we plan to extend the MCGI framework to support dynamic updates, enabling efficient insertions and deletions while maintaining manifold-consistent routing. Second, we aim to investigate more sophisticated geometric metrics beyond LID, such as curvature or local density estimates, to further refine the pruning strategy. Finally, we will explore the integration of MCGI with emerging hardware accelerators (e.g., NVMe SSDs with built-in compute capabilities) to push the boundaries of disk-resident indexing performance.
 
 \begin{ack}
 Results presented in this paper were obtained using the Chameleon testbed supported by the National Science Foundation.
@@ -936,7 +923,10 @@ with equality only when $\alpha(u) = \bar{\alpha}$ for all $u$ on the routing pa
 \subsection{Additional Experimental Details}
 \label{appendix:setup}
 
-\paragraph{Datasets.} 
+\paragraph{Experiment Platform}
+All experiments were conducted on the Chameleon Cloud~\cite{keahey2020lessons} platform using a compute node equipped with dual-socket Intel Xeon Platinum 8380 CPUs (Ice Lake architecture, 2.30GHz, 80 cores total) and 256 GiB of RAM. To simulate a cost-effective large-scale retrieval scenario, the indices are stored on a single 480 GB Micron 5300 PRO Enterprise SSD. The operating system is Ubuntu 24.04 LTS. All algorithms were compiled using GCC 11.4 with -O3 and AVX2 optimizations enabled to fully utilize the hardware instruction set.
+
+\paragraph{Datasets} 
 We evaluate our method on five standard benchmarks, ranging from million-scale to billion-scale, to comprehensively test robustness across varying intrinsic dimensionalities and data volumes. In the following descriptions, $N$ denotes the number of base vectors and $D$ represents the vector dimensionality:
 \begin{itemize}
     \item SIFT1M~\cite{jegou2011product} ($N=10^6, D=128$): A standard computer vision dataset using Euclidean distance ($L_2$).
@@ -946,7 +936,7 @@ We evaluate our method on five standard benchmarks, ranging from million-scale t
     \item T2I-1B~\cite{simhadri2025results} ($N=10^9, D=200$): A billion-scale dataset consisting of CLIP~\cite{radford2021learning} embeddings derived from the LAION-5B dataset. Unlike visual descriptors like SIFT, T2I-1B represents a cross-modal retrieval scenario with a more complex manifold structure and higher intrinsic dimensionality, posing greater challenges for graph-based indexing algorithms.
 \end{itemize}
 
-\paragraph{Baselines.} 
+\paragraph{Baselines} 
 We compare MCGI against five baselines, each serving a distinct role:
 \begin{itemize}
     \item PipeANN~\cite{osdi25pipeann, fast26odinann}: A recent state-of-the-art disk-based system that optimizes search throughput via aggressive I/O pipeline parallelism. We include it to evaluate whether system-level asynchronous I/O optimizations can compensate for topological deficiencies in high-dimensional spaces.
@@ -956,7 +946,7 @@ We compare MCGI against five baselines, each serving a distinct role:
     \item HNSW~\cite{malkov2018efficient}: The state-of-the-art in-memory graph index known for its superior recall-latency trade-off. Unlike disk-resident approaches, HNSW maintains the entire hierarchical graph topology in DRAM, completely eliminating I/O latency. We include it to establish a performance ceiling for graph-based search, allowing us to quantify the gap between our disk-resident solution and the theoretical limit of unconstrained memory-resident traversal. 
 \end{itemize}
 
-\paragraph{Evaluation Metrics.} 
+\paragraph{Evaluation Metrics} 
 We adhere to the standard evaluation protocol for ANN search. We measure Recall@10 against QPS (Queries Per Second). Additionally, we report the query latency at critical high-recall operating points (e.g., 95\% Recall) to assess the tail latency characteristics.
 
 \paragraph{Build Configuration}
