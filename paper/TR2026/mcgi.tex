@@ -495,7 +495,7 @@ HNSW$^\dagger$~\cite{malkov2018efficient} & memory & 2,165 \\
 \bottomrule
 \end{tabular}
 \end{wraptable}
-Table~\ref{tab:high_recall} reports peak QPS at Recall@10 $\geq$ 95\%, where $R$ denotes the maximum out-degree of each graph node. Disk-resident baselines plateau well below 100 QPS: DiskANN reaches only 64.7 QPS, and PipeANN's aggressive I/O parallelism yields at most 60.3 QPS at $R=48$, confirming that system-level optimizations cannot compensate for topologically suboptimal routing in high-dimensional spaces. \ours{} delivers 375.1 QPS, a 5.8$\times$ gain over DiskANN and 6.2$\times$ over PipeANN-R48. Notably, \ours{} reaches 64\% of the throughput of the memory-resident IVF Flat index, bridging the historical performance gap between disk-resident and in-memory indices without sacrificing the storage efficiency of SSD-based deployment.
+Table~\ref{tab:high_recall} reports peak QPS of different indexing methods on high-dimensional vectors (i.e., 960-dimensinal GIST1M) at Recall@10 $\geq$ 95\%, where $R$ denotes the maximum out-degree of each graph node. Disk-resident baselines plateau well below 100 QPS: DiskANN reaches only 64.7 QPS, and PipeANN's aggressive I/O parallelism yields at most 60.3 QPS at $R=48$, confirming that system-level optimizations cannot compensate for topologically suboptimal routing in high-dimensional spaces. \ours{} delivers 375.1 QPS, a 5.8$\times$ gain over DiskANN and 6.2$\times$ over PipeANN-R48. Notably, \ours{} reaches 64\% of the throughput of the memory-resident IVF Flat index, bridging the historical performance gap between disk-resident and in-memory indices without sacrificing the storage efficiency of SSD-based deployment.
 
 \subsection{Billion Scales}
 
