@@ -55,6 +55,7 @@
 \maketitle 
 
 \begin{abstract}
+    \don{TODO}
 Graph-based Approximate Nearest Neighbor (ANN) search often suffers from performance degradation in high-dimensional spaces due to the Euclidean-Geodesic mismatch, where greedy routing diverges from the underlying data manifold. To address this challenge, we propose Manifold-Consistent Graph Indexing (MCGI), a geometry-aware and disk-resident indexing method that leverages Local Intrinsic Dimensionality (LID) to dynamically adapt search strategies to the intrinsic geometry of the data. Unlike standard algorithms that treat dimensions uniformly, MCGI modulates its beam search budget based on in-situ geometric analysis, which decouples the search strategy from dataset-specific static hyperparameters, replacing a single brittle scalar with a geometry-informed range that is robust to cross-dataset variation. Theoretical analysis confirms that MCGI provides robust approximation guarantees by preserving manifold-consistent topological connectivity. Extensive evaluations against five industry-standard baselines across five datasets up to billion scales demonstrate the superiority of the proposed approach.
 \end{abstract}
 
