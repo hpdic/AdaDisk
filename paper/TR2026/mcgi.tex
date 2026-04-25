@@ -961,11 +961,11 @@ Table~\ref{tab:build_params} summarizes the dataset specifications and indexing 
 \toprule
 Dataset & $R$ & $L_{build}$ & $\alpha$ Range & $m_{PQ}$ (Byte) & Data Type\\
 \midrule
-SIFT1M    & 64 & 100 & $[1.0, 1.5]$ & N/A & float32 \\
-GloVe-100 & 64 & 100 & $[1.0, 1.5]$ & N/A & float32 \\
-GIST1M    & 96 & 150 & $[1.0, 1.5]$ & N/A & float32 \\
-SIFT1B    & 32 & 50  & $[1.0, 1.5]$ & 16  & uint8   \\
-T2I-1B    & 32 & 50  & $[1.0, 1.5]$ & 16  & float32 \\
+SIFT1M    & \{32, 48, 64\} & 100 & $[1.0, 1.5]$ & N/A & float32 \\
+GloVe-100 & \{32, 48, 64\} & 100 & $[1.0, 1.5]$ & N/A & float32 \\
+GIST1M    & \{32, 48, 64, 96\} & 150 & $[1.0, 1.5]$ & N/A & float32 \\
+SIFT1B    & \{32, 48\} & 50  & $[1.0, 1.5]$ & 16  & uint8   \\
+T2I-1B    & \{32, 48\} & 50  & $[1.0, 1.5]$ & 16  & float32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -984,11 +984,11 @@ Table~\ref{tab:search_params} lists the statistical parameters derived from the 
 \toprule
 Dataset & $\mu_{LID}$ (Mean) & $\sigma_{LID}$ (Std) & Beam ($L_{search}$) & Threads \\
 \midrule
-SIFT1M    & 14.2 & 3.1 & $10 \to 100$ & 1 \\
-GloVe-100 & 18.5 & 4.2 & $10 \to 120$ & 1 \\
-GIST1M    & 22.1 & 5.8 & $20 \to 200$ & 1 \\
-SIFT1B    & 19.5 & 7.9 & $10 \to 400$ & 80 \\
-T2I-1B    & 18.3 & 7.0 & $10 \to 200$ & 80 \\
+SIFT1M    & 14.2 & 3.1 & $10 \to 200$ & 96 \\
+GloVe-100 & 18.5 & 4.2 & $10 \to 200$ & 96 \\
+GIST1M    & 22.1 & 5.8 & $10 \to 200$ & 96 \\
+SIFT1B    & 19.5 & 7.9 & $10 \to 200$ & 96 \\
+T2I-1B    & 18.3 & 7.0 & $10 \to 200$ & 96 \\
 \bottomrule
 \end{tabular}
 \end{table}
