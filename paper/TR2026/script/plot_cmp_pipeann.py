@@ -2,6 +2,14 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 
+# 全局调大字体设置
+plt.rcParams['font.size'] = 16
+plt.rcParams['axes.titlesize'] = 20
+plt.rcParams['axes.labelsize'] = 16
+plt.rcParams['xtick.labelsize'] = 14
+plt.rcParams['ytick.labelsize'] = 14
+plt.rcParams['legend.fontsize'] = 14
+
 # 公共 X 轴：搜索列表大小 L
 L_values = [50, 100, 150, 200]
 
@@ -30,9 +38,9 @@ def draw_final_plots():
     markers = {'MCGI': 'o', 'CSPG': 's', 'PipeANN': 'D'}
 
     def plot_ax(ax, r_val, m_rec, m_qps, c_rec, c_qps, p_rec, p_qps):
-        ax.set_title(f'$R={r_val}$', fontsize=15, fontweight='bold', pad=15)
-        ax.set_xlabel('Search List Size ($L$)', fontsize=12)
-        ax.set_ylabel('Recall@10', fontsize=12)
+        ax.set_title(f'$R={r_val}$', fontweight='bold', pad=15)
+        ax.set_xlabel('Search List Size ($L$)')
+        ax.set_ylabel('Recall@10')
         ax.set_ylim(0.5, 1.0)
         ax.set_xticks(L_values)
         ax.grid(True, which='both', linestyle=':', alpha=0.6)
@@ -44,7 +52,7 @@ def draw_final_plots():
 
         # 2. QPS (右轴 - 虚线 - 对数坐标)
         ax_q = ax.twinx()
-        ax_q.set_ylabel('QPS (Log Scale)', fontsize=12)
+        ax_q.set_ylabel('QPS (Log Scale)')
         ax_q.set_yscale('log')
         ax_q.set_ylim(100, 40000)
         
@@ -56,7 +64,6 @@ def draw_final_plots():
     plot_ax(ax2, 48, mcgi_recall_48, mcgi_qps_48, cspg_recall_48, cspg_qps_48, pipe_recall_48, pipe_qps_48)
 
     # --- 调整图例顺序，确保同一个算法的 Recall 和 QPS 垂直挨着 ---
-    # 顺序：Col1(MCGI Rec, MCGI QPS), Col2(CSPG Rec, CSPG QPS), Col3(PipeANN Rec, PipeANN QPS)
     handles = [
         mlines.Line2D([], [], color=colors['MCGI'], marker=markers['MCGI'], linestyle='-', label='MCGI Recall'),
         mlines.Line2D([], [], color=colors['MCGI'], marker=markers['MCGI'], linestyle='--', label='MCGI QPS'),
@@ -66,12 +73,11 @@ def draw_final_plots():
         mlines.Line2D([], [], color=colors['PipeANN'], marker=markers['PipeANN'], linestyle='--', label='PipeANN QPS')
     ]
 
-    # 设置为 ncol=3，这样 handles 的 1,2,3 在第一行，4,5,6 在第二行
     fig.legend(handles=handles, loc='upper center', bbox_to_anchor=(0.5, 0.98),
-               ncol=3, frameon=False, fontsize=10, columnspacing=1.5, labelspacing=0.5)
+               ncol=3, frameon=False, columnspacing=1.5, labelspacing=0.5)
 
-    # 留出 18% 的顶部空间
-    plt.tight_layout(rect=[0, 0, 1, 0.96])
+    # 留出顶部空间
+    plt.tight_layout(rect=[0, 0, 1, 0.92])
     
     save_path = os.path.expanduser('~/hpdic/AdaDisk/paper/TR2026/figures/cmp_pipeann.pdf')
     os.makedirs(os.path.dirname(save_path), exist_ok=True)

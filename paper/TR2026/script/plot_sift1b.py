@@ -84,7 +84,7 @@ ax1.set_ylim(1000, 10500) # 根据 70% 后的最高 QPS 重新定高
 
 ax1.legend(loc='upper right', frameon=True, edgecolor='black', framealpha=0.8)
 ax1.grid(True, linestyle='--', which='both')
-ax1.set_title('(a) Throughput (QPS)', y=-0.32, fontsize=28) 
+# ax1.set_title('(a) Throughput (QPS)', y=-0.32, fontsize=28) 
 
 # 2.2 右图: Latency vs Recall
 ax2 = axes[1]
@@ -101,7 +101,7 @@ ax2.set_ylim(0, 65) # 根据最高延迟 61.8ms 重新定高
 
 ax2.legend(loc='upper left', frameon=True, edgecolor='black', framealpha=0.8)
 ax2.grid(True, linestyle='--', which='both')
-ax2.set_title('(b) Latency', y=-0.32, fontsize=28) 
+# ax2.set_title('(b) Latency', y=-0.32, fontsize=28) 
 
 plt.tight_layout()
 plt.subplots_adjust(bottom=0.25, wspace=0.35) 
