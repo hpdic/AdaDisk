@@ -420,12 +420,13 @@ is left for future work.
 \section{Evaluation}
 \label{sec:experiments}
 
-We have implemented MCGI with C++ and integrated it into the codebase of DiskANN~\cite{subramanya2019diskann}, i.e., the C++ main branch before the new Rust migration. 
+We have implemented MCGI as a C++ library; some of the code has been merged into the codebase of DiskANN~\cite{subramanya2019diskann}, i.e., the C++ main branch, in March 2026 before the Rust migration. 
 The anonymized implementation of \ours{} is available at: \url{https://anonymous.4open.science/r/MCGI/}.
+
 All experiments were conducted on the Chameleon Cloud~\cite{keahey2020lessons}, whose details are provided in Appendix~\ref{appendix:setup}.
-We evaluate MCGI on five standard benchmarks ranging from million-scale to billion-scale: SIFT1M~\cite{jegou2011product}, GloVe-100~\cite{pennington2014glove}, GIST1M~\cite{jegou2011product}, SIFT1B~\cite{jegou2011searching}, and T2I-1B~\cite{simhadri2025results}.
-Our evaluation compares MCGI against five state-of-the-art baselines: PipeANN~\cite{fast26odinann,osdi25pipeann}, CSPG~\cite{NEURIPS2024_bab1486c}, DiskANN (Vamana)~\cite{subramanya2019diskann}, IVF-Flat (Faiss)~\cite{johnson2019billion}, and HNSW~\cite{malkov2018efficient}.
-More details of these datasets and baselines are provided in Appendix~\ref{appendix:setup}.
+We evaluate MCGI on five benchmarks ranging from million-scale to billion-scale: SIFT1M~\cite{jegou2011product}, GloVe-100~\cite{pennington2014glove}, GIST1M~\cite{jegou2011product}, SIFT1B~\cite{jegou2011searching}, and T2I-1B~\cite{simhadri2025results}.
+Our evaluation compares MCGI against five baselines: PipeANN~\cite{fast26odinann,osdi25pipeann}, CSPG~\cite{NEURIPS2024_bab1486c}, DiskANN (Vamana)~\cite{subramanya2019diskann}, IVF-Flat (Faiss)~\cite{johnson2019billion}, and HNSW~\cite{malkov2018efficient}.
+More details are provided in Appendix~\ref{appendix:setup}.
 
 \subsection{High-dimensional Effectiveness}
 While the in-memory Faiss baseline establishes a theoretical throughput upper-bound, disk-resident indices face severe constraints from SSD random I/O latency. As illustrated in Figure~\ref{fig:gist}, \ours{} mitigates this bottleneck on the high-dimensional GIST1M dataset by leveraging manifold-aware routing to minimize necessary disk reads, achieving 375 QPS at 95\% recall and delivering a 5.8$\times$ speedup over the baseline DiskANN. 
@@ -490,14 +491,16 @@ HNSW$^\dagger$~\cite{malkov2018efficient} & memory & 2,165 \\
 \bottomrule
 \end{tabular}
 \end{wraptable}
-We restrict billion-scale comparisons to PipeANN and DiskANN, which share the same Vamana backbone as \ours{} and thus isolate the contribution of manifold-aware routing. As shown in Figure~\ref{fig:sift1b}, at 90\% recall \ours{} maintains 3,436 QPS with 16.20 ms latency versus DiskANN's 2,597 QPS and 49.06 ms: a 3$\times$ latency reduction driven by fewer redundant disk accesses. Figure~\ref{fig:sensitivity} confirms that \ours{} matches DiskANN's recall trajectory across all tested beam widths $L$, while Figure~\ref{fig:latency} shows reduced tail latency at high-recall operating points.
+We restrict billion-scale comparisons to PipeANN and DiskANN, which share the same Vamana backbone as \ours{} and thus isolate the contribution of manifold-aware routing. 
+All reported results on billion-scale datasets use Online-MCGI (Algorithm 2), where LID estimation is performed on-the-fly using the candidate set discovered during greedy search. The geometric calibration overhead is therefore fully included in the reported latency numbers.
+As shown in Figure~\ref{fig:sift1b}, at 90\% recall \ours{} maintains 3,436 QPS with 16.20 ms latency versus DiskANN's 2,597 QPS and 49.06 ms: a 3$\times$ latency reduction driven by fewer redundant disk accesses. Figure~\ref{fig:sensitivity} confirms that \ours{} matches DiskANN's recall trajectory across all tested beam widths $L$, while Figure~\ref{fig:latency} shows reduced tail latency at high-recall operating points.
 
 \begin{figure*}[t]
     \centering
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\linewidth]{figures/sift1b_performance.pdf}
-        \caption{Performance trade-off (SIFT1B)}
+        \caption{Performance trade-off (SIFT1B, Online-MCGI)}
         \label{fig:sift1b}
     \end{subfigure}
     \hfill 
@@ -526,7 +529,7 @@ The performance gap narrows compared to SIFT1B as expected: the I/O bottleneck i
   \begin{minipage}{0.42\linewidth}
     \centering
     \includegraphics[width=\linewidth]{figures/t2i_performance.pdf}
-    \caption{Performance on T2I-1B.}
+    \caption{Trade-off on T2I-1B.}
     \label{fig:t2i_performance}
   \end{minipage}
   \hfill
@@ -588,9 +591,10 @@ To further validate the necessity of our non-linear density mapping Sigmoid, we 
 
 \section{Conclusion}
 
-This paper presents MCGI, a geometry-aware disk-resident index that resolves the Euclidean-Geodesic mismatch by adapting graph topology to local intrinsic dimensionality. Unlike existing methods that treat all regions of the data manifold uniformly, MCGI dynamically allocates graph connectivity based on local geometric complexity, achieving what static-parameter approaches cannot: manifold-consistent routing that remains efficient as dimensionality scales. Our theoretical analysis formalizes this advantage with provable guarantees, and our empirical results confirm its effectiveness: $5.8\times$ higher throughput at 95\% recall on GIST1M and $3\times$ lower latency on billion-scale SIFT1B, narrowing the long-standing performance gap between disk-resident and in-memory indices. 
+This paper presents MCGI, a geometry-aware disk-resident indexing method for high-dimensional data of varying intrinsic dimensionality.
+MCGI resolves the Euclidean-Geodesic mismatch by adapting graph topology to local intrinsic dimensionality. Unlike existing methods that treat all regions of the underlying data manifold uniformly, MCGI dynamically allocates graph connectivity based on local geometric complexity, achieving what static-parameter approaches cannot: manifold-consistent routing that remains efficient as dimensionality scales and fluctuates. Our theoretical analysis formalizes this advantage with provable guarantees, and our empirical results confirm its effectiveness in practice: $5.8\times$ higher throughput at 95\% recall on high-dimensional datasets (e.g., 960-dimensional GIST1M) and $3\times$ lower latency on billion-scale datasets (e.g., 1-billion SIFT1B), narrowing the long-standing performance gap between disk-resident and in-memory indices. 
 
-Our future work will explore several promising directions. First, we plan to extend the MCGI framework to support dynamic updates, enabling efficient insertions and deletions while maintaining manifold-consistent routing. Second, we aim to investigate more sophisticated geometric metrics beyond LID, such as curvature or local density estimates, to further refine the pruning strategy. Finally, we will explore the integration of MCGI with emerging hardware accelerators (e.g., NVMe SSDs with built-in compute capabilities) to push the boundaries of disk-resident indexing performance.
+% Our future work will explore several promising directions. First, we plan to extend the MCGI framework to support dynamic updates, enabling efficient insertions and deletions while maintaining manifold-consistent routing. Second, we aim to investigate more sophisticated geometric metrics beyond LID, such as curvature or local density estimates, to further refine the pruning strategy. Finally, we will explore the integration of MCGI with emerging hardware accelerators (e.g., NVMe SSDs with built-in compute capabilities) to push the boundaries of disk-resident indexing performance.
 
 \begin{ack}
 Results presented in this paper were obtained using the Chameleon testbed supported by the National Science Foundation.
