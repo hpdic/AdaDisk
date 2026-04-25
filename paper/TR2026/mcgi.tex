@@ -172,7 +172,7 @@ Substituting into $\alpha(u) = \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) \
 
 % \don{TODO: Need to update the algorithm to reflect the fact that LID is calculated on the fly, rather than being preprocessed as a batch (which is unacceptable for billion-scale data sets).}
 
-The Manifold-Consistent Graph Indexing (MCGI) algorithm introduces a geometric calibration phase to a graph indexing procedure. Unlike static methods that apply a uniform connectivity rule, MCGI executes in two distinct stages to ensure that the topology respects the manifold structure, as follows. The full pseudo-code of the algorithm is in Appendix~\ref{appendix:alg}, Algorithm~\ref{alg:online_mcgi}.
+The Manifold-Consistent Graph Indexing (MCGI) algorithm introduces a geometric calibration phase to a graph indexing procedure. Unlike static methods that apply a uniform connectivity rule, MCGI executes in two distinct stages to ensure that the topology respects the manifold structure, as follows. The full pseudo-code of the algorithm is in Appendix~\ref{appendix:alg}, Algorithm~\ref{alg:mcgi}.
 
 \paragraph{Phase 1: Geometric Calibration.}
 Before modifying the graph topology, the system first performs a global analysis of the dataset geometry. We estimate the LID for every point and aggregate the population statistics ($\mu, \sigma$) defined in Section~\ref{subsec:mapping}. 
