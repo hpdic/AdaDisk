@@ -29,6 +29,7 @@ cd /app/Release
 cp -r /app/Release /workspace/
 exit
 ls Release/
+sync; sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'
 docker run -it --name spann_lab -v ~/hpdic/SPTAG:/app -v ~/hpdic/sift1b_data:/data sptag_env /bin/bash
 ls ../data
 cd Release

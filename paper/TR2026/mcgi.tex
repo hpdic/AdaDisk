@@ -423,10 +423,10 @@ is left for future work.
 We have implemented MCGI as a C++ library; some of the code has been merged into the codebase of DiskANN~\cite{subramanya2019diskann}, i.e., the C++ main branch, in March 2026 before the Rust migration. 
 The anonymized implementation of \ours{} is available at: \url{https://anonymous.4open.science/r/MCGI/}.
 
-All experiments were conducted on the Chameleon Cloud~\cite{keahey2020lessons}, whose details are provided in Appendix~\ref{appendix:setup}.
+All experiments were conducted with 96 CPU cores, 256 GiB of RAM, and 7.68 TB of NVMe SSD on Chameleon Cloud~\cite{keahey2020lessons}.
 We evaluate MCGI on five benchmarks ranging from million-scale to billion-scale: SIFT1M~\cite{jegou2011product}, GloVe-100~\cite{pennington2014glove}, GIST1M~\cite{jegou2011product}, SIFT1B~\cite{jegou2011searching}, and T2I-1B~\cite{simhadri2025results}.
 Our evaluation compares MCGI against five baselines: PipeANN~\cite{fast26odinann,osdi25pipeann}, CSPG~\cite{NEURIPS2024_bab1486c}, DiskANN (Vamana)~\cite{subramanya2019diskann}, IVF-Flat (Faiss)~\cite{johnson2019billion}, and HNSW~\cite{malkov2018efficient}.
-More details are provided in Appendix~\ref{appendix:setup}.
+More setup details are in Appendix~\ref{appendix:setup}.
 
 \subsection{High-dimensional Effectiveness}
 While the in-memory Faiss baseline establishes a theoretical throughput upper-bound, disk-resident indices face severe constraints from SSD random I/O latency. As illustrated in Figure~\ref{fig:gist}, \ours{} mitigates this bottleneck on the high-dimensional GIST1M dataset by leveraging manifold-aware routing to minimize necessary disk reads, achieving 375 QPS at 95\% recall and delivering a 5.8$\times$ speedup over the baseline DiskANN. 
@@ -929,7 +929,10 @@ with equality only when $\alpha(u) = \bar{\alpha}$ for all $u$ on the routing pa
 \label{appendix:setup}
 
 \paragraph{Experiment Platform}
-All experiments were conducted on the Chameleon Cloud~\cite{keahey2020lessons} platform using a compute node equipped with dual-socket Intel Xeon Platinum 8380 CPUs (Ice Lake architecture, 2.30GHz, 80 cores total) and 256 GiB of RAM. To simulate a cost-effective large-scale retrieval scenario, the indices are stored on a single 480 GB Micron 5300 PRO Enterprise SSD. The operating system is Ubuntu 24.04 LTS. All algorithms were compiled using GCC 11.4 with -O3 and AVX2 optimizations enabled to fully utilize the hardware instruction set.
+All experiments were conducted on the Chameleon Cloud~\cite{keahey2020lessons} platform using a compute node equipped with 96 AMD EPYC 7352 CPU cores and 256 GiB of RAM. 
+The operating system is Ubuntu 24.04 LTS. All algorithms were compiled using GCC 11.4 with -O3 and AVX2 optimizations enabled to fully utilize the hardware instruction set.
+We utilize a single enterprise-grade Samsung PM1733 NVMe SSD (model MZWLJ7T6HALA) with a total physical capacity of 7.68 TB. In this configuration, the physical drive is divided into four independent hardware namespaces, each providing approximately 1.7 TiB of storage capacity. These four namespaces are subsequently aggregated into a single 7 TB logical volume using the Linux Logical Volume Manager (LVM). 
+This setup leverages the PCIe Gen4 interface to deliver the massive I/O throughput and low latency.
 
 \paragraph{Datasets} 
 We evaluate our method on five standard benchmarks, ranging from million-scale to billion-scale, to comprehensively test robustness across varying intrinsic dimensionalities and data volumes. In the following descriptions, $N$ denotes the number of base vectors and $D$ represents the vector dimensionality:
