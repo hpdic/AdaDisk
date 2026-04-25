@@ -188,7 +188,7 @@ In each iteration, the algorithm dynamically updates $\mathcal{N}(u)$ by conside
     \item Filters connections using the dynamic occlusion criterion. 
 \end{enumerate}
 
-\paragraph{Remark} The calibration phase takess $O(N \log N)$ dominated by the construction phase, on par with the complexity of DiskANN~\cite{subramanya2019diskann}.
+\paragraph{Remark} The calibration phase takes $O(N \log N)$ dominated by the construction phase, on par with the complexity of DiskANN~\cite{subramanya2019diskann}.
 In practice, calculating the exact LID for the entire dataset may cause a computational bottleneck on billion-scale data. 
 To address this, we also design an online algorithm called \textit{Online-MCGI}, whose pseudo-code can be found in Appendix~\ref{appendix:alg}, Algorithm~\ref{alg:online_mcgi}.
 
