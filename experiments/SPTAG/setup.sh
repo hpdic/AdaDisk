@@ -46,19 +46,19 @@ IndexDirectory=/data/indices/spann_sift_1b
 
 [SelectHead]
 isExecute=true
-SamplesNumber=5000000
+SamplesNumber=500000
 NumberOfThreads=96
 
 [BuildHead]
 isExecute=true
-TPTNumber=32
+TPTNumber=1
 NumberOfThreads=96
 
 [BuildSSDIndex]
 isExecute=true
 BuildSsdIndex=true
-InternalResultNum=64
-ReplicaCount=8
+InternalResultNum=1
+ReplicaCount=1
 NumberOfThreads=96
 EOF
 apt install vim -y
