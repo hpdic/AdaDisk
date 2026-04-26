@@ -34,6 +34,7 @@ docker run -it --name spann_lab -v ~/hpdic/SPTAG:/app -v ~/hpdic/sift1b_data:/da
 ls ../data
 cd Release
 mkdir -p /data/indices/spann_sift_1b
+
 cat << EOF > paper_config.ini
 [Base]
 ValueType=UInt8
@@ -46,20 +47,21 @@ IndexDirectory=/data/indices/spann_sift_1b
 
 [SelectHead]
 isExecute=true
-SamplesNumber=500000
+SamplesNumber=1000000
 NumberOfThreads=96
 
 [BuildHead]
 isExecute=true
-TPTNumber=1
+TPTNumber=32
 NumberOfThreads=96
 
 [BuildSSDIndex]
 isExecute=true
 BuildSsdIndex=true
-InternalResultNum=1
-ReplicaCount=1
+InternalResultNum=16
+ReplicaCount=2
 NumberOfThreads=96
 EOF
+
 apt install vim -y
 ./ssdserving paper_config.ini
