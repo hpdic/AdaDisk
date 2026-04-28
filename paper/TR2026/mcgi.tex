@@ -1,8 +1,8 @@
 \documentclass{article}
 
 \PassOptionsToPackage{numbers, compress}{natbib}
-\usepackage[preprint]{neurips_2026}
-% \usepackage{neurips_2026}
+% \usepackage[preprint]{neurips_2026}
+\usepackage{neurips_2026}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{hyperref}
@@ -420,8 +420,8 @@ is left for future work.
 \section{Evaluation}
 \label{sec:experiments}
 
-We have implemented MCGI as a C++ library; some of the code has been merged into the codebase of DiskANN~\cite{subramanya2019diskann}, i.e., the C++ main branch, in March 2026 before the Rust migration. 
-The anonymized implementation of \ours{} is available at: \url{https://anonymous.4open.science/r/MCGI/}.
+We implemented MCGI with C++; some of the code has been merged into DiskANN~\cite{subramanya2019diskann}. 
+The anonymized code is at: \url{https://anonymous.4open.science/r/MCGI/}. Reported numbers are averaged over 3 independent runs with unnoticable variance, thereby not displayed in the figures.
 
 All experiments were conducted with 96 CPU cores, 256 GiB of RAM, and 7.68 TB of NVMe SSD on Chameleon Cloud~\cite{keahey2020lessons}.
 We evaluate MCGI on five benchmarks ranging from million-scale to billion-scale: SIFT1M~\cite{jegou2011product}, GloVe-100~\cite{pennington2014glove}, GIST1M~\cite{jegou2011product}, SIFT1B~\cite{jegou2011searching}, and T2I-1B~\cite{simhadri2025results}.
@@ -1106,7 +1106,7 @@ Algorithm~\ref{alg:online_mcgi} presents an optimized online variant designed to
 \end{algorithmic}
 \end{algorithm}
 
-% \clearpage
-% \input{checklist.tex}
+\clearpage
+\input{checklist.tex}
 
 \end{document}
