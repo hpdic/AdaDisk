@@ -3,6 +3,69 @@
 ## Documentation
 * [Preprint](https://arxiv.org/pdf/2601.01930)
 
+## Updates in October 2026, reproducing the GIST1M benchmark
+
+I just reproduced (roughly) the GIST1M benchmark, see below. But, the results can only reproduce on a relatively old SSD before we moved to a larger (and newer) SSD testbed. Newer NVMe SSDs wouldn't yield the same performance. We will clarify this in the updated report and remove the claim of 5.x speedup on this benchmark. 
+
+### Hardware Requirement
+
+The benchmark must be run on a system using a SATA SSD (e.g., SATA 6Gb/s SSD with AHCI controller).
+
+### Reproduction Commands
+Run the following commands from the repository root:
+
+- Clear any existing shared baseline directory to ensure a fresh build
+    ```bash
+    rm -rf experiments/results/gist_R48_L120_baseline_shared
+    ```
+- Set the exact parameters from the paper and run the original experiment
+  script
+    ```bash
+    export R=48
+    export L=120
+    export ALPHA_MIN=1.0
+    export ALPHA_MAX=1.2
+    export THREADS=32
+    bash experiments/scripts/run_exp_single.sh gist
+    ```
+
+### Expected Output
+The script builds the indexes and prints the benchmark table directly to the prompt:
+```bash
+    --- Baseline ---
+    L     QPS        Lat(us)    Recall    
+    50    1343.38    20289.45   80.08     
+    100   736.02     38841.87   90.80     
+    150   136.65     222973.38  94.61     
+    200   57.54      539057.16  96.48     
+    
+    --- MCGI ---
+    L     QPS        Lat(us)    Recall    
+    50    989.99     28094.37   78.99     
+    100   708.59     40449.46   89.13     
+    150   405.62     73163.76   93.38     
+    200   375.08     79296.23   95.32     
+
+  At L = 200:
+
+              375.08
+    Speedup = ────── ≈ 6.52 ×
+              57.54
+```
+
+Details of the testing platform are as follows:
+```bash
+[System Hardware Configuration]
+    CPU Model:    Intel(R) Xeon(R) Platinum 8380 CPU @ 2.30GHz
+    CPU Cores:    160 vCPUs (2 Sockets x 40 Cores)
+    Memory (RAM):    251Gi
+    OS & Kernel:    Ubuntu 26.04 LTS (7.0.0-29-generic)
+    ---------------------------------------------------------------------
+    Storage Model:    MTFDDAK480TDS (Micron 5300 PRO, 447.1G)
+    Controller:    Intel Corporation C620 Series Chipset Family SSATA Controller [AHCI mode] (rev 0a)
+    Disk Type:    SATA 6Gb/s SSD (AHCI mode, NCQ Queue Depth: 32)
+```
+
 ## Updates in April 2026, UChicago NVMe 7TB SSD
 
 ### Quick Start

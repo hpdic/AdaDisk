@@ -3,8 +3,9 @@
 
 #pragma once
 
-#ifdef _WINDOWS
+#include <cstdint>
 
+#ifdef _WINDOWS
 #ifdef _WINDLL
 #define DISKANN_DLLEXPORT __declspec(dllexport)
 #else
