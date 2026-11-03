@@ -1197,8 +1197,6 @@ void Index<T, TagT, LabelT>::prune_neighbors(const uint32_t location, std::vecto
         // 只有当开启了 MCGI 且 pool 里有数据时才计算
         if (g_mcgi_ctx.enabled && !pool.empty())
         {
-            // 1. 这里的 alpha 原本可能是传入的参数或者写死的 1.2
-            float alpha = 1.2f; // 或者使用函数参数 alpha_param
 
             // ================= [AMCGI INLINE START] =================
             // 利用当前 Candidate Pool 实时估算 LID 并动态调整 Alpha

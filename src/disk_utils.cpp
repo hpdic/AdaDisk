@@ -1427,7 +1427,7 @@ int build_disk_index(const char *dataFilePath, const char *indexFilePathPrefix, 
         g_mcgi_ctx.alpha_min = alpha_min;
         g_mcgi_ctx.alpha_max = alpha_max;
         g_mcgi_ctx.advanced = true;
-        // g_mcgi_ctx.enabled = true; // 如果你的 struct 有这个字段，请取消注释
+        g_mcgi_ctx.enabled = true;
 
         std::cout << "[AMCGI] Context Initialized. Avg=" << lid_avg << " Std=" << lid_std << " Alpha=[" << alpha_min
                   << "," << alpha_max << "]" << std::endl;
