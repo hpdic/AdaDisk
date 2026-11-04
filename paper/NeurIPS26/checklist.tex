@@ -44,7 +44,7 @@
 \item {\bf Limitations}
     \item[] Question: Does the paper discuss the limitations of the work performed by the authors?
     \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: We discuss the limitations of our approach by mentioning that the lower and upper bounds of the $\alpha$ cannot be left empty.
+    \item[] Justification: Appendix~\ref{appendix:limitations} discusses the scope of the evaluated mechanism, the effect of the degree bound on the construction-time rule, the tail latency of the adaptive list, the calibration requirements, and the modeling assumptions of the theory.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper has no limitation while the answer \answerNo{} means that the paper has limitations, but those are not discussed in the paper. 
@@ -60,7 +60,7 @@
 \item {\bf Theory assumptions and proofs}
     \item[] Question: For each theoretical result, does the paper provide the full set of assumptions and a complete (and correct) proof?
     \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: Full proofs are provided in the appendix, and all assumptions are clearly stated in the main paper and/or the appendix.
+    \item[] Justification: Every proposition states its assumptions, including the absence of a degree bound where it matters, and Appendix~\ref{appendix:proofs} gives the full proofs; Appendix~\ref{appendix:limitations} lists the modeling assumptions of the analysis.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include theoretical results. 
@@ -74,7 +74,7 @@
  \item {\bf Experimental result reproducibility}
     \item[] Question: Does the paper fully disclose all the information needed to reproduce the main experimental results of the paper to the extent that it affects the main claims and/or conclusions of the paper (regardless of whether the code and data are provided or not)?
     \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: All code and data needed to reproduce the main experimental results are availabe on the anonymous Github repository.
+    \item[] Justification: The code, the experiment scripts, and the data behind every figure are available in the public repository \url{https://github.com/hpdic/mcgi}, and Section~\ref{sec:experiments} and Appendix~\ref{appendix:setup} describe the setup.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -94,7 +94,7 @@
 \item {\bf Open access to data and code}
     \item[] Question: Does the paper provide open access to the data and code, with sufficient instructions to faithfully reproduce the main experimental results, as described in supplemental material?
     \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: All the details to reproduce the main experimental results are provided in the anonymous Github repository, including instructions for data access and preparation, and scripts to reproduce all experimental results for the new proposed method and baselines.
+    \item[] Justification: The public repository \url{https://github.com/hpdic/mcgi} contains the code, the experiment scripts, and the exported results; all datasets are public benchmarks.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that paper does not include experiments requiring code.
@@ -111,7 +111,7 @@
 \item {\bf Experimental setting/details}
     \item[] Question: Does the paper specify all the training and test details (e.g., data splits, hyperparameters, how they were chosen, type of optimizer) necessary to understand the results?
     \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: All such details are provided in the anonymous Github repository, and the main paper includes a summary of the experimental setting.
+    \item[] Justification: Section~\ref{sec:experiments} and Appendix~\ref{appendix:setup} give the datasets, the index and search parameters, the calibration protocol, and the baseline configurations.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -121,8 +121,8 @@
 
 \item {\bf Experiment statistical significance}
     \item[] Question: Does the paper report error bars suitably and correctly defined or other appropriate information about the statistical significance of the experiments?
-    \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: The results are pretty stable so we did not report error bars; we explain this in the main paper.
+    \item[] Answer: \answerNo{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: Each configuration runs once on an otherwise idle machine with the page cache dropped, and both methods search the same index with the same queries; the paper does not report error bars.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -139,7 +139,7 @@
 \item {\bf Experiments compute resources}
     \item[] Question: For each experiment, does the paper provide sufficient information on the computer resources (type of compute workers, memory, time of execution) needed to reproduce the experiments?
     \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: These details are provided in the anonymous Github repository, and the main paper includes a summary of the compute resources used for the experiments.
+    \item[] Justification: Section~\ref{sec:experiments} and Appendix~\ref{appendix:setup} describe the platform (192 virtual cores, 960 GiB of RAM, and a virtual block device), and Table~\ref{tab:offline_cost} reports the build and calibration times.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not include experiments.
@@ -163,7 +163,7 @@
 \item {\bf Broader impacts}
     \item[] Question: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed?
     \item[] Answer: \answerNA{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \answerNA{}
+    \item[] Justification: The paper studies the efficiency of nearest-neighbor search over public benchmarks and has no direct societal impact beyond faster retrieval.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that there is no societal impact of the work performed.
@@ -177,7 +177,7 @@
 \item {\bf Safeguards}
     \item[] Question: Does the paper describe safeguards that have been put in place for responsible release of data or models that have a high risk for misuse (e.g., pre-trained language models, image generators, or scraped datasets)?
     \item[] Answer: \answerNA{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \answerNA{}
+    \item[] Justification: The paper releases no data or model with a risk of misuse.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper poses no such risks.
@@ -188,8 +188,8 @@
 
 \item {\bf Licenses for existing assets}
     \item[] Question: Are the creators or original owners of assets (e.g., code, data, models), used in the paper, properly credited and are the license and terms of use explicitly mentioned and properly respected?
-    \item[] Answer: \answerNA{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \answerNA{}
+    \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: The paper cites the creators of every dataset (SIFT1M, GIST1M, SIFT1B, GloVe-100, and Deep1B) and every baseline. DiskANN and Faiss are released under the MIT license, PipeANN and hnswlib under the Apache License 2.0, and CSPG is used from the public repository of its authors for research comparison; the datasets are public benchmarks used under the terms of their original releases.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not use existing assets.
@@ -204,8 +204,8 @@
 
 \item {\bf New assets}
     \item[] Question: Are new assets introduced in the paper well documented and is the documentation provided alongside the assets?
-    \item[] Answer: \answerNA{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \answerNA{}
+    \item[] Answer: \answerYes{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
+    \item[] Justification: The code of \ours{} is released at \url{https://github.com/hpdic/mcgi} under the MIT license of its DiskANN code base, with a README that maps every figure and table to its script.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not release new assets.
@@ -217,7 +217,7 @@
 \item {\bf Crowdsourcing and research with human subjects}
     \item[] Question: For crowdsourcing experiments and research with human subjects, does the paper include the full text of instructions given to participants and screenshots, if applicable, as well as details about compensation (if any)? 
     \item[] Answer: \answerNA{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \answerNA{}
+    \item[] Justification: The paper involves no crowdsourcing or human subjects.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not involve crowdsourcing nor research with human subjects.
@@ -228,7 +228,7 @@
 \item {\bf Institutional review board (IRB) approvals or equivalent for research with human subjects}
     \item[] Question: Does the paper describe potential risks incurred by study participants, whether such risks were disclosed to the subjects, and whether Institutional Review Board (IRB) approvals (or an equivalent approval/review based on the requirements of your country or institution) were obtained?
     \item[] Answer: \answerNA{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \answerNA{}
+    \item[] Justification: The paper involves no human subjects.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the paper does not involve crowdsourcing nor research with human subjects.
@@ -241,7 +241,7 @@
     \item[] Question: Does the paper describe the usage of LLMs if it is an important, original, or non-standard component of the core methods in this research? Note that if the LLM is used only for writing, editing, or formatting purposes and does \emph{not} impact the core methodology, scientific rigor, or originality of the research, declaration is not required.
     %this research? 
     \item[] Answer: \answerNA{} % Replace by \answerYes{}, \answerNo{}, or \answerNA{}.
-    \item[] Justification: \answerNA{}
+    \item[] Justification: LLMs assisted with the implementation, the experiments, and the writing, as stated in the acknowledgments, but they are not a component of the method.
     \item[] Guidelines:
     \begin{itemize}
         \item The answer \answerNA{} means that the core method development in this research does not involve LLMs as any important, original, or non-standard components.

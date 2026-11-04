@@ -23,7 +23,7 @@ plt.rcParams.update({"font.size": 16, "font.family": "serif", "font.serif": ["Ti
 
 rows = list(csv.DictReader(open(os.path.join(HERE, "data", "recall_qps_clean.csv"))))
 for out, panels in FIGURES.items():
-    fig, axes = plt.subplots(1, len(panels), figsize=(3.2 * len(panels) + 0.4, 3.3))
+    fig, axes = plt.subplots(1, len(panels), figsize=(3.2 * len(panels) + 0.4, 3.3 if len(panels) == 2 else 2.9))
     for ax, (ds, title, xlim) in zip(axes, panels):
         for method, st in STYLE.items():
             pts = sorted((float(r["recall"]), float(r["qps"])) for r in rows if r["dataset"] == ds and r["method"] == method)
