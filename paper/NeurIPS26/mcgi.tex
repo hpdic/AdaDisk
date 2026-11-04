@@ -16,6 +16,7 @@
 \usepackage{mathtools}
 \usepackage{amsthm}
 \usepackage{algorithmic}
+\renewcommand{\algorithmiccomment}[1]{\hfill// #1}
 \usepackage{algorithm}
 \usepackage{graphicx}
 \usepackage{subcaption}
@@ -946,8 +947,8 @@ Algorithm~\ref{alg:mcgi} outlines the offline construction process of the indexi
 
 Algorithm~\ref{alg:online_mcgi} presents an optimized online variant designed to handle massive datasets where exhaustive geometric profiling is computationally prohibitive. 
 \begin{itemize}
-    \item It begins with a fast approximation phase that samples a small subset of the data. By evaluating this subset, the algorithm quickly bootstraps the global mean and standard deviation of the underlying probability distribution. This step provides a coarse but efficient estimate of the overall geometric complexity, enabling the algorithm to initialize the pruning parameters without incurring the cost of a full dataset pass.
-    \item The second phase merges the geometric estimation directly into the iterative topology refinement loop. Instead of computing all complexities beforehand, the algorithm dynamically estimates the node specific dimensionality on the fly using the candidate set discovered during the greedy search step. This real time estimate is immediately used to calculate the specific pruning parameter $\alpha_u$. The algorithm then applies this dynamic parameter to the pruning criterion, determining which edges to preserve and which to discard. This approach ensures the graph connectivity adapts to the manifold geometry progressively as the quality of the candidate neighbors improves with each iteration.
+    \item It begins with a fast approximation phase that samples a small subset of the data. By evaluating this subset, the algorithm quickly bootstraps the global mean and standard deviation of the underlying probability distribution. This step provides a coarse but efficient estimate of the overall geometric complexity, enabling the algorithm to initialize the pruning parameters without incurring the cost of a full-dataset pass.
+    \item The second phase merges the geometric estimation directly into the iterative topology-refinement loop. Instead of computing all complexities beforehand, the algorithm dynamically estimates the node-specific dimensionality on the fly using the candidate set discovered during the greedy-search step. This real-time estimate is immediately used to calculate the specific pruning parameter $\alpha_u$. The algorithm then applies this dynamic parameter to the pruning criterion, determining which edges to preserve and which to discard. This approach ensures the graph connectivity adapts to the manifold geometry progressively as the quality of the candidate neighbors improves with each iteration.
 \end{itemize}
 
 \begin{algorithm}[h!]
