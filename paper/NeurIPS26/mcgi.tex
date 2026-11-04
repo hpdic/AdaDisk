@@ -667,22 +667,40 @@ To maintain a uniform bound on the routing failure probability $\delta$ across t
 \end{proposition}
 
 \begin{proof}
-Consider a beam search with width $L$. The probability of failing to find a descent step in one round is approximately $(1 - P_{success})^L$. To guarantee a recall target, we enforce a constant upper bound $\delta$ on the failure probability:
+Consider a beam search with width $L$, and model each of its $L$ expansions as an independent trial that finds a descent step with probability $P_{success}$, as in Definition~\ref{def:iso_recall}. The search fails if all $L$ trials fail, which happens with probability $(1 - P_{success})^L$. A uniform bound $\delta$ on the failure probability therefore requires
 \begin{equation}
     (1 - P_{success})^L \le \delta.
 \end{equation}
-Taking the natural logarithm, the condition holds exactly when $L \ge \ln(1/\delta)/(-\ln(1-P_{success}))$. Since $-\ln(1-x) = x + O(x^2)$, for small $P_{success}$ this threshold approaches
+We solve this condition for $L$ in three steps.
+
+(i) Both sides are positive and the natural logarithm is increasing, so that the condition is equivalent to
 \begin{equation}
-    L \ge \frac{-\ln \delta}{P_{success}}.
+    L \cdot \ln(1 - P_{success}) \le \ln \delta.
 \end{equation}
-One expansion evaluates at most $R$ neighbors, each of which yields a descent step with probability $1 / \mathbb{E}[N_{dist}]$ by Lemma~\ref{lemma:complexity}; the union bound therefore gives the asymptotic upper bound $P_{success} \le \mathcal{O}( R\, d^{-1/2} \cdot \exp(-\lambda \cdot d) )$, where $d = \text{LID}(q)$. To satisfy the recall constraint in the worst case scenario, the search budget $L$ must grow inversely to $P_{success}$:
+
+(ii) Since $0 < P_{success} < 1$, the factor $\ln(1 - P_{success})$ is negative, and dividing both sides by it reverses the inequality:
 \begin{equation}
-    L \ge \frac{-\ln \delta}{\mathcal{O}( R\, d^{-1/2} \cdot \exp(-\lambda \cdot d) )} = \Omega\left( \frac{\sqrt{d}}{R} \cdot \exp(\lambda \cdot d) \right).
+    L \ge \frac{\ln \delta}{\ln(1 - P_{success})} = \frac{\ln(1/\delta)}{-\ln(1 - P_{success})}.
 \end{equation}
-In high-dimensional spaces ($d \gg 1$), the exponential growth term dominates the polynomial factor $\sqrt{d}$. Since $\sqrt{d} \ge 1$, absorbing the confidence factor $-\ln \delta$, the degree bound $R$, and the constant of the lemma into $C_{\delta}$ gives the necessary budget:
+
+(iii) To compare this threshold with $1/P_{success}$, we bound $-\ln(1 - P_{success})$ from above. For $0 \le x < 1$, the Taylor series of the logarithm gives
 \begin{equation}
-    L(q) \ge C_{\delta} \cdot \exp(\lambda \cdot \text{LID}(q)).
+    -\ln(1 - x) = \sum_{k=1}^{\infty} \frac{x^k}{k} \le \sum_{k=1}^{\infty} x^k = \frac{x}{1 - x},
 \end{equation}
+so that $-\ln(1 - P_{success}) \le P_{success}/(1 - P_{success})$. Inserting this upper bound into the denominator of step (ii) can only lower the threshold; hence every $L$ that meets the bound $\delta$ satisfies
+\begin{equation}
+    L \ge (1 - P_{success}) \cdot \frac{\ln(1/\delta)}{P_{success}}.
+\end{equation}
+
+It remains to bound $P_{success}$ from above. One expansion evaluates at most $R$ neighbors, and Step 3 of Proof~\ref{proof:complexity} bounds the probability that one neighbor yields a descent step by $\kappa_0\, d^{-1/2} \exp(-\lambda \cdot d)$, where $d = \text{LID}(q) \ge 3$. The union bound over the at most $R$ neighbors therefore gives
+\begin{equation}
+    P_{success} \le R\, \kappa_0\, d^{-1/2} \exp(-\lambda \cdot d).
+\end{equation}
+Since $(1 - P_{success})/P_{success} = 1/P_{success} - 1$, the result of step (iii) reads $L \ge \ln(1/\delta)\,(1/P_{success} - 1)$, and the upper bound on $P_{success}$ gives the lower bound $1/P_{success} \ge \sqrt{d}\, \exp(\lambda \cdot d)/(R\, \kappa_0)$. Substituting this lower bound yields, for every $d \ge 3$,
+\begin{equation}
+    L \ge \ln(1/\delta) \left( \frac{\sqrt{d}\, \exp(\lambda \cdot d)}{R\, \kappa_0} - 1 \right).
+\end{equation}
+The first term inside the parentheses grows exponentially with $d$, whereas the second term is the constant $1$; consequently, $L(q) = \Omega(\exp(\lambda \cdot \text{LID}(q)))$, which is the claim.
 \end{proof}
 
 \begin{proposition}[Connectivity Preservation]
