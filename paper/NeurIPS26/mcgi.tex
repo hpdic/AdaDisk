@@ -219,7 +219,7 @@ where $\lambda > 0$ depends on $\epsilon$ and the ratio of the step length to th
 
 \begin{proof}[Proof Sketch]
 At a node $u$ with distance $r$ to query $q$, a greedy step succeeds only if a neighbor $v$ falls within a cone of half-angle $\theta_{\max}$ around the direction of $q$; the probability of this event corresponds to the ratio of a spherical cap to the full hypersphere $\mathcal{S}^{d-1}$.
-Asymptotic analysis of this ratio via the regularized incomplete beta function yields $P_{\text{success}} \propto d^{-1/2} \exp(-\lambda \cdot d)$, where the exponential decay arises from the concentration of measure on high-dimensional spheres and $\lambda = -\ln(\sin\theta_{\max}) > 0$.
+Bounding the numerator of this ratio from above by integration by parts and its denominator from below near the equator yields $P_{\text{success}} \le \kappa_0\, d^{-1/2} \exp(-\lambda \cdot d)$ for a constant $\kappa_0$, where the exponential decay arises from the concentration of measure on high-dimensional spheres and $\lambda = -\ln(\sin\theta_{\max}) > 0$.
 Since $\mathbb{E}[N_{dist}] = 1/P_{\text{success}}$, the lower bound follows directly.
 % The complete proof can be found in Appendix~\ref{appendix:proofs}, Proof~\ref{proof:complexity}.
 \end{proof}
@@ -582,45 +582,76 @@ For a step size proportional to the distance, i.e., $s = \beta r$ with a constan
 
 \paragraph{2. Volume Concentration of the Improving Region.}
 In the tangent space at $u$, the directions of neighbors are uniformly distributed on the unit hypersphere $\mathbb{S}^{d-1}$. The probability $P_{success}$ of finding a neighbor in the improving cone corresponds to the ratio of the surface area of the spherical cap $\mathcal{C}(\theta_{max})$ to the total surface area of $\mathbb{S}^{d-1}$.
-This ratio is given by the regularized incomplete beta function, which can be expressed in terms of the integral over the polar angle $\phi$:
+Both areas follow from integrating over the polar angle $\phi$, measured from the direction of $q$. The points of $\mathbb{S}^{d-1}$ at polar angle $\phi$ form a sphere of dimension $d-2$ and radius $\sin \phi$, whose area equals $\sin^{d-2}\phi$ times the area $A_{d-2}$ of the unit sphere $\mathbb{S}^{d-2}$; consequently, the area element at angle $\phi$ is $A_{d-2} \sin^{d-2}\phi \, d\phi$. Integrating this element over $[0, \theta_{max}]$ for the cap and over $[0, \pi]$ for the whole sphere, the constant $A_{d-2}$ cancels in the ratio:
 \begin{equation}
     P_{success} = \frac{\text{Area}(\mathcal{C}(\theta_{max}))}{\text{Area}(\mathbb{S}^{d-1})} = \frac{\int_0^{\theta_{max}} \sin^{d-2} \phi \, d\phi}{\int_0^{\pi} \sin^{d-2} \phi \, d\phi}.
+    \label{eq:cap_ratio}
 \end{equation}
+\paragraph{3. Upper Bound on the Success Probability.}
+We show that $P_{success} \le \kappa_0\, d^{-1/2} \gamma^{d}$ for every $d \ge 3$, where $\gamma = \sin\theta_{max} < 1$ and the constant $\kappa_0$ does not depend on $d$; this upper bound suffices for the lemma, because $\mathbb{E}[N_{dist}] = 1/P_{success}$. Since $P_{success}$ is the ratio of the two integrals in Eq.~\eqref{eq:cap_ratio}, we bound the numerator from above in Step 3a and the denominator from below in Step 3b, and we divide the two bounds in Step 3c.
 
-\paragraph{3. Asymptotic Analysis.}
-We analyze the asymptotic behavior of this ratio as $d \to \infty$. The denominator relates to the surface area of the hypersphere and can be evaluated using the standard integral identity for powers of sine. Exploiting the symmetry of $\sin \phi$ around $\pi/2$, we have:
-\begin{align}
-    \int_0^{\pi} \sin^{d-2} \phi \, d\phi &= 2 \int_0^{\frac{\pi}{2}} \sin^{d-2} \phi \, d\phi \nonumber \\
-    &= 2 \cdot \frac{\sqrt{\pi}}{2} \frac{\Gamma(\frac{d-1}{2})}{\Gamma(\frac{d}{2})} = \sqrt{\pi} \frac{\Gamma(\frac{d-1}{2})}{\Gamma(\frac{d}{2})}.
-\end{align}
-For high-dimensional spaces ($d \gg 1$), we apply the asymptotic property of the Gamma function ratio, $\frac{\Gamma(x+a)}{\Gamma(x)} \approx x^a$. Setting $x = d/2$ and $a = -1/2$, we obtain the approximation:
+\emph{Step 3a: numerator.} The numerator of Eq.~\eqref{eq:cap_ratio} is the cap integral $J = \int_0^{\theta_{max}} \sin^{d-2}\phi \, d\phi$, which measures the improving directions, and this step shows that $J \le \frac{\sin^{d-1}\theta_{max}}{(d-1)\cos\theta_{max}}$. The integrand $\sin^{d-2}\phi$ has no elementary antiderivative, so that we bound the integral by integration by parts, which needs a factor of the integrand whose antiderivative is known. We construct such a factor as follows. Since $\theta_{max} < \pi/2$, the function $\cos\phi$ is positive on $[0, \theta_{max}]$, and we may multiply and divide the integrand by $(d-1)\cos\phi$:
 \begin{equation}
-    \sqrt{\pi} \frac{\Gamma(\frac{d}{2} - \frac{1}{2})}{\Gamma(\frac{d}{2})} \approx \sqrt{\pi} \left( \frac{d}{2} \right)^{-\frac{1}{2}} = \sqrt{\frac{2\pi}{d}}.
+    \sin^{d-2}\phi = \frac{1}{(d-1)\cos\phi} \cdot (d-1)\sin^{d-2}\phi \cos\phi.
 \end{equation}
-For the numerator, we exploit the concentration of measure near the integration boundary $\theta_{max}$. Since the integrand $\sin^{d-2} \phi$ decays exponentially fast away from $\theta_{max}$, the integral is dominated by the contribution near the upper limit. We apply integration by parts to extract the leading order term. 
-Recall that $\frac{d}{d\phi}(\sin^{d-1} \phi) = (d-1)\sin^{d-2} \phi \cos \phi$. We rewrite the integrand as:
+The second factor is the derivative of $\sin^{d-1}\phi$, because the chain rule gives $\frac{d}{d\phi}(\sin^{d-1} \phi) = (d-1)\sin^{d-2} \phi \cdot \cos \phi$. We choose the exponent $d-1$ because differentiation lowers it by one to the exponent $d-2$ of the integrand, and the factor $d-1$ that the chain rule produces is the one we multiplied in. The integral therefore becomes
 \begin{equation}
     \int_0^{\theta_{max}} \sin^{d-2} \phi \, d\phi = \int_0^{\theta_{max}} \frac{1}{(d-1)\cos \phi} \frac{d}{d\phi}(\sin^{d-1} \phi) \, d\phi.
 \end{equation}
-Neglecting lower-order terms generated by the derivative of $\frac{1}{\cos \phi}$, the integral approximates to the boundary term:
+Integration by parts states that
 \begin{equation}
-    \left[ \frac{\sin^{d-1} \phi}{(d-1)\cos \phi} \right]_0^{\theta_{max}} = \frac{\sin^{d-1} \theta_{max}}{(d-1) \cos \theta_{max}}.
+    \int_a^b f(\phi)\, g'(\phi)\, d\phi = \Bigl[ f(\phi)\, g(\phi) \Bigr]_a^b - \int_a^b f'(\phi)\, g(\phi)\, d\phi,
 \end{equation}
-Substituting these approximations back into the probability ratio, we obtain:
+and $J$ has exactly the form of the left-hand side with $f(\phi) = \frac{1}{(d-1)\cos\phi}$ and $g(\phi) = \sin^{d-1}\phi$ on $[a, b] = [0, \theta_{max}]$. The right-hand side needs three quantities:
+\begin{itemize}
+    \item the product $f(\phi)\, g(\phi) = \frac{\sin^{d-1}\phi}{(d-1)\cos\phi}$, which equals $0$ at $\phi = 0$ because $\sin 0 = 0$, and equals $\frac{\sin^{d-1}\theta_{max}}{(d-1)\cos\theta_{max}}$ at $\phi = \theta_{max}$;
+    \item the derivative $f'(\phi) = \frac{\sin\phi}{(d-1)\cos^2\phi}$, because the chain rule applied to $(\cos\phi)^{-1}$ gives $\frac{d}{d\phi}(\cos\phi)^{-1} = -(\cos\phi)^{-2} \cdot \frac{d}{d\phi}\cos\phi = -(\cos\phi)^{-2} \cdot (-\sin\phi) = \frac{\sin\phi}{\cos^2\phi}$;
+    \item the product $f'(\phi)\, g(\phi) = \frac{\sin\phi \cdot \sin^{d-1}\phi}{(d-1)\cos^2\phi} = \frac{\sin^{d}\phi}{(d-1)\cos^2\phi}$, which we rewrite with $\sin^{d}\phi = \sin^2\phi \cdot \sin^{d-2}\phi$ and $\tan\phi = \sin\phi/\cos\phi$ as $\frac{1}{d-1} \cdot \frac{\sin^2\phi}{\cos^2\phi} \cdot \sin^{d-2}\phi = \frac{1}{d-1} \tan^2\phi \, \sin^{d-2}\phi$.
+\end{itemize}
+Substituting the three quantities into the right-hand side gives
 \begin{equation}
-    P_{success} \approx \frac{1}{\sqrt{2\pi} \cos \theta_{max}} \cdot \frac{\sqrt{d}}{d-1} \cdot (\sin \theta_{max})^{d-1}.
+    J = \left[ \frac{\sin^{d-1} \phi}{(d-1)\cos \phi} \right]_0^{\theta_{max}} - \frac{1}{d-1}\int_0^{\theta_{max}} \tan^2\phi \, \sin^{d-2}\phi \, d\phi.
 \end{equation}
-For large $d$, the term $\frac{\sqrt{d}}{d-1}$ is asymptotically equivalent to $d^{-1/2}$. Since $\theta_{max}$ is fixed by the geometric constraints, the trigonometric factors are constant relative to $d$. Let $\gamma = \sin \theta_{max} < 1$. The probability scales as:
+The last integral is nonnegative, because $\tan^2\phi \ge 0$ and $\sin^{d-2}\phi \ge 0$ on $[0, \theta_{max}]$, and it enters with a minus sign. Dropping it can therefore only increase the right-hand side, which yields the upper bound
 \begin{equation}
-    P_{success} \propto d^{-1/2} \cdot \gamma^{d} = d^{-1/2} \exp(d \ln \gamma).
+    J \le \frac{\sin^{d-1} \theta_{max}}{(d-1) \cos \theta_{max}}.
 \end{equation}
-Defining the decay rate $\lambda = -\ln \gamma > 0$ (since $\gamma < 1$), we strictly obtain:
+
+\emph{Step 3b: denominator.} This step shows that the denominator of Eq.~\eqref{eq:cap_ratio} is at least $1/\sqrt{d}$. The idea is that $\sin\phi$ equals $1$ at the equator $\phi = \pi/2$, so that the integrand $\sin^{d-2}\phi$ stays close to $1$ on a narrow band around the equator. We show that the integrand is at least $\frac{1}{2}$ on the band of half-width $1/\sqrt{d}$; the integral is then at least the width $2/\sqrt{d}$ of the band times $\frac{1}{2}$. The argument has four parts.
+
+(i) Restriction to the band. The integrand $\sin^{d-2}\phi$ is nonnegative on $[0, \pi]$, so that the integral over $[0, \pi]$ is at least the integral over the band $[\pi/2 - 1/\sqrt{d},\ \pi/2 + 1/\sqrt{d}]$, which lies inside $[0, \pi]$ because $1/\sqrt{d} \le 1 < \pi/2$.
+
+(ii) Centering the band at zero. The substitution $\phi = \pi/2 + x$ maps the band to $x \in [-1/\sqrt{d}, 1/\sqrt{d}]$, with $d\phi = dx$ and $\sin(\pi/2 + x) = \sin(\pi/2)\cos x + \cos(\pi/2)\sin x = \cos x$. Parts (i) and (ii) give
 \begin{equation}
-    P_{success} \propto d^{-1/2} \exp(-\lambda \cdot d).
+    \int_0^{\pi} \sin^{d-2} \phi \, d\phi \ge \int_{-1/\sqrt{d}}^{1/\sqrt{d}} \cos^{d-2} x \, dx.
+\end{equation}
+
+(iii) Lower bound $\frac{1}{2}$ on the band. For $|x| \le 1/\sqrt{d}$, we show
+\begin{equation}
+    \cos^{d-2} x \ge \left(1 - \frac{x^2}{2}\right)^{d-2} \ge 1 - \frac{(d-2)\, x^2}{2} \ge 1 - \frac{d-2}{2d} \ge \frac{1}{2}.
+\end{equation}
+The first inequality follows from $\cos x \ge 1 - x^2/2$, which holds because $1 - \cos x = 2\sin^2(x/2) \le 2\,(x/2)^2 = x^2/2$ by $|\sin y| \le |y|$; both sides are positive for $|x| \le 1$, so that raising them to the power $d-2$ keeps the inequality. The second inequality is Bernoulli's inequality $(1 - y)^n \ge 1 - n y$, which holds for every $y \in [0, 1]$ and every real $n \ge 1$; here $y = x^2/2$ lies in $[0, 1]$ because $x^2 \le 1/d$, and $n = d - 2 \ge 1$ because $d \ge 3$, without $d$ being an integer. The third inequality uses $x^2 \le 1/d$, and the fourth uses $\frac{d-2}{2d} \le \frac{1}{2}$.
+
+(iv) Integration over the band. Integrating the lower bound $\frac{1}{2}$ from part (iii) over the band of width $2/\sqrt{d}$ gives
+\begin{equation}
+    \int_0^{\pi} \sin^{d-2} \phi \, d\phi \ge \int_{-1/\sqrt{d}}^{1/\sqrt{d}} \frac{1}{2} \, dx = \frac{2}{\sqrt{d}} \cdot \frac{1}{2} = \frac{1}{\sqrt{d}}.
+\end{equation}
+
+\emph{Step 3c: ratio.} A fraction with a positive numerator grows when the numerator grows and when the positive denominator shrinks. Replacing the numerator of Eq.~\eqref{eq:cap_ratio} by its upper bound from Step 3a and the denominator by its lower bound $1/\sqrt{d}$ from Step 3b therefore gives
+\begin{equation}
+    P_{success} \le \frac{\sin^{d-1} \theta_{max}}{(d-1) \cos \theta_{max}} \cdot \sqrt{d} = \frac{1}{\cos \theta_{max}} \cdot \frac{\sqrt{d}}{d-1} \cdot (\sin \theta_{max})^{d-1}.
+\end{equation}
+To bring this bound into the form $\kappa_0\, d^{-1/2} \gamma^{d}$, we use $\frac{\sqrt{d}}{d-1} \le \frac{2}{\sqrt{d}}$, which holds for $d \ge 2$ because multiplying both sides by the positive number $\sqrt{d}\,(d-1)$ turns it into $d \le 2(d-1)$. We also write $(\sin \theta_{max})^{d-1} = \gamma^{d}/\gamma$ with $\gamma = \sin \theta_{max}$, which satisfies $0 < \gamma < 1$ because $0 < \theta_{max} < \pi/2$, and we set $\kappa_0 = 2/(\gamma \cos \theta_{max})$ for the factors that do not depend on $d$:
+\begin{equation}
+    P_{success} \le \frac{1}{\cos\theta_{max}} \cdot \frac{2}{\sqrt{d}} \cdot \frac{\gamma^{d}}{\gamma} = \kappa_0\, d^{-1/2}\, \gamma^{d} = \kappa_0\, d^{-1/2} \exp(d \ln \gamma),
+\end{equation}
+where the last step writes $\gamma^d = \exp(d \ln \gamma)$. Defining the decay rate $\lambda = -\ln \gamma$, which is positive because $0 < \gamma < 1$ implies $\ln \gamma < 0$, we obtain:
+\begin{equation}
+    P_{success} \le \kappa_0\, d^{-1/2} \exp(-\lambda \cdot d).
 \end{equation}
 
 \paragraph{4. Complexity Bound.}
-The expected number of distance evaluations follows $\mathbb{E}[N_{dist}] = 1/P_{success}$. Thus:
+Under the model of the lemma, each distance evaluation independently finds an improving neighbor with probability $P_{success}$, so that the number of evaluations until the first success follows a geometric distribution with mean $\mathbb{E}[N_{dist}] = 1/P_{success}$. Step 3 therefore gives $\mathbb{E}[N_{dist}] \ge \kappa_0^{-1} \sqrt{d}\, \exp(\lambda \cdot d)$ for every $d \ge 3$, i.e.,
 \begin{equation}
     \mathbb{E}[N_{dist}] \ge \Omega\left( \sqrt{d} \cdot \exp(\lambda \cdot d) \right).
 \end{equation}
