@@ -83,7 +83,7 @@ Theoretical metrics such as the doubling dimension~\cite{gupta2003bounded} and e
 \section{Methodology} 
 \label{method}
 
-\ours{} allocates the resources of a disk-resident graph index according to the local intrinsic dimensionality (LID) of the data, because greedy routing needs more steps to find a descent direction where the LID around the target is high. The primary application of this rule is the search, where a query with a high LID receives a longer candidate list $L(q)$, which spends disk reads where a fixed list fails and saves them where the search converges early. The same rule optionally applies to construction, where a node with a high LID receives a larger pruning parameter $\alpha(u)$ and therefore a more permissive pruning test for its candidate edges. Under the degree bound $R$ of the index, this construction-time rule changes which candidate edges a node keeps rather than how many, whereas the search-time rule applies to any Vamana index regardless of how the index was built.
+Greedy routing needs more steps to find a descent direction where the local intrinsic dimensionality (LID) around the target is high. \ours{} therefore spends more of the resources of a disk-resident graph index where the LID is high and fewer where it is low. During search, \ours{} gives a query with a high LID a longer candidate list and a query with a low LID a shorter one, because a fixed list fails on the first kind of query and wastes disk reads on the second. During construction, \ours{} can apply the same rule to the pruning parameter of each node: a node with a high LID receives a larger pruning parameter, which relaxes the pruning test for its candidate edges. Under the degree bound of the index, nodes typically fill their neighbor lists with either parameter, so that this construction-time rule mainly changes the choice of edges of a node. The search-time rule applies to any Vamana index, regardless of how the index was built.
 
 \subsection{Mapping Function from LID to Pruning Parameter}
 \label{subsec:mapping}
@@ -104,8 +104,7 @@ While Definition~\ref{def:lid} is elegant, it is often impractical to compute di
 
 \begin{definition}[LID Maximum Likelihood Estimator]
 \label{def:lid_mle}
-Given a reference point $x$ and its $k$-nearest neighbors determined by the distance measure $d$.
-Let $r_i = d(x, v_i)$ denote the distance to the $i$-th nearest neighbor, sorted such that $r_1 \le \dots \le r_k$. 
+Consider a reference point $x$ and its $k$ nearest neighbors under the distance measure $d$, and denote by $r_i = d(x, v_i)$ the distance to the $i$-th nearest neighbor, sorted such that $r_1 \le \dots \le r_k$. 
 Following the formulation in~\cite{10.1145/2783258.2783405}, which adapts the Hill estimator for intrinsic dimensionality, the LID at $x$ can be estimated as:
 \begin{equation}
     \widehat{\text{LID}}(x) = - \left( \frac{1}{k} \sum_{i=1}^{k} \ln \frac{r_i}{r_k} \right)^{-1}.
@@ -113,7 +112,7 @@ Following the formulation in~\cite{10.1145/2783258.2783405}, which adapts the Hi
 \end{definition}
 
 The primary hypothesis of the proposed Manifold-Consistent Graph Indexing (MCGI) is that the graph topology should adapt to the local geometric complexity, rather than being a static vertex-edge structure. 
-To preserve topological fidelity in complex regions, the indexing algorithm must adopt a conservative pruning strategy there (larger $\alpha$ in~\cite{subramanya2019diskann}), under which more candidate edges of each node survive the pruning test before the degree bound $R$ applies.
+To preserve topological fidelity in complex regions, the indexing algorithm must adopt a conservative pruning strategy there (larger $\alpha$ in~\cite{subramanya2019diskann}), which relaxes the pruning test for the candidate edges of each node.
 The question then becomes how to quantitatively map the estimated LID to the pruning parameter $\alpha$ that controls the edge selection during graph construction.
 We refer to such a function as the \textit{mapping function} $\Phi: \mathbb{R}^+ \to [\alpha_{\min}, \alpha_{\max}]$, which translates the geometric complexity of the local neighborhood into a corresponding pruning constraint.
 
@@ -173,13 +172,10 @@ Substituting into $\alpha(u) = \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) \
 The Manifold-Consistent Graph Indexing (MCGI) algorithm introduces a geometric calibration phase to a graph indexing procedure. Unlike static methods that apply a uniform connectivity rule, MCGI executes in two distinct stages to ensure that the topology respects the manifold structure, as follows. The full pseudo-code of the algorithm is in Appendix~\ref{appendix:alg}, Algorithm~\ref{alg:mcgi}.
 
 \paragraph{Phase 1: Geometric Calibration.}
-Before modifying the graph topology, the system first performs a global analysis of the dataset geometry. We estimate the LID for every point and aggregate the population statistics ($\mu, \sigma$) defined in Section~\ref{subsec:mapping}. 
-This phase freezes the geometric profile of the dataset. By pre-computing these statistics, we decouple the complexity estimation from the graph update loop, ensuring that the mapping function $\Phi$ remains stable and computationally efficient during the intensive edge-selection process.
+Before modifying the graph topology, the system first performs a global analysis of the dataset geometry. We estimate the LID for every point and aggregate the population statistics ($\mu, \sigma$) defined in Section~\ref{subsec:mapping} once before the construction starts, so that the mapping function $\Phi$ stays fixed and cheap to evaluate during the edge-selection process.
 
 \paragraph{Phase 2: Manifold-Consistent Refinement.}
-The index construction follows an iterative refinement strategy. 
-Let $\mathcal{N}(u)$ denote the set of neighbors for node $u$ in the graph $G$. 
-In each iteration, the algorithm dynamically updates $\mathcal{N}(u)$ by considering a candidate pool $\mathcal{C}$ obtained from a greedy search on the current graph structure:
+The index construction then refines the neighbor set $\mathcal{N}(u)$ of each node $u$ in the graph $G$ over several iterations, and each iteration updates $\mathcal{N}(u)$ from a candidate pool $\mathcal{C}$ that a greedy search on the current graph returns:
 \begin{enumerate}
     \item Queries the pre-computed geometric profile to determine the node-specific constraint $\alpha(u)$.
     \item Explores the graph to identify a candidate pool $\mathcal{C}$.
@@ -213,11 +209,11 @@ We formalize the relationship between LID and the computational cost required to
 
 \begin{lemma}[Local Complexity Lower Bound]
 \label{lemma:complexity}
-Consistent with the complexity bounds established for growth-restricted metrics~\cite{karger2002finding}, for a query $q$ on a manifold $\mathcal{M}$, the expected number of distance evaluations $N_{dist}$ required for successful greedy routing scales exponentially with the local intrinsic dimensionality $d = \text{LID}(q)$:
+Consistent with the complexity bounds established for growth-restricted metrics~\cite{karger2002finding}, consider a query $q$ on a manifold $\mathcal{M}$ of local intrinsic dimensionality $d = \text{LID}(q)$, and assume that the neighbor directions at a node are independent and uniform on the unit sphere, that the step length is proportional to the distance to $q$, and that each greedy step must reduce this distance by a fixed factor $1-\epsilon$ with $\epsilon$ independent of $d$. Then the expected number of distance evaluations $N_{dist}$ per improving step scales exponentially with $d$:
 \begin{equation}
     \mathbb{E}[N_{dist}] \ge \Omega\left( \sqrt{d} \cdot \exp(\lambda \cdot d) \right),
 \end{equation}
-where $\lambda > 0$ is a geometric constant derived from the required convergence rate.
+where $\lambda > 0$ depends on $\epsilon$ and the ratio of the step length to the distance.
 \end{lemma}
 
 \begin{proof}[Proof Sketch]
@@ -227,19 +223,19 @@ Since $\mathbb{E}[N_{dist}] = 1/P_{\text{success}}$, the lower bound follows dir
 % The complete proof can be found in Appendix~\ref{appendix:proofs}, Proof~\ref{proof:complexity}.
 \end{proof}
 
-Lemma~\ref{lemma:complexity} reveals a fundamental geometric barrier: for a fixed budget $L$, the probability of routing failure grows exponentially in high-LID regions. To address this, \ours{} adopts an \textit{Iso-Recall} strategy, aiming to homogenize the search reliability across the heterogeneous manifold.
+Lemma~\ref{lemma:complexity} reveals a fundamental geometric barrier: the probability of a successful greedy step decays exponentially with the LID, so that a fixed budget $L$ fails more often in high-LID regions. To address this, \ours{} adopts an \textit{Iso-Recall} strategy, aiming to homogenize the search reliability across the heterogeneous manifold.
 
 \begin{proposition}[Optimal Budget Allocation]
 \label{thm:oba}
-To maintain a uniform bound on the routing failure probability $\delta$ across the manifold (i.e., $\mathbb{P}(\text{fail}\;|\;q) \le \delta$ for all $q \in \mathcal{M}$), the search beam width $L(q)$ must scale exponentially with the local intrinsic dimensionality:
+To maintain a uniform bound on the routing failure probability $\delta$ across the manifold (i.e., $\mathbb{P}(\text{fail}\;|\;q) \le \delta$ for all $q \in \mathcal{M}$), the search beam width $L(q)$ must grow exponentially with the local intrinsic dimensionality:
 \begin{equation}
-    L(q) \propto \exp\left( \lambda \cdot \text{LID}(q) \right).
+    L(q) = \Omega\left( \exp\left( \lambda \cdot \text{LID}(q) \right) \right).
 \end{equation}
 \end{proposition}
 
 \begin{proof}[Proof Sketch]
-For a beam of width $L$, the failure probability is $(1 - P_{\text{success}})^L \leq \delta$, which via the approximation $\ln(1-x) \approx -x$ requires $L \geq -\ln\delta / P_{\text{success}}$.
-Substituting the bound $P_{\text{success}} \propto d^{-1/2}\exp(-\lambda \cdot d)$ from Lemma~\ref{lemma:complexity} and absorbing the polynomial and confidence factors into a constant $C_\delta$ yields $L(q) \geq C_\delta \cdot \exp(\lambda \cdot \text{LID}(q))$.
+For a beam of width $L$, the condition $(1 - P_{\text{success}})^L \leq \delta$ holds exactly when $L \geq \ln(1/\delta) / (-\ln(1-P_{\text{success}}))$, which approaches $\ln(1/\delta)/P_{\text{success}}$ for small $P_{\text{success}}$.
+Because one expansion evaluates at most $R$ neighbors, Lemma~\ref{lemma:complexity} and the union bound give $P_{\text{success}} = O(R\, d^{-1/2}\exp(-\lambda \cdot d))$, and $\sqrt{d} \ge 1$ yields $L(q) = \Omega(\exp(\lambda \cdot \text{LID}(q))/R)$.
 % The complete proof can be found in Appendix~\ref{appendix:proofs}, Proof~\ref{proof:oba}.
 \end{proof}
 
@@ -252,12 +248,12 @@ Proposition~\ref{thm:oba} implies that the search budget of each query should gr
 
 A primary theoretical concern with aggressive edge pruning is the potential fracture of the connectivity backbone~\cite{dzhao_pami09}. We show that, when the pruning test runs over all points and no degree bound applies, the pruning of \ours{} preserves every edge of the Euclidean minimum spanning tree and therefore global reachability.
 
-Formally, the edge selection in \ours{} is governed by the adaptive pruning parameter $\alpha(u)$. Specifically, an edge $(u, v)$ is pruned if there exists a witness node $n$ such that $\alpha(u) \cdot d(n, v) \le d(u, v)$.
-This condition defines an \textit{exclusion region} around the midpoint of $u$ and $v$. As $\alpha(u)$ increases, this region shrinks, making pruning more conservative. We formulate this in the following proposition.
+Formally, the edge selection in \ours{} is governed by the adaptive pruning parameter $\alpha(u)$. Specifically, the candidates of $u$ are processed in increasing order of their distance to $u$, and an edge $(u, v)$ is pruned if a previously selected neighbor $n$ of $u$ satisfies $\alpha(u) \cdot d(n, v) \le d(u, v)$.
+Because such a witness also satisfies $d(u, n) < d(u, v)$, this condition defines an \textit{exclusion region} $\{n : d(u,n) < d(u,v),\ d(n,v) \le d(u,v)/\alpha(u)\}$. As $\alpha(u)$ increases, this region shrinks, making pruning more conservative. We formulate this in the following proposition.
 
 \begin{proposition}[Connectivity Preservation]
 \label{prop:connectivity}
-Let $G_{EMST}$ and $G_{RNG}$ denote the Euclidean Minimum Spanning Tree (EMST) and the Relative Neighborhood Graph (RNG), respectively. For any configuration of points in general position, provided that $\alpha(u) \ge 1.0$ for all $u \in V$, that the pruning test of each node runs over all other points, and that no degree bound truncates the neighbor lists, the graph $G_{MCGI}$ satisfies the inclusion hierarchy:
+Let $G_{EMST}$ and $G_{RNG}$ denote the Euclidean Minimum Spanning Tree (EMST) and the Relative Neighborhood Graph (RNG), respectively. For any configuration of points with distinct pairwise distances, provided that $\alpha(u) \ge 1.0$ for all $u \in V$, that the pruning test of each node runs over all other points, and that no degree bound truncates the neighbor lists, the graph $G_{MCGI}$ satisfies the inclusion hierarchy:
 \begin{equation}
     E_{EMST} \subseteq E_{RNG} \subseteq E_{MCGI}.
 \end{equation}
@@ -266,21 +262,21 @@ Consequently, $G_{MCGI}$ is connected.
 
 \begin{proof}[Proof Sketch]
 The first inclusion $E_{EMST} \subseteq E_{RNG}$ follows from the classical result of Toussaint~\cite{TOUSSAINT1980261}, which holds for any finite point set in a metric space.
-For the second inclusion $E_{RNG} \subseteq E_{MCGI}$, note that MCGI prunes an edge $(u,v)$ only if a witness node falls within a exclusion region of radius $\frac{1}{\alpha(u)}d(u,v)$ around $v$; since $\alpha(u) \geq 1.0$, this exclusion region is a strict geometric subset of the RNG exclusion region, so any edge surviving the RNG pruning condition is guaranteed to survive MCGI pruning.
+For the second inclusion $E_{RNG} \subseteq E_{MCGI}$, note that MCGI prunes an edge $(u,v)$ only with a witness $n$ that satisfies $d(u,n) < d(u,v)$ and $d(n,v) \le d(u,v)/\alpha(u) \le d(u,v)$ since $\alpha(u) \geq 1.0$; such a witness lies in the RNG exclusion region, so any edge surviving the RNG pruning condition survives MCGI pruning at both of its endpoints.
 Connectivity of $G_{MCGI}$ follows immediately from the inclusion hierarchy, since $G_{EMST}$ spans all vertices by definition.
 % The complete proof can be found in Appendix~\ref{appendix:proofs}, Proof~\ref{proof:connectivity}.
 \end{proof}
 
 Proposition~\ref{prop:connectivity} ensures that there are no structural dead ends. While Lemma~\ref{lemma:complexity} dictates the \textit{cost} of routing, Proposition~\ref{prop:connectivity} ensures the \textit{viability} of routing. Even in the worst-case scenario where heuristics fail, a path exists from the entry point to any target via the edges of the underlying EMST, provided the graph traversal algorithm has sufficient width to discover these backbone links.
 
-The adaptive pruning also tolerates the estimation noise of the finite-sample estimator in Definition~\ref{def:lid_mle}. Proposition~\ref{proof:robustness} in Appendix~\ref{appendix:proofs} bounds the induced perturbation of the pruning parameter by $(\alpha_{\max} - \alpha_{\min})\,\mathrm{LID}(u) / (4\,\sigma_{\widehat{\mathrm{LID}}}\sqrt{k})$, because the logistic derivative is at most $1/4$ and the estimation error is of order $\mathrm{LID}(u)/\sqrt{k}$~\cite{NIPS2004_74934548}. Consequently, a modest neighborhood size such as $k = 20$ already yields stable pruning parameters.
+The adaptive pruning also tolerates the estimation noise of the finite-sample estimator in Definition~\ref{def:lid_mle}. Proposition~\ref{proof:robustness} in Appendix~\ref{appendix:proofs} bounds the induced perturbation of the pruning parameter by $(\alpha_{\max} - \alpha_{\min})/(4\,\sigma_{\widehat{\mathrm{LID}}})$ times the estimation error, because the logistic derivative is at most $1/4$; since the estimation error is of order $\mathrm{LID}(u)/\sqrt{k}$~\cite{NIPS2004_74934548}, the perturbation is of order $(\alpha_{\max} - \alpha_{\min})\,\mathrm{LID}(u) / (\sigma_{\widehat{\mathrm{LID}}}\sqrt{k})$. Consequently, the perturbation shrinks as $1/\sqrt{k}$ with the neighborhood size.
 
 \subsubsection{Fixed-Beam Suboptimality and Adaptation}
 \label{subsec:optimality}
 
 Proposition~\ref{thm:oba} establishes that an \emph{ideal}
-search system allocates the beam width
-$L^*(q) \propto \exp(\lambda \cdot \mathrm{LID}(q))$ at query time.
+search system allocates a beam width
+that grows exponentially with $\mathrm{LID}(q)$ at query time.
 We now formalize the cost of a fixed beam width, which motivates
 both the query-adaptive search list of \ours{} and its
 construction-time adaptation.
@@ -291,14 +287,17 @@ For a target failure probability $\delta$, the iso-recall beam schedule
 assigns each query the list size
 \begin{equation}
     L^*(q) = \frac{\ln(1/\delta)}{P_{\mathrm{success}}(q)}
-    = C_\delta \cdot \exp\!\left(\lambda \cdot
+    \ge C_\delta \cdot \exp\!\left(\lambda \cdot
     \mathrm{LID}(q)\right),
     \label{eq:oracle_schedule}
 \end{equation}
-where the second form follows from Lemma~\ref{lemma:complexity}, and
-the constant $C_\delta$ collects $\ln(1/\delta)$ and the polynomial
-factor of the lemma, which varies slowly compared with the exponential
-term. Since $(1-P_{\mathrm{success}})^{L} \le e^{-L P_{\mathrm{success}}}$,
+where $P_{\mathrm{success}}(q)$ is the probability that one expansion
+near $q$ yields a descent step. One expansion evaluates at most $R$
+neighbors, each of which succeeds with probability at most
+$\kappa\, \mathrm{LID}(q)^{-1/2} \exp(-\lambda \cdot \mathrm{LID}(q))$
+by Lemma~\ref{lemma:complexity} for a constant $\kappa > 0$; the union
+bound together with $\mathrm{LID}(q) \ge 1$ then yields the inequality
+with $C_\delta = \ln(1/\delta)/(R\kappa)$. Since $(1-P_{\mathrm{success}})^{L} \le e^{-L P_{\mathrm{success}}}$,
 the list size $L^*(q)$ keeps the failure probability of $q$ at most
 $\delta$. A search algorithm is said to be
 \emph{recall-optimal} if it implements $L^*(q)$ for every query $q$.
@@ -311,7 +310,7 @@ search at a query $q$ satisfies:
 \begin{equation}
     1 - P(\mathrm{fail} \mid q) \;\le\;
     \ln(1/\delta)\,\frac{\bar{L}}{L^*(q)}
-    \;=\; \frac{\ln(1/\delta)\,\bar{L}}{C_\delta}\,
+    \;\le\; \frac{\ln(1/\delta)\,\bar{L}}{C_\delta}\,
     \exp\!\left(-\lambda \cdot \mathrm{LID}(q)\right),
     \label{eq:recall_gap}
 \end{equation}
@@ -326,7 +325,7 @@ $\bar{L}$ satisfies $1 - (1-P_{\mathrm{success}}(q))^{\bar{L}} \le
 \bar{L}\, P_{\mathrm{success}}(q)$. Substituting
 $P_{\mathrm{success}}(q) = \ln(1/\delta)/L^*(q)$ from
 Definition~\ref{def:iso_recall} yields the first form of
-Eq.~\eqref{eq:recall_gap}, and the exponential form of $L^*(q)$ yields
+Eq.~\eqref{eq:recall_gap}, and the exponential lower bound on $L^*(q)$ yields
 the second. The bound falls below $1-\delta$ exactly when
 $L^*(q) > \bar{L}\ln(1/\delta)/(1-\delta)$.
 \end{proof}
@@ -339,21 +338,22 @@ high-LID regions. The query-adaptive search list of Section~\ref{subsec:query_ad
 
 \begin{corollary}[Construction-time Structural Compensation for Fixed Beam Width]
 \label{cor:construction_approx}
-Under any fixed beam width $\bar{L}$ and without the degree bound $R$, setting $\alpha(u)$ during index construction by $\Phi(\widehat{\mathrm{LID}}(u))$ monotonically reduces $P(\mathrm{fail} \mid q)$ for every query whose beam search visits only high-LID nodes, compared to any static baseline $\bar{\alpha} \le (\alpha_{\min} + \alpha_{\max})/2$ operating under the same $\bar{L}$. Specifically, nodes in high-LID regions receive conservative pruning (large $\alpha$), preserving a larger navigational edge set that structurally compensates for the shortfall of $\bar{L}$ relative to the oracle schedule $L^*(q)$. This guarantee is monotone but not tight: it establishes that \ours{}
+Consider the pruning rule that tests every candidate $n$ with $d(u,n) < d(u,v)$ as a witness, apply no degree bound $R$, and model the expansion of a node $u$ as $\deg(u)$ independent trials that each find a descent step with the probability of Lemma~\ref{lemma:complexity}. Under any fixed beam width $\bar{L}$, setting $\alpha(u)$ by $\Phi(\widehat{\mathrm{LID}}(u))$ does not increase $P(\mathrm{fail} \mid q)$ for every query whose beam search expands the same nodes in both graphs, all with $\widehat{\mathrm{LID}}(u) > \mu_{\widehat{\mathrm{LID}}}$, compared to any static baseline $\bar{\alpha} \le (\alpha_{\min} + \alpha_{\max})/2$ operating under the same $\bar{L}$. Specifically, these nodes receive conservative pruning (large $\alpha$), preserving a larger navigational edge set that structurally compensates for the shortfall of $\bar{L}$ relative to the iso-recall schedule $L^*(q)$. This guarantee is monotone but not tight: it establishes that \ours{}
 dominates fixed-$\alpha$ baselines, rather than quantifying the residual gap to the Iso-Recall Schedule $L^*(q)$ (Definition~\ref{def:iso_recall}) directly.
 \end{corollary}
 
 \begin{proof}[Proof Sketch]
-For nodes where $\mathrm{LID}(u) > \mathrm{LID}_{\mathrm{avg}}$,
-Proposition~\ref{prop:monotonicity} guarantees $\alpha(u) > \Phi(\mu_{\widehat{\mathrm{LID}}}) = (\alpha_{\min} + \alpha_{\max})/2 \ge \bar{\alpha}$,
-which shrinks the pruning exclusion region and thus preserves,
-for the same candidate pool, a superset of edges relative to the static-$\bar{\alpha}$ baseline,
-i.e., $E_{\mathrm{MCGI}} \supseteq E_{\bar{\alpha}}$ in high-LID regions.
-A strictly larger outgoing edge set monotonically increases
-$P_{\mathrm{success}}(q)$ at each beam step by the same geometric
-argument as Proposition~\ref{thm:oba}, yielding
+For nodes with $\widehat{\mathrm{LID}}(u) > \mu_{\widehat{\mathrm{LID}}}$,
+Proposition~\ref{prop:monotonicity} guarantees $\alpha(u) > \Phi(\mu_{\widehat{\mathrm{LID}}}) = (\alpha_{\min} + \alpha_{\max})/2 \ge \bar{\alpha}$.
+For a fixed witness $n$, the condition $\alpha(u) \cdot d(n,v) \le d(u,v)$ implies
+$\bar{\alpha} \cdot d(n,v) \le d(u,v)$; since the witness set of this rule does not depend on $\alpha$,
+every edge pruned under $\alpha(u)$ is also pruned under $\bar{\alpha}$, and the out-edges of $u$ form a superset
+of those under $\bar{\alpha}$. Under the trial model, the expansion of $u$ fails with probability
+$(1-p)^{\deg(u)}$ for the per-neighbor success probability $p$, which does not increase with $\deg(u)$;
+the product over the expanded nodes yields
 $P(\mathrm{fail} \mid q, \mathrm{MCGI}) \leq P(\mathrm{fail} \mid q,
-\bar{\alpha})$ for every such query $q$.
+\bar{\alpha})$. Algorithm~\ref{alg:mcgi} tests only previously selected neighbors as witnesses,
+for which the inclusion can fail, because a node that the larger $\alpha$ admits can prune a later candidate.
 Note that this guarantee is monotone but not tight: quantifying the
 residual gap to the iso-recall schedule $L^*(q)$ (Definition~\ref{def:iso_recall})
 is left for future work.
@@ -363,16 +363,16 @@ is left for future work.
 \subsection{Query-Adaptive Search List}
 \label{subsec:query_adaptive}
 
-\ours{} applies the iso-recall schedule of Definition~\ref{def:iso_recall} at query time, where it resizes the candidate list of each query according to the geometry that the search observes around the query. The schedule requires $\mathrm{LID}(q)$ before the search, although the neighborhood of $q$ is unknown at that point. The beam search of a disk-resident Vamana index, however, maintains two structures that expose this neighborhood as the search proceeds. Specifically, the candidate list holds up to $\bar{L}$ nodes ordered by their compressed distances to $q$, and the expanded set records the exact distance of every node whose vector the search has read from disk. \ours{} therefore inspects these two structures at a checkpoint after the search expands $n_0$ nodes, where $n_0$ is a small constant of a few tens, and resizes the candidate list once at this checkpoint.
+\ours{} applies the iso-recall schedule of Definition~\ref{def:iso_recall} at query time by resizing the candidate list of each query according to the local geometry around the query. The schedule requires $\mathrm{LID}(q)$ before the search starts, although the neighborhood of $q$ is unknown at that point. The beam search of a disk-resident Vamana index, however, keeps two structures that reveal this neighborhood during the search: the candidate list holds up to $\bar{L}$ nodes ordered by their compressed distances to $q$, and the expanded set holds the exact distances of all nodes read from disk so far. \ours{} therefore inspects these two structures once after $n_0$ expansions, with $n_0$ a small constant of a few tens, and resizes the candidate list at this checkpoint.
 
-At the checkpoint, \ours{} forms a feature vector $\mathbf{f}(q)$ of five quantities that describe the local geometry around $q$. The first feature is $\ln \widehat{\mathrm{LID}}(q)$, which Definition~\ref{def:lid_mle} computes from the exact distances $r_1 \le \dots \le r_k$ of the $k$ nearest expanded nodes, where $k$ equals the result size, typically 10. Because $k$ distances yield a noisy estimate, the second feature applies the same estimator to the compressed distances of the $m$ best candidates in the list, where $m$ is a few tens. The next two features, $\ln r_1$ and $\ln r_k$, record the scale of the neighborhood, which the LID estimator removes by construction. The last feature is the logarithm of one plus the number of candidates whose squared distance lies within $(1+\epsilon)\, r_k^2$ for a small constant $\epsilon$ such as 0.2. A large count indicates that many points compete for the last result positions, which is the concentration of distances that a high LID causes (Lemma~\ref{lemma:complexity}).
+At the checkpoint, \ours{} forms a feature vector $\mathbf{f}(q)$ of five quantities that describe the local geometry around $q$. The first feature is $\ln \widehat{\mathrm{LID}}(q)$ from Definition~\ref{def:lid_mle} over the exact distances $r_1 \le \dots \le r_k$ of the $k$ nearest expanded nodes, with $k$ equal to the result size, typically 10. Because $k$ distances yield a noisy estimate, the second feature applies the same estimator to the compressed distances of the $m$ best candidates in the list, with $m$ a few tens. The next two features record the scale of the neighborhood through $\ln r_1$ and $\ln r_k$, since the LID estimator removes this scale by construction. The last feature is the logarithm of one plus the number of candidates whose squared distance lies within $(1+\epsilon)\, r_k^2$ for a small constant $\epsilon$ such as 0.2. A large count means that many points compete for the last result positions, as happens when a high LID concentrates the distances.
 
 \ours{} maps the features to a list size through a log-linear score that mirrors the exponential form of Eq.~\eqref{eq:oracle_schedule}:
 \begin{equation}
     L(q) = \min\Bigl\{ c\bar{L},\; \max\bigl\{ L_{\min},\; \bar{L} \exp\bigl(\gamma\,(\mathbf{w}^{\top}\mathbf{f}(q) + b - \bar{s})\bigr) \bigr\} \Bigr\},
     \label{eq:adaptive_list}
 \end{equation}
-where $\bar{L}$ is the list size that the application requests, $\gamma > 0$ sets the strength of the adaptation, and $c$ is a small cap such as 8. The weights $\mathbf{w}$ and the offset $b$ result from a least-squares fit with a small ridge penalty on a set of calibration queries that is disjoint from the evaluation queries; for each calibration query, the regression target is the logarithm of the smallest list size at which the query reaches its best recall. The constant $\bar{s}$ is the mean score of the calibration queries, so that a query of average geometry keeps the requested list size $\bar{L}$. A query whose features indicate a high LID consequently receives a longer list, whereas a query in a low-LID region terminates earlier and saves the disk reads that a fixed list would spend on it.
+where $\bar{L}$ is the list size that the application requests, $\gamma > 0$ sets the strength of the adaptation, and $c$ is a small cap such as 8. The weights $\mathbf{w}$ and the offset $b$ result from a least-squares fit with a small ridge penalty on a set of calibration queries disjoint from the evaluation queries, with the logarithm of the smallest list size at which each calibration query reaches its best recall as the regression target. The constant $\bar{s}$ is the mean score of the calibration queries, so that a query of average geometry keeps the requested list size $\bar{L}$. A query whose features indicate a high LID consequently receives a longer list, whereas a query in a low-LID region terminates earlier and saves the disk reads that a fixed list would spend on it.
 
 The adaptation adds no disk reads, because every feature reuses distances that the search has already computed. Computing $\mathbf{f}(q)$ takes $O(n_0 + \bar{L})$ time once per query, which is small compared with the $O(\bar{L} R)$ compressed-distance evaluations of the search itself. Resizing the list either truncates its tail or raises its capacity, after which the beam search continues from its current state without a restart. The vectorized distance computation therefore remains unchanged, since the adaptation only moves the termination point of each query. Because the index format is also unchanged, the query-adaptive search list applies to any Vamana index, including an index built with the construction-time adaptation of Section~\ref{subsec:algorithm}.
 
@@ -414,36 +414,30 @@ The left two panels of Figure~\ref{fig:results_1b} show that the gain of \ours{}
 
 We compare \ours{} with PipeANN~\cite{osdi25pipeann, fast26odinann}, which overlaps the disk reads of each query in a pipelined beam search, on GIST1M with $R = 32$ and $R = 48$. PipeANN searches the same DiskANN index files as DiskANN and \ours{}, with 32 threads, its in-memory entry-point index built from a 1\% sample, and the better of the I/O widths 4 and 32. HNSW~\cite{malkov2018efficient}, IVF-Flat~\cite{johnson2019billion}, and CSPG~\cite{NEURIPS2024_bab1486c} serve as in-memory references, since they keep every full-precision vector in RAM.
 
-
-\begin{wraptable}{r}{0.5\textwidth}
-\vspace{-4mm}
+\begin{table}[t]
 \centering
 \small
-\setlength{\tabcolsep}{4pt}
-\caption{GIST1M at 95\% Recall@10. $^\dagger$In memory.}
+\caption{QPS and disk reads per query on GIST1M at 95\% Recall@10 ($^\dagger$in memory).}
 \label{tab:gist_compare}
-\begin{tabular}{lcccc}
+\begin{tabular}{llcccccc}
 \toprule
- & \multicolumn{2}{c}{$R = 32$} & \multicolumn{2}{c}{$R = 48$} \\
-\cmidrule(lr){2-3} \cmidrule(lr){4-5}
-Method & QPS & Reads & QPS & Reads \\
+$R$ & Metric & DiskANN & PipeANN & \ours{} & CSPG$^\dagger$ & HNSW$^\dagger$ & IVF-Flat$^\dagger$ \\
 \midrule
-DiskANN & 351 & 272.7 & 659 & 146.7 \\
-PipeANN & 545 & 268.3 & 780 & 143.8 \\
-\ours{} & 420 & \textbf{223.7} & \textbf{785} & \textbf{125.5} \\
+32 & QPS   & 351   & 545   & 420            & 5{,}742 & 6{,}678 & 1{,}292 \\
+   & Reads & 272.7 & 268.3 & \textbf{223.7} & --      & --      & --      \\
 \midrule
-CSPG$^\dagger$ & 5{,}742 & -- & 9{,}107 & -- \\
-HNSW$^\dagger$ & 6{,}678 & -- & -- & -- \\
-IVF-Flat$^\dagger$ & \multicolumn{4}{c}{1{,}292 (no degree bound)} \\
+48 & QPS   & 659   & 780   & \textbf{785}   & 9{,}107 & --      & 1{,}292 \\
+   & Reads & 146.7 & 143.8 & \textbf{125.5} & --      & --      & --      \\
 \bottomrule
 \end{tabular}
-\vspace{-3mm}
-\end{wraptable}
-The right two panels of Figure~\ref{fig:gist_compare} and Table~\ref{tab:gist_compare} show that \ours{} issues the fewest disk reads of the three disk-resident methods. At 95\% recall, \ours{} reads 224 nodes per query with $R = 32$ and 126 with $R = 48$, which is 13--18\% fewer than DiskANN and PipeANN, whose reads differ from each other by at most 2\%. PipeANN turns the same reads into higher throughput by overlapping them, and it leads at $R = 32$ with 545 queries per second against 420 for \ours{}. With $R = 48$, \ours{} matches PipeANN at 95\% recall with 785 against 780 queries per second and surpasses it at 97\% recall with 564 against 521. The two techniques act on different costs: PipeANN shortens the wait for each read, while \ours{} removes reads, so the query-adaptive list can also size the candidate list of a pipelined search. The in-memory indexes reach 1{,}292 to 9{,}107 queries per second at 95\% recall, at the price of holding the 3.84~GB of full-precision vectors in RAM, whereas the disk-resident methods hold mainly the 322~MB of PQ codes.
+\end{table}
+
+
+The right two panels of Figure~\ref{fig:gist_compare} and Table~\ref{tab:gist_compare} show that \ours{} issues the fewest disk reads of the three disk-resident methods. At 95\% recall, \ours{} reads 224 nodes per query with $R = 32$ and 126 with $R = 48$, 13--18\% fewer than both DiskANN and PipeANN, whose reads differ by at most 2\%. By overlapping these reads, PipeANN reaches a higher throughput at $R = 32$, with 545 queries per second against 420 for \ours{}. With $R = 48$, \ours{} matches PipeANN at 95\% recall with 785 against 780 queries per second and surpasses it at 97\% recall with 564 against 521. Because PipeANN shortens the wait for each read and \ours{} removes reads, the two techniques act on different costs; hence, the query-adaptive list can also size the candidate list of a pipelined search. The in-memory indexes reach 1{,}292 to 9{,}107 queries per second at 95\% recall, at the price of holding the 3.84~GB of full-precision vectors in RAM, whereas the disk-resident methods hold mainly the 322~MB of PQ codes.
 
 \subsection{Ablation and Sensitivity}
 
-Figure~\ref{fig:ablation} attributes the gain of \ours{} at the highest target recall of each million-scale dataset, namely 99\% on SIFT1M, 90\% on GloVe-100, and 95\% on GIST1M. Each variant is fitted on the same calibration queries and searched once on the same index as DiskANN. The random variant keeps the fitted list sizes of \ours{} in distribution but assigns them to queries at random, which lowers the throughput to $0.72\times$--$0.84\times$ that of DiskANN. The gain therefore comes from matching each list to the geometry of its query, not from varying the list size. The two LID features alone retain gains of $1.18\times$--$1.33\times$, and the distance features alone, namely the first and tenth expanded distances and the candidate count, retain $1.25\times$--$1.37\times$, since the LID estimate is a function of the same distances.
+Figure~\ref{fig:ablation} attributes the gain of \ours{} at the highest target recall of each million-scale dataset, namely 99\% on SIFT1M, 90\% on GloVe-100, and 95\% on GIST1M. Each variant is fitted on the same calibration queries and searched once on the same index as DiskANN. The random variant keeps the fitted list sizes of \ours{} in distribution but assigns them to queries at random, which lowers the throughput to $0.72\times$--$0.84\times$ that of DiskANN. The gain therefore comes from matching each list to the geometry of its query, not from varying the list size. The two LID features alone retain gains of $1.18\times$--$1.33\times$; similarly, a model that uses only the first and tenth expanded distances and the candidate count retains $1.25\times$--$1.37\times$, because the LID estimate is a function of these distances.
 
 \begin{figure*}[t]
     \centering
@@ -452,7 +446,7 @@ Figure~\ref{fig:ablation} attributes the gain of \ours{} at the highest target r
     \label{fig:ablation}
 \end{figure*}
 
-The last two panels of Figure~\ref{fig:ablation} vary the strength $\gamma$ of Eq.~\eqref{eq:adaptive_list} from 0.5 to 1.3 and the checkpoint $n_0$ from 12 to 48 expansions around the calibrated setting. Every setting keeps a gain of at least $1.17\times$, and the calibrated setting stays within $0.08\times$ of the best setting on each dataset. The calibration therefore needs no careful tuning of either parameter, and the default $n_0 = 24$ serves all datasets.
+The last two panels of Figure~\ref{fig:ablation} vary the strength $\gamma$ of Eq.~\eqref{eq:adaptive_list} from 0.5 to 1.3 and the checkpoint $n_0$ from 12 to 48 expansions around the calibrated setting. Every setting keeps a gain of at least $1.17\times$, with the calibrated setting within $0.08\times$ of the best setting on each dataset. Consequently, neither parameter needs careful tuning, so that the default $n_0 = 24$ serves all datasets.
 
 \section{Conclusion}
 
@@ -556,16 +550,16 @@ Since $(\alpha_{\max} - \alpha_{\min}) > 0$, we can apply the inequality boundar
     \alpha(u) &< \alpha_{\min} + (\alpha_{\max} - \alpha_{\min}) \cdot 1 = \alpha_{\max}.
 \end{align}
 This proves that the topology is strictly confined. 
-The pruning behavior never exceeds the relaxation upper limit ($\alpha_{\max}$) and never becomes stricter than the lower limit ($\alpha_{\min}$), ensuring graph connectivity and preventing degree explosion.
+The pruning behavior never exceeds the relaxation upper limit ($\alpha_{\max}$) and never becomes stricter than the lower limit ($\alpha_{\min}$).
 \end{proof}
 
 \begin{lemma}[Local Complexity Lower Bound]
 \label{proof:complexity}
-Consistent with the complexity bounds established for growth-restricted metrics~\cite{karger2002finding}, for a query $q$ on a manifold $\mathcal{M}$, the expected number of distance evaluations $N_{dist}$ required for successful greedy routing scales exponentially with the local intrinsic dimensionality $d = \text{LID}(q)$:
+Consistent with the complexity bounds established for growth-restricted metrics~\cite{karger2002finding}, consider a query $q$ on a manifold $\mathcal{M}$ of local intrinsic dimensionality $d = \text{LID}(q)$, and assume that the neighbor directions at a node are independent and uniform on the unit sphere, that the step length is proportional to the distance to $q$, and that each greedy step must reduce this distance by a fixed factor $1-\epsilon$ with $\epsilon$ independent of $d$. Then the expected number of distance evaluations $N_{dist}$ per improving step scales exponentially with $d$:
 \begin{equation}
     \mathbb{E}[N_{dist}] \ge \Omega\left( \sqrt{d} \cdot \exp(\lambda \cdot d) \right),
 \end{equation}
-where $\lambda > 0$ is a geometric constant derived from the required convergence rate.
+where $\lambda > 0$ depends on $\epsilon$ and the ratio of the step length to the distance.
 \end{lemma}
 
 \begin{proof}
@@ -583,7 +577,7 @@ where $\theta$ is the angle between the vector $\vec{u q}$ and $\vec{u v}$. The 
     2rs \cos \theta &\ge r^2 + s^2 - r^2(1-\epsilon)^2, \nonumber \\
     \cos \theta &\ge \frac{r^2 + s^2 - r^2(1-\epsilon)^2}{2rs}.
 \end{align}
-Assuming the step size is small relative to the distance (i.e., $s \ll r$), the right-hand side is dominated by $1 - (1-\epsilon)^2 \approx 2\epsilon$, yielding a critical angle threshold $\theta_{max}$ such that any successful neighbor must fall within the cone defined by $0 \le \theta \le \theta_{max}$.
+For a step size proportional to the distance, i.e., $s = \beta r$ with a constant $\beta > 0$, the right-hand side equals $\frac{1 - (1-\epsilon)^2 + \beta^2}{2\beta}$, a constant that does not depend on $d$. Whenever this constant is below 1, it defines a critical angle $\theta_{max}$, and any successful neighbor must fall within the cone defined by $0 \le \theta \le \theta_{max}$.
 
 \paragraph{2. Volume Concentration of the Improving Region.}
 In the tangent space at $u$, the directions of neighbors are uniformly distributed on the unit hypersphere $\mathbb{S}^{d-1}$. The probability $P_{success}$ of finding a neighbor in the improving cone corresponds to the ratio of the surface area of the spherical cap $\mathcal{C}(\theta_{max})$ to the total surface area of $\mathbb{S}^{d-1}$.
@@ -634,9 +628,9 @@ This confirms that the routing cost is dominated by the exponential term $\exp(\
 
 \begin{proposition}[Optimal Budget Allocation]
 \label{proof:oba}
-To maintain a uniform bound on the routing failure probability $\delta$ across the manifold (i.e., $\mathbb{P}(\text{fail}\;|\;q) \le \delta$ for all $q \in \mathcal{M}$), the search beam width $L(q)$ must scale exponentially with the local intrinsic dimensionality:
+To maintain a uniform bound on the routing failure probability $\delta$ across the manifold (i.e., $\mathbb{P}(\text{fail}\;|\;q) \le \delta$ for all $q \in \mathcal{M}$), the search beam width $L(q)$ must grow exponentially with the local intrinsic dimensionality:
 \begin{equation}
-    L(q) \propto \exp\left( \lambda \cdot \text{LID}(q) \right).
+    L(q) = \Omega\left( \exp\left( \lambda \cdot \text{LID}(q) \right) \right).
 \end{equation}
 \end{proposition}
 
@@ -645,15 +639,15 @@ Consider a beam search with width $L$. The probability of failing to find a desc
 \begin{equation}
     (1 - P_{success})^L \le \delta.
 \end{equation}
-Taking the natural logarithm and using the approximation $\ln(1-x) \approx -x$ for small $P_{success}$, we require:
+Taking the natural logarithm, the condition holds exactly when $L \ge \ln(1/\delta)/(-\ln(1-P_{success}))$. Since $-\ln(1-x) = x + O(x^2)$, for small $P_{success}$ this threshold approaches
 \begin{equation}
-    -L \cdot P_{success} \le \ln \delta \implies L \ge \frac{-\ln \delta}{P_{success}}.
+    L \ge \frac{-\ln \delta}{P_{success}}.
 \end{equation}
-Substituting the relationship $P_{success} = 1 / \mathbb{E}[N_{dist}]$ established in Lemma~\ref{lemma:complexity}, we obtain the asymptotic upper bound $P_{success} \le \mathcal{O}( d^{-1/2} \cdot \exp(-\lambda \cdot d) )$, where $d = \text{LID}(q)$. To satisfy the recall constraint in the worst case scenario, the search budget $L$ must grow inversely to $P_{success}$:
+One expansion evaluates at most $R$ neighbors, each of which yields a descent step with probability $1 / \mathbb{E}[N_{dist}]$ by Lemma~\ref{lemma:complexity}; the union bound therefore gives the asymptotic upper bound $P_{success} \le \mathcal{O}( R\, d^{-1/2} \cdot \exp(-\lambda \cdot d) )$, where $d = \text{LID}(q)$. To satisfy the recall constraint in the worst case scenario, the search budget $L$ must grow inversely to $P_{success}$:
 \begin{equation}
-    L \ge \frac{-\ln \delta}{\mathcal{O}( d^{-1/2} \cdot \exp(-\lambda \cdot d) )} = \Omega\left( \sqrt{d} \cdot \exp(\lambda \cdot d) \right).
+    L \ge \frac{-\ln \delta}{\mathcal{O}( R\, d^{-1/2} \cdot \exp(-\lambda \cdot d) )} = \Omega\left( \frac{\sqrt{d}}{R} \cdot \exp(\lambda \cdot d) \right).
 \end{equation}
-In high-dimensional spaces ($d \gg 1$), the exponential growth term dominates the polynomial factor $\sqrt{d}$. By absorbing the lower-order polynomial variations and the confidence factor $-\ln \delta$ into a generalized constant $C_{\delta}$, the necessary budget asymptotically simplifies to:
+In high-dimensional spaces ($d \gg 1$), the exponential growth term dominates the polynomial factor $\sqrt{d}$. Since $\sqrt{d} \ge 1$, absorbing the confidence factor $-\ln \delta$, the degree bound $R$, and the constant of the lemma into $C_{\delta}$ gives the necessary budget:
 \begin{equation}
     L(q) \ge C_{\delta} \cdot \exp(\lambda \cdot \text{LID}(q)).
 \end{equation}
@@ -661,7 +655,7 @@ In high-dimensional spaces ($d \gg 1$), the exponential growth term dominates th
 
 \begin{proposition}[Connectivity Preservation]
 \label{proof:connectivity}
-Let $G_{EMST}$ and $G_{RNG}$ denote the Euclidean Minimum Spanning Tree and the Relative Neighborhood Graph, respectively. For any configuration of points in general position, provided that $\alpha(u) \ge 1.0$ for all $u \in V$, that the pruning test of each node runs over all other points, and that no degree bound truncates the neighbor lists, the graph $G_{MCGI}$ satisfies the inclusion hierarchy:
+Let $G_{EMST}$ and $G_{RNG}$ denote the Euclidean Minimum Spanning Tree and the Relative Neighborhood Graph, respectively. For any configuration of points with distinct pairwise distances, provided that $\alpha(u) \ge 1.0$ for all $u \in V$, that the pruning test of each node runs over all other points, and that no degree bound truncates the neighbor lists, the graph $G_{MCGI}$ satisfies the inclusion hierarchy:
 \begin{equation}
     E_{EMST} \subseteq E_{RNG} \subseteq E_{MCGI}.
 \end{equation}
@@ -676,7 +670,7 @@ The proof proceeds in two steps. First, we invoke the classical result establish
 Since the EMST connects all vertices in a single component, $G_{RNG}$ is necessarily connected.
 
 Second, we show that $E_{RNG} \subseteq E_{MCGI}$. In the RNG, an edge between $u$ and $v$ is pruned if and only if a witness node falls within the intersection of two spheres centered at $u$ and $v$ with radius $d(u, v)$. We denote this geometric intersection as the exclusion region $\mathcal{R}_{RNG}$. Therefore, an edge exists in the RNG if and only if $\mathcal{R}_{RNG}$ contains no data points.
-In \ours{}, the pruning condition requires the witness node to be within a distance of $\frac{1}{\alpha(u)} d(u, v)$ from $v$. Because the algorithm enforces $\alpha(u) \ge 1.0$, the pruning radius in \ours{} is strictly less than or equal to the pruning radius of the RNG. Consequently, the exclusion region of \ours{} is a geometric subset of the RNG exclusion region:
+In \ours{}, the candidates of $u$ are processed in increasing order of their distance to $u$, and the witness is a previously selected neighbor; hence it satisfies $d(u, n) < d(u, v)$ and $d(n, v) \le \frac{1}{\alpha(u)} d(u, v)$. Because the algorithm enforces $\alpha(u) \ge 1.0$, the second distance is at most $d(u, v)$. Consequently, the exclusion region of \ours{} is a geometric subset of the RNG exclusion region:
 \begin{equation}
     \mathcal{R}_{MCGI} \subseteq \mathcal{R}_{RNG}.
 \end{equation}
@@ -694,15 +688,16 @@ $k$ nearest neighbors. The induced perturbation on the pruning
 parameter satisfies:
 \begin{equation}
     |\Delta\alpha(u)| \leq
-    \frac{(\alpha_{\max} - \alpha_{\min}) \cdot \mathrm{LID}(u)}
-         {4\,\sigma_{\widehat{\mathrm{LID}}}\,\sqrt{k}}.
+    \frac{\alpha_{\max} - \alpha_{\min}}{4\,\sigma_{\widehat{\mathrm{LID}}}}\,
+    |\widehat{\mathrm{LID}}(u) - \mathrm{LID}(u)|
+    = O\!\left(\frac{(\alpha_{\max} - \alpha_{\min}) \cdot \mathrm{LID}(u)}
+         {\sigma_{\widehat{\mathrm{LID}}}\,\sqrt{k}}\right).
 \end{equation}
 \end{proposition}
 
 \begin{proof}
 Let $\epsilon = \widehat{\mathrm{LID}}(u) - \mathrm{LID}(u)$
-denote the estimation error. By the first-order Taylor expansion
-of $\Phi$ around $\mathrm{LID}(u)$:
+denote the estimation error. By the mean value theorem:
 \begin{equation}
     |\Delta\alpha(u)| =
     \left|\Phi\!\left(\widehat{\mathrm{LID}}(u)\right)
@@ -725,12 +720,13 @@ $\nicefrac{1}{4}$ at $z = 0$, so:
 \end{equation}
 Substituting the asymptotic error bound of the MLE estimator, whose
 variance is of order $\mathrm{LID}^2/k$, namely
-$|\epsilon| = O(\mathrm{LID}(u)/\sqrt{k})$
+$|\epsilon| = O_P(\mathrm{LID}(u)/\sqrt{k})$
 \cite{NIPS2004_74934548}, yields:
 \begin{equation}
     |\Delta\alpha(u)| \leq
-    \frac{(\alpha_{\max} - \alpha_{\min}) \cdot \mathrm{LID}(u)}
-         {4\,\sigma_{\widehat{\mathrm{LID}}}\,\sqrt{k}}.
+    \frac{\alpha_{\max} - \alpha_{\min}}{4\,\sigma_{\widehat{\mathrm{LID}}}}\,|\epsilon|
+    = O\!\left(\frac{(\alpha_{\max} - \alpha_{\min}) \cdot \mathrm{LID}(u)}
+         {\sigma_{\widehat{\mathrm{LID}}}\,\sqrt{k}}\right).
 \end{equation}
 This completes the proof.
 \end{proof}
@@ -759,10 +755,10 @@ $P_{\mathrm{success}}(q) = \ln(1/\delta)/L^*(q)$, and substitution
 yields
 \begin{equation}
     1 - P(\mathrm{fail} \mid q) \le \ln(1/\delta)\,\frac{\bar{L}}{L^*(q)}
-    = \frac{\ln(1/\delta)\,\bar{L}}{C_\delta}\,
+    \le \frac{\ln(1/\delta)\,\bar{L}}{C_\delta}\,
       \exp\!\left(-\lambda \cdot \mathrm{LID}(q)\right),
 \end{equation}
-where the last step uses $L^*(q) = C_\delta \exp(\lambda \cdot
+where the last step uses $L^*(q) \ge C_\delta \exp(\lambda \cdot
 \mathrm{LID}(q))$. The right-hand side decays exponentially with
 $\mathrm{LID}(q)$, and it falls below the target $1-\delta$ exactly
 when $L^*(q) > \bar{L}\ln(1/\delta)/(1-\delta)$.
@@ -770,19 +766,19 @@ when $L^*(q) > \bar{L}\ln(1/\delta)/(1-\delta)$.
 
 \begin{corollary}[Construction-time Structural Compensation]
 \label{proof:construction_approx}
-Under any fixed beam width $\bar{L}$ and without the degree bound $R$, the adaptive pruning in \ours{} monotonically reduces $P(\mathrm{fail} \mid q)$ for every query whose beam search visits only high-LID nodes, compared to any static baseline $\bar{\alpha} \le (\alpha_{\min} + \alpha_{\max})/2$ operating under the same $\bar{L}$.
+Under the pruning rule that tests every candidate $n$ with $d(u,n) < d(u,v)$ as a witness, without the degree bound $R$, and under the trial model in which the expansion of a node $u$ consists of $\deg(u)$ independent trials with the per-neighbor success probability of Lemma~\ref{lemma:complexity}, the adaptive pruning in \ours{} does not increase $P(\mathrm{fail} \mid q)$ under any fixed beam width $\bar{L}$ for every query whose beam search expands the same nodes in both graphs, all with $\widehat{\mathrm{LID}}(u) > \mu_{\widehat{\mathrm{LID}}}$, compared to any static baseline $\bar{\alpha} \le (\alpha_{\min} + \alpha_{\max})/2$ operating under the same $\bar{L}$.
 \end{corollary}
 
 \begin{proof}
-We proceed in two steps: first showing that MCGI preserves a strictly larger edge set in high-LID regions, then connecting this to a lower failure probability under fixed beam search.
+We proceed in two steps: first showing that MCGI preserves a superset of edges at the expanded nodes, then connecting this to the failure probability under fixed beam search.
 
-\textbf{Step 1: Edge set inclusion.} The pruning criterion in \ours{} discards an edge $(u, v)$ if and only if there exists a witness node $n$ such that $\alpha(u) \cdot d(n, v) \leq d(u, v)$. For nodes where $\mathrm{LID}(u) > \mathrm{LID}_{\mathrm{avg}}$, Proposition~\ref{proof:mono} guarantees $\alpha(u) > \Phi(\mathrm{LID}_{\mathrm{avg}}) = (\alpha_{\min} + \alpha_{\max})/2 \ge \bar{\alpha}$. Since $\alpha(u) > \bar{\alpha}$ strictly enlarges the left-hand side of the pruning condition, any edge that would be pruned under $\alpha(u)$ is also pruned under $\bar{\alpha}$, but not vice versa, for the same candidate pool and the same witness nodes. The degree bound $R$ is not applied in this step; with the bound, both edge sets are truncated to at most $R$ edges, and the inclusion holds only for the edges that survive the pruning test. Therefore $\mathcal{E}_{\mathrm{MCGI}} \supseteq \mathcal{E}_{\bar{\alpha}}$ in high-LID regions, with strict inclusion whenever at least one edge survives $\alpha(u)$ but not $\bar{\alpha}$.
+\textbf{Step 1: Edge set inclusion.} Under the pruning rule of the corollary, an edge $(u, v)$ is discarded if and only if some candidate $n$ with $d(u,n) < d(u,v)$ satisfies $\alpha(u) \cdot d(n, v) \leq d(u, v)$, so that the set of witnesses does not depend on $\alpha(u)$. For nodes with $\widehat{\mathrm{LID}}(u) > \mu_{\widehat{\mathrm{LID}}}$, Proposition~\ref{proof:mono} guarantees $\alpha(u) > \Phi(\mu_{\widehat{\mathrm{LID}}}) = (\alpha_{\min} + \alpha_{\max})/2 \ge \bar{\alpha}$. For a fixed witness $n$, the condition $\alpha(u) \cdot d(n, v) \leq d(u, v)$ implies $\bar{\alpha} \cdot d(n, v) \leq d(u, v)$, so that any edge pruned under $\alpha(u)$ is also pruned under $\bar{\alpha}$. Therefore, without the degree bound $R$, the out-edges of every such node satisfy $\mathcal{E}_{\mathrm{MCGI}}(u) \supseteq \mathcal{E}_{\bar{\alpha}}(u)$. The inclusion does not hold for the sequential rule of Algorithm~\ref{alg:mcgi}, whose witnesses are the previously selected neighbors: a node that the larger $\alpha(u)$ admits can prune a later candidate that $\bar{\alpha}$ keeps.
 
-\textbf{Step 2: Failure probability.} Under beam search with fixed width $\bar{L}$, the failure probability at query $q$ is governed by $P_{\mathrm{success}}(q)$, the probability of finding a descent step from any node on the routing path (Proof~\ref{proof:oba}). A strictly larger outgoing edge set at each high-LID node monotonically increases the number of candidate directions evaluated per beam step, which by the same geometric argument in Proof~\ref{proof:oba} yields a weakly higher $P_{\mathrm{success}}(q)$. Therefore, for every query $q$ whose beam search visits only nodes with $\mathrm{LID}(u) > \mathrm{LID}_{\mathrm{avg}}$,
+\textbf{Step 2: Failure probability.} Under the trial model, the expansion of a node $u$ finds no descent step with probability $(1-p)^{\deg(u)}$, where $p$ is the per-neighbor success probability of Lemma~\ref{proof:complexity}, and the search fails if all of its expansions fail. For a query whose beam search expands the same nodes in both graphs, all with $\widehat{\mathrm{LID}}(u) > \mu_{\widehat{\mathrm{LID}}}$, Step 1 gives $\deg_{\mathrm{MCGI}}(u) \ge \deg_{\bar{\alpha}}(u)$ at every expanded node, and the product of the per-expansion failure probabilities yields
 \begin{equation}
-    P(\mathrm{fail} \mid q, \mathrm{MCGI}) \leq P(\mathrm{fail} \mid q, \bar{\alpha}),
+    P(\mathrm{fail} \mid q, \mathrm{MCGI}) \leq P(\mathrm{fail} \mid q, \bar{\alpha}).
 \end{equation}
-with equality only when $\alpha(u) = \bar{\alpha}$ for all $u$ on the routing path, i.e., when the data is geometrically uniform. This establishes a monotone improvement over fixed-$\alpha$ baselines; quantifying the residual gap to the Iso-Recall Schedule $L^*(q)$ (Definition~\ref{def:iso_recall}) is left for future work.
+This establishes a monotone improvement over fixed-$\alpha$ baselines within the model; quantifying the residual gap to the Iso-Recall Schedule $L^*(q)$ (Definition~\ref{def:iso_recall}) is left for future work.
 \end{proof}
 
 \subsection{Additional Experimental Details}
@@ -890,9 +886,9 @@ Deep1B    & 3{,}373 & 15{,}029 & 836 & 19{,}317 & 289 \\
 \subsection{Limitations}
 \label{appendix:limitations}
 
-The throughput gains in Section~\ref{sec:experiments} come from the query-adaptive search list, which runs on indexes built with the standard Vamana pruning rule. The construction-time rule of Section~\ref{subsec:mapping} relaxes the pruning test of high-LID nodes; under the degree bound $R$ of a disk-resident index, however, a node fills its neighbor list either way, so that the rule changes which candidate edges a node keeps rather than how many. Consequently, Corollary~\ref{cor:construction_approx} and Proposition~\ref{prop:connectivity} hold without the degree bound, and the evaluation attributes no gain to the construction-time rule.
+All throughput gains in Section~\ref{sec:experiments} come from the query-adaptive search list on indexes built with the standard Vamana pruning rule. The construction-time rule of Section~\ref{subsec:mapping} relaxes the pruning test of high-LID nodes; however, under the degree bound of a disk-resident index, nodes typically fill their neighbor lists with either rule, so that the construction-time rule mainly changes the choice of edges of a node. For this reason, Corollary~\ref{cor:construction_approx} and Proposition~\ref{prop:connectivity} assume no degree bound, the corollary further assumes a set of pruning witnesses that does not depend on the pruning parameter, while the evaluation attributes no gain to the construction-time rule. Similarly, the analysis of Section~\ref{sec:theory} models each beam step as an independent trial under a uniform local model of the data, so that its bounds describe trends rather than exact recall values.
 
-The query-adaptive list also has costs that its mean throughput does not show. Because hard queries receive lists up to $c$ times longer than $\bar{L}$, the 99.9th-percentile latency at matched recall rises, for example from 119 to 181~ms on GIST1M at 95\% recall, while the mean latency falls. The calibration further needs a few thousand queries from the query distribution together with their exact nearest neighbors, and the fitted weights apply to the index on which they were fitted. Finally, the analysis of Section~\ref{sec:theory} models each beam step as an independent trial whose success probability follows from a uniform local model of the data, so that its bounds describe trends rather than exact recall values.
+The query-adaptive list also carries two costs that its mean throughput hides. First, hard queries receive lists up to eight times longer than the requested list, so that the 99.9th-percentile latency at matched recall rises while the mean latency falls; on GIST1M at 95\% recall, for example, the tail latency grows from 119 to 181~ms. Second, every index needs its own calibration with a few thousand queries from the query distribution and their exact nearest neighbors, since the fitted weights hold only for the index on which they were fitted.
 
 \subsection{Algorithm Pseudo-Code}
 \label{appendix:alg}
