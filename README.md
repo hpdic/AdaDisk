@@ -1,5 +1,7 @@
 # [HPDIC MOD] AdaDisk: A Distributed Agentic System for Adaptive Ingestion-Query Scheduling of DiskANN (https://github.com/microsoft/DiskANN) RAG in LLM Serving
 
+> **MCGI has moved to https://github.com/hpdic/mcgi.** That repository holds the code, the fitted weights, and the experiment scripts of the NeurIPS 2026 paper; the MCGI notes below describe the earlier version.
+
 ## Documentation
 * [Preprint](https://arxiv.org/pdf/2601.01930)
 
