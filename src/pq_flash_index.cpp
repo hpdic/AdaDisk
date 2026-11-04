@@ -7,6 +7,8 @@
 #include "pq.h"
 #include "pq_scratch.h"
 #include "pq_flash_index.h"
+#include <random>
+#include <thread>
 #include "cosine_similarity.h"
 #include <iostream>
 
@@ -1484,6 +1486,15 @@ void PQFlashIndex<T, LabelT>::cached_beam_search(const T *query1, const uint64_t
                 double pred = adapt[nw];
                 for (size_t i = 0; i < nw; i++)
                     pred += adapt[i] * f[i];
+                // ablation control (MCGI_RANDOM_STD=s): replace the prediction by pmean + s * N(0, 1), which keeps
+                // the spread of list sizes but assigns them to queries at random
+                static const double rand_std =
+                    std::getenv("MCGI_RANDOM_STD") ? std::atof(std::getenv("MCGI_RANDOM_STD")) : 0.0;
+                if (rand_std > 0)
+                {
+                    thread_local std::mt19937_64 rng(std::hash<std::thread::id>{}(std::this_thread::get_id()));
+                    pred = adapt[nw + 2] + rand_std * std::normal_distribution<double>(0.0, 1.0)(rng);
+                }
                 double lq = l_search * std::exp(adapt[nw + 1] * (pred - adapt[nw + 2]));
                 lq = (std::min)((std::max)(lq, 10.0), l_search * adapt[nw + 4]);
                 retset.set_capacity((size_t)lq);

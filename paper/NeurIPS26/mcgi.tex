@@ -51,7 +51,7 @@
 \maketitle 
 
 \begin{abstract}
-Graph-based Approximate Nearest Neighbor (ANN) search often suffers from performance degradation in high-dimensional spaces due to the Euclidean-Geodesic mismatch, where greedy routing diverges from the underlying data manifold. To address this challenge, this paper presents Manifold-Consistent Graph Indexing (MCGI), a geometry-aware and disk-resident indexing method that leverages Local Intrinsic Dimensionality (LID) to dynamically adapt search strategies to the intrinsic geometry of data. Unlike conventional algorithms that treat dimensions uniformly, MCGI modulates its beam search budget based on in-situ geometric analysis, which reduces sensitivity to data-specific hyperparameters by replacing a single scalar with a geometry-informed range that remains stable across datasets of varying dimensionality. Theoretical analysis demonstrates that MCGI provides robust approximation by preserving manifold-consistent topological connectivity. At matched high recall, \ours{} raises the query throughput of DiskANN on the same index by up to $1.43\times$ on three million-scale benchmarks and by up to $1.22\times$ on the billion-scale SIFT1B.
+Graph-based Approximate Nearest Neighbor (ANN) search often suffers from performance degradation in high-dimensional spaces due to the Euclidean-Geodesic mismatch, where greedy routing diverges from the underlying data manifold. To address this challenge, this paper presents Manifold-Consistent Graph Indexing (MCGI), a geometry-aware and disk-resident indexing method that leverages Local Intrinsic Dimensionality (LID) to dynamically adapt search strategies to the intrinsic geometry of data. Unlike conventional algorithms that treat dimensions uniformly, MCGI modulates its beam search budget based on in-situ geometric analysis, which reduces sensitivity to data-specific hyperparameters by replacing a single scalar with a geometry-informed range that remains stable across datasets of varying dimensionality. Theoretical analysis demonstrates that MCGI provides robust approximation by preserving manifold-consistent topological connectivity. At matched high recall, \ours{} raises the query throughput of DiskANN on the same index by up to $1.43\times$ on three million-scale benchmarks and by up to $1.24\times$ on the billion-scale SIFT1B and Deep1B.
 \end{abstract}
 
 \section{Introduction}
@@ -66,7 +66,7 @@ Our observation on this EGM problem is that high-dimensional real-world data is 
 
 To demonstrate the above hypothesis, we design Manifold-Consistent Graph Indexing (MCGI), a geometry-aware disk-based indexing method crafted to align Euclidean search with the underlying data manifold. By incorporating LID estimation directly into the routing logic, MCGI demonstrates the ability to adapt its traversal strategy to the local topology of the underlying manifold. 
 
-\emph{The remainder of this paper will present the following contributions:} (1) A theoretical framework embedding the local intrinsic dimensionality to graph navigability with formal guarantees on estimation robustness, fixed-beam suboptimality, and construction-time adaptation; (2) Geometry-aware algorithms that adapt the pruning parameter of each node during construction and the candidate list of each query during search; and (3) up to $1.33\times$, $1.43\times$, and $1.20\times$ higher throughput than DiskANN at matched high recall on SIFT1M, GloVe-100, and GIST1M, respectively, and up to $1.22\times$ on one billion vectors (SIFT1B).
+\emph{The remainder of this paper will present the following contributions:} (1) A theoretical framework embedding the local intrinsic dimensionality to graph navigability with formal guarantees on estimation robustness, fixed-beam suboptimality, and construction-time adaptation; (2) Geometry-aware algorithms that adapt the pruning parameter of each node during construction and the candidate list of each query during search; and (3) up to $1.33\times$, $1.43\times$, and $1.20\times$ higher throughput than DiskANN at matched high recall on SIFT1M, GloVe-100, and GIST1M, respectively, and up to $1.22\times$ and $1.24\times$ on one billion vectors of SIFT1B and Deep1B, respectively.
 
 \section{Related Work}
 \label{sec:related_work}
@@ -429,7 +429,7 @@ The adaptation adds no disk reads, because every feature reuses distances that t
 
 The anonymized code is at: \url{https://github.com/hpdic/mcgi}. 
 
-All experiments run on a cloud virtual machine with 192 virtual cores of Intel Xeon Platinum 8468 and 960 GiB of RAM, where the disk-resident indexes reside on a 17.6 TB virtual block device (virtio). Each search reads graph nodes from this device with direct I/O, and at 32 search threads the measured I/O time is about 0.34 ms per read; consequently, the throughput of each method follows its number of disk reads per query. We evaluate \ours{} on three million-scale benchmarks with dimensionality from 100 to 960, namely SIFT1M~\cite{jegou2011product}, GloVe-100~\cite{pennington2014glove}, and GIST1M~\cite{jegou2011product}, and on the billion-scale SIFT1B~\cite{jegou2011searching}. The baseline is DiskANN (Vamana)~\cite{subramanya2019diskann}, which searches the same index with a fixed candidate list. More setup details are in Appendix~\ref{appendix:setup}.
+All experiments run on a cloud virtual machine with 192 virtual cores of Intel Xeon Platinum 8468 and 960 GiB of RAM, where the disk-resident indexes reside on a 17.6 TB virtual block device (virtio). Each search reads graph nodes from this device with direct I/O, and at 32 search threads the measured I/O time is about 0.34 ms per read; consequently, the throughput of each method follows its number of disk reads per query. We evaluate \ours{} on three million-scale benchmarks with dimensionality from 100 to 960, namely SIFT1M~\cite{jegou2011product}, GloVe-100~\cite{pennington2014glove}, and GIST1M~\cite{jegou2011product}, and on the billion-scale SIFT1B~\cite{jegou2011searching} and Deep1B~\cite{babenko2016efficient}. The baseline is DiskANN (Vamana)~\cite{subramanya2019diskann}, which searches the same index with a fixed candidate list. More setup details are in Appendix~\ref{appendix:setup}.
 
 \subsection{Million-scale Effectiveness}
 
@@ -438,22 +438,29 @@ We compare \ours{} with DiskANN on a single index per dataset, so that the two m
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{figures/recall_qps.pdf}
-    \caption{Recall-QPS trade-off of \ours{} and DiskANN on the same index of each dataset.}
+    \caption{Recall-QPS trade-off of \ours{} and DiskANN on the million-scale datasets.}
     \label{fig:results}
 \end{figure*}
 
-The first three panels of Figure~\ref{fig:results} plot the query throughput against Recall@10 for the two methods. \ours{} raises the throughput of DiskANN on all three million-scale datasets, and the improvement grows with the target recall. On SIFT1M, the gain rises from $1.15\times$ at 95\% recall to $1.33\times$ at 99\%. GloVe-100 and GIST1M follow the same trend, with gains from $1.12\times$ at 80\% to $1.43\times$ at 90\% and from $1.12\times$ at 85\% to $1.20\times$ at 95\%, respectively. The growth with recall agrees with Proposition~\ref{prop:fixed_beam}, because a high target recall forces a fixed search to use a long list for every query, including the many queries in low-LID regions that converge early. \ours{} shortens the lists of these queries and lengthens the lists of queries in high-LID regions, which removes disk reads that do not improve the result.
+Figure~\ref{fig:results} plots the query throughput against Recall@10 for the two methods. \ours{} raises the throughput of DiskANN on all three million-scale datasets, and the improvement grows with the target recall. On SIFT1M, the gain rises from $1.15\times$ at 95\% recall to $1.33\times$ at 99\%. GloVe-100 and GIST1M follow the same trend, with gains from $1.12\times$ at 80\% to $1.43\times$ at 90\% and from $1.12\times$ at 85\% to $1.20\times$ at 95\%, respectively. The growth with recall agrees with Proposition~\ref{prop:fixed_beam}, because a high target recall forces a fixed search to use a long list for every query, including the many queries in low-LID regions that converge early. \ours{} shortens the lists of these queries and lengthens the lists of queries in high-LID regions, which removes disk reads that do not improve the result.
 
 \subsection{Billion-scale Scalability}
 
-We build one DiskANN index of SIFT1B with the standard sharded construction, which partitions the one billion vectors into three overlapping shards under a memory budget of 300 GiB and completes in 4.8 hours on the CPU cores of the platform. The index uses $R = 32$, $L_{build} = 50$, and 31-byte PQ codes, and both methods again search this single index. The calibration queries of SIFT1B are the even-indexed half of the 10{,}000 official queries, and the evaluation uses the odd-indexed half. The requested list sizes extend to $\bar{L} = 1{,}000$, since DiskANN needs a list longer than 400 to reach 95\% recall on this dataset.
+We build one DiskANN index for each of SIFT1B and Deep1B with the standard sharded construction under a memory budget of 300 GiB. The construction splits the 8-bit vectors of SIFT1B into three overlapping shards and completes in 4.8 hours on the CPU cores of the platform, while the 32-bit vectors of Deep1B need seven shards and 5.4 hours. Both indexes use $R = 32$, $L_{build} = 50$, and 31-byte PQ codes, and both methods again search the same index. The calibration queries of each dataset are the even-indexed half of its 10{,}000 official queries, and the evaluation uses the odd-indexed half. The requested list sizes extend to $\bar{L} = 1{,}000$ on SIFT1B and to $\bar{L} = 2{,}000$ on Deep1B, since DiskANN needs a list longer than 400 on SIFT1B and longer than 800 on Deep1B to reach 95\% recall.
 
-The last panel of Figure~\ref{fig:results} shows that the gain of \ours{} persists at one billion vectors and again grows with the target recall. \ours{} raises the throughput of DiskANN from $1.07\times$ at 85\% recall to $1.17\times$ at 95\% and to $1.22\times$ at 97\%, where the throughput rises from 115 to 141 queries per second. At the longest list that we evaluate, DiskANN stays below 98\% recall, whereas \ours{} reaches 98.2\% at 89 queries per second.
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.67\textwidth]{figures/recall_qps_1b.pdf}
+    \caption{Recall-QPS trade-off of \ours{} and DiskANN on the billion-scale datasets.}
+    \label{fig:results_1b}
+\end{figure}
+
+Figure~\ref{fig:results_1b} shows that the gain of \ours{} persists at one billion vectors on both datasets and again grows with the target recall. On SIFT1B, \ours{} raises the throughput of DiskANN from $1.07\times$ at 85\% recall to $1.17\times$ at 95\% and to $1.22\times$ at 97\%, where the throughput rises from 115 to 141 queries per second. Deep1B follows the same trend with gains from $1.08\times$ at 85\% to $1.18\times$ at 95\% and to $1.24\times$ at 97\%, where the throughput rises from 58 to 72 queries per second. At the longest list that we evaluate, DiskANN stays below 98\% recall on both datasets, whereas \ours{} reaches 98.2\% on each of them, at 89 queries per second on SIFT1B and 42 on Deep1B.
 
 \section{Conclusion}
 
 This paper presents MCGI, a geometry-aware disk-resident indexing method for high-dimensional data of varying intrinsic dimensionality.
-MCGI addresses the Euclidean-Geodesic mismatch by adapting both the graph topology and the search budget to local intrinsic dimensionality. Specifically, MCGI estimates the LID around each query from the distances that its own search has already computed, and it resizes the candidate list of the query once, so that queries in high-LID regions receive longer lists and queries in low-LID regions terminate earlier. Our theoretical analysis shows that any fixed beam width leaves a recall gap that grows exponentially with LID, and the query-adaptive list approximates the iso-recall schedule that closes this gap without additional disk reads. On popular benchmarks of 100 to 960 dimensions and up to one billion vectors, MCGI raises the throughput of the state-of-the-art DiskANN by up to $1.43\times$ at matched high recall on the same index.
+MCGI addresses the Euclidean-Geodesic mismatch by adapting both the graph topology and the search budget to local intrinsic dimensionality. Specifically, MCGI estimates the LID around each query from the distances that its own search has already computed, and it resizes the candidate list of the query once, so that queries in high-LID regions receive longer lists and queries in low-LID regions terminate earlier. Our theoretical analysis shows that any fixed beam width leaves a recall gap that grows exponentially with LID, and the query-adaptive list approximates the iso-recall schedule that closes this gap without additional disk reads. On popular benchmarks of 96 to 960 dimensions and up to one billion vectors, MCGI raises the throughput of the state-of-the-art DiskANN by up to $1.43\times$ at matched high recall on the same index, and by up to $1.24\times$ on one billion vectors.
 
 % Our future work will explore several promising directions. First, we plan to extend the MCGI framework to support dynamic updates, enabling efficient insertions and deletions while maintaining manifold-consistent routing. Second, we aim to investigate more sophisticated geometric metrics beyond LID, such as curvature or local density estimates, to further refine the pruning strategy. Finally, we will explore the integration of MCGI with emerging hardware accelerators (e.g., NVMe SSDs with built-in compute capabilities) to push the boundaries of disk-resident indexing performance.
 
@@ -794,17 +801,18 @@ with equality only when $\alpha(u) = \bar{\alpha}$ for all $u$ on the routing pa
 \label{appendix:setup}
 
 \paragraph{Experiment Platform}
-All experiments run on a cloud virtual machine with 192 virtual cores of Intel Xeon Platinum 8468 and 960 GiB of RAM. The operating system is Ubuntu 24.04 LTS, and all code is compiled with GCC 13.3 at optimization level -O3. The disk-resident indexes reside on a 17.6 TB virtual block device (virtio) of the virtual machine, which the DiskANN search engine reads through Linux asynchronous I/O with direct I/O, so that the operating system page cache does not serve graph nodes. Every search uses 32 threads and a beam width of 2, and the page cache is dropped before each search run. All indexes are built on the CPU cores with the DiskANN builder; the SIFT1B build uses a memory budget of 300 GiB and 192 threads.
+All experiments run on a cloud virtual machine with 192 virtual cores of Intel Xeon Platinum 8468 and 960 GiB of RAM. The operating system is Ubuntu 24.04 LTS, and all code is compiled with GCC 13.3 at optimization level -O3. The disk-resident indexes reside on a 17.6 TB virtual block device (virtio) of the virtual machine, which the DiskANN search engine reads through Linux asynchronous I/O with direct I/O, so that the operating system page cache does not serve graph nodes. Every search uses 32 threads and a beam width of 2, and the page cache is dropped before each search run. All indexes are built on the CPU cores with the DiskANN builder; the SIFT1B and Deep1B builds use a memory budget of 300 GiB and 192 threads.
 
 \paragraph{Datasets}
-We evaluate our method on three standard million-scale benchmarks whose dimensionality ranges from 100 to 960 and on one billion-scale benchmark, so that the datasets cover both high ambient dimensionality and large scale. In the following descriptions, $N$ denotes the number of base vectors and $D$ represents the vector dimensionality:
+We evaluate our method on three standard million-scale benchmarks whose dimensionality ranges from 100 to 960 and on two billion-scale benchmarks, so that the datasets cover both high ambient dimensionality and large scale. In the following descriptions, $N$ denotes the number of base vectors and $D$ represents the vector dimensionality:
 \begin{itemize}
     \item SIFT1M~\cite{jegou2011product} ($N=10^6, D=128$): Local image descriptors with 10{,}000 queries, searched with Euclidean distance ($L_2$).
     \item GloVe-100~\cite{pennington2014glove} ($N=1.18 \times 10^6, D=100$): Word embedding vectors with 10{,}000 queries. Following standard practice, we normalize the vectors to unit length and use Euclidean distance as a proxy for cosine similarity.
     \item GIST1M~\cite{jegou2011product} ($N=10^6, D=960$): Global image descriptors with 1{,}000 queries, which have the highest ambient dimensionality and the widest spread of LID values among the million-scale datasets.
     \item SIFT1B~\cite{jegou2011searching} ($N=10^9, D=128$): One billion local image descriptors stored as 8-bit unsigned integers, with 10{,}000 queries and the official ground truth over the full billion vectors.
+    \item Deep1B~\cite{babenko2016efficient} ($N=10^9, D=96$): One billion image descriptors from a convolutional neural network, reduced to 96 dimensions by PCA, normalized to unit length, and stored as 32-bit floats, with 10{,}000 queries. The official ground truth over the full billion vectors is wrong for three queries (indices 449, 2382, and 2809)\footnote{\url{https://github.com/harsha-simhadri/big-ann-benchmarks/issues/353}}, which we exclude.
 \end{itemize}
-The calibration queries of the query-adaptive search list are disjoint from the evaluation queries. For SIFT1M and GIST1M, they are the first 10{,}000 vectors of the learning set of each dataset. GloVe-100 has no learning set; its calibration queries are 10{,}000 base vectors drawn with a fixed seed, and each of them is excluded from its own ground truth. The ground truth of every calibration query consists of its exact 100 nearest neighbors. For SIFT1B, the calibration queries are the even-indexed half of the official queries, and the evaluation uses the odd-indexed half.
+The calibration queries of the query-adaptive search list are disjoint from the evaluation queries. For SIFT1M and GIST1M, they are the first 10{,}000 vectors of the learning set of each dataset. GloVe-100 has no learning set; its calibration queries are 10{,}000 base vectors drawn with a fixed seed, and each of them is excluded from its own ground truth. The ground truth of every calibration query consists of its exact 100 nearest neighbors. For SIFT1B and Deep1B, the calibration queries are the even-indexed half of the official queries, and the evaluation uses the odd-indexed half, which leaves 5{,}000 evaluation queries on SIFT1B and 4{,}998 on Deep1B.
 
 \paragraph{Baselines}
 We compare \ours{} against DiskANN (Vamana)~\cite{subramanya2019diskann}, the standard disk-resident graph index. Both methods search the same index file with the same compressed vectors, the same beam width, and the same requested list sizes. The comparison therefore isolates the query-adaptive search list of \ours{}, since the index, the I/O path, and the distance computation are identical.
@@ -827,6 +835,7 @@ SIFT1M    & $10^6$ & 128 & 10{,}000 & 32 & 50  & 107 & float32 \\
 GloVe-100 & $1.18 \times 10^6$ & 100 & 10{,}000 & 64 & 100 & 90  & float32 \\
 GIST1M    & $10^6$ & 960 & 1{,}000  & 32 & 100 & 322 & float32 \\
 SIFT1B    & $10^9$ & 128 & 5{,}000  & 32 & 50  & 31  & uint8   \\
+Deep1B    & $10^9$ & 96  & 4{,}998  & 32 & 50  & 31  & float32 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -847,6 +856,28 @@ SIFT1M    & 16.1 & 9.2  & $10 \to 400$ & 0.7 & 32 \\
 GloVe-100 & 35.3 & 18.1 & $10 \to 400$ & 1.0 & 32 \\
 GIST1M    & 48.9 & 25.9 & $10 \to 400$ & 0.7 & 32 \\
 SIFT1B    & -- & -- & $10 \to 1000$ & 0.7 & 32 \\
+Deep1B    & -- & -- & $10 \to 2000$ & 0.7 & 32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Offline Cost}
+Table~\ref{tab:offline_cost} lists the offline cost of each index, where every build runs alone on the platform with 192 threads and the calibration runs alone with 32 search threads. The training of the PQ codebooks dominates the build of the million-scale indexes, whereas the graph construction over the shards and their merge dominates at one billion vectors. The only offline step that \ours{} adds is the calibration of Eq.~\eqref{eq:adaptive_list}, which searches the calibration queries once at each list size of a fixed grid and then fits the weights by ridge regression within seconds. The grid has 14 list sizes from 10 to 400 for the million-scale datasets and SIFT1B, and 18 list sizes from 10 to 1{,}000 for Deep1B. Calibration takes about 3 minutes on each million-scale dataset, and 1.6 and 4.8 minutes on SIFT1B and Deep1B, which is at most 1.5\% of the build time of a billion-scale index.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Offline cost in seconds: index build stages and calibration of the query-adaptive search list.}
+\label{tab:offline_cost}
+\begin{tabular}{lccccc}
+\toprule
+Dataset & PQ training & Graph & Disk layout & Total build & Calibration \\
+\midrule
+SIFT1M    & 195   & 6       & 1   & 203       & 174 \\
+GloVe-100 & 400   & 15      & 1   & 416       & 168 \\
+GIST1M    & 1{,}678 & 82    & 4   & 1{,}764   & 174 \\
+SIFT1B    & 2{,}775 & 14{,}117 & 290 & 17{,}225 & 94  \\
+Deep1B    & 3{,}373 & 15{,}029 & 836 & 19{,}317 & 289 \\
 \bottomrule
 \end{tabular}
 \end{table}
