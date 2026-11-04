@@ -1366,6 +1366,29 @@ void PQFlashIndex<T, LabelT>::cached_beam_search(const T *query1, const uint64_t
     retset.reserve(l_search);
     std::vector<Neighbor> &full_retset = query_scratch->full_retset;
 
+    // [MCGI] query-adaptive search list. MCGI_ADAPT="w_1,...,w_m,b,gamma,pmean,n0,cap" with m = 4 or 6: after
+    // n0 expansions, the checkpoint features (see QueryStats::mcgi_feat) give pred = w . f + b, and the list size
+    // becomes l_search * exp(gamma * (pred - pmean)), at most cap * l_search. MCGI_FEAT_N0 alone only
+    // records the features in QueryStats.
+    static const std::vector<double> adapt = [] {
+        std::vector<double> v;
+        if (const char *e = std::getenv("MCGI_ADAPT"))
+        {
+            std::stringstream ss(e);
+            std::string tok;
+            while (std::getline(ss, tok, ','))
+                v.push_back(std::atof(tok.c_str()));
+        }
+        return (v.size() == 9 || v.size() == 11) ? v : std::vector<double>();
+    }();
+    static const size_t feat_n0 = !adapt.empty() ? (size_t)adapt[adapt.size() - 2]
+                                                 : (std::getenv("MCGI_FEAT_N0") ? std::atoi(std::getenv("MCGI_FEAT_N0")) : 0);
+    int feat_stage = feat_n0 > 0 ? 0 : 3; // next checkpoint: stage s at n0 << s expansions
+    if (!adapt.empty())
+        retset.reserve((uint64_t)(l_search * adapt.back()));
+    std::vector<float> expanded_pq;                       // PQ distance of each full_retset entry
+    std::vector<std::pair<uint32_t, float>> selected_pq; // PQ distances of the current beam
+
     uint32_t best_medoid = 0;
     float best_dist = (std::numeric_limits<float>::max)();
     if (!use_filter)
@@ -1425,6 +1448,47 @@ void PQFlashIndex<T, LabelT>::cached_beam_search(const T *query1, const uint64_t
 
     while (retset.has_unexpanded_node() && num_ios < io_limit)
     {
+        if (feat_stage < 3 && full_retset.size() >= (feat_n0 << feat_stage) && full_retset.size() >= 10)
+        {
+            const int stage = feat_stage++;
+            std::vector<float> d(full_retset.size());
+            double noise = 0;
+            for (size_t i = 0; i < d.size(); i++)
+            {
+                d[i] = (std::max)(full_retset[i].distance, 1e-12f);
+                noise += std::fabs(expanded_pq[i] - full_retset[i].distance);
+            }
+            noise /= d.size();
+            std::partial_sort(d.begin(), d.begin() + 10, d.end());
+            double s = 0;
+            for (size_t i = 0; i < 10; i++)
+                s += std::log((double)d[9] / d[i]);
+            // candidate-list features: LID of the best (up to 64) candidates, and how many candidates
+            // lie within 1.2 times the current 10th distance
+            size_t kc = (std::min)((size_t)64, retset.size());
+            double sc = 0, dmax = (std::max)(retset[kc - 1].distance, 1e-12f);
+            for (size_t i = 0; i < kc; i++)
+                sc += std::log(dmax / (std::max)(retset[i].distance, 1e-12f));
+            size_t crowd = 0;
+            for (size_t i = 0; i < retset.size() && retset[i].distance <= 1.2f * d[9]; i++)
+                crowd++;
+            double f[6] = {std::log(20.0 / (std::max)(s, 1e-9)), std::log(d[0] + 1e-9), std::log(d[9] + 1e-9),
+                           std::log((noise + 1e-9) / ((double)d[9] - d[0] + 1e-9)),
+                           std::log(2.0 * kc / (std::max)(sc, 1e-9)), std::log(1.0 + crowd)};
+            if (stats != nullptr)
+                for (int i = 0; i < 6; i++)
+                    stats->mcgi_feat[6 * stage + i] = (float)f[i];
+            if (!adapt.empty() && stage == 0)
+            {
+                const size_t nw = adapt.size() - 5; // weights, then b, gamma, pmean, n0, cap
+                double pred = adapt[nw];
+                for (size_t i = 0; i < nw; i++)
+                    pred += adapt[i] * f[i];
+                double lq = l_search * std::exp(adapt[nw + 1] * (pred - adapt[nw + 2]));
+                lq = (std::min)((std::max)(lq, 10.0), l_search * adapt[nw + 4]);
+                retset.set_capacity((size_t)lq);
+            }
+        }
         // clear iteration state
         frontier.clear();
         frontier_nhoods.clear();
@@ -1433,10 +1497,12 @@ void PQFlashIndex<T, LabelT>::cached_beam_search(const T *query1, const uint64_t
         sector_scratch_idx = 0;
         // find new beam
         uint32_t num_seen = 0;
+        selected_pq.clear();
         while (retset.has_unexpanded_node() && frontier.size() < beam_width && num_seen < beam_width)
         {
             auto nbr = retset.closest_unexpanded();
             num_seen++;
+            selected_pq.emplace_back(nbr.id, nbr.distance);
             auto iter = _nhood_cache.find(nbr.id);
             if (iter != _nhood_cache.end())
             {
@@ -1510,6 +1576,11 @@ void PQFlashIndex<T, LabelT>::cached_beam_search(const T *query1, const uint64_t
                         query_float, (uint8_t *)node_fp_coords_copy);
             }
             full_retset.push_back(Neighbor((uint32_t)cached_nhood.first, cur_expanded_dist));
+            for (auto &sp : selected_pq)
+                if (sp.first == full_retset.back().id)
+                    expanded_pq.push_back(sp.second);
+            if (expanded_pq.size() < full_retset.size())
+                expanded_pq.push_back(full_retset.back().distance);
 
             uint64_t nnbrs = cached_nhood.second.first;
             uint32_t *node_nbrs = cached_nhood.second.second;
@@ -1575,6 +1646,11 @@ void PQFlashIndex<T, LabelT>::cached_beam_search(const T *query1, const uint64_t
                     cur_expanded_dist = _disk_pq_table.l2_distance(query_float, (uint8_t *)data_buf);
             }
             full_retset.push_back(Neighbor(frontier_nhood.first, cur_expanded_dist));
+            for (auto &sp : selected_pq)
+                if (sp.first == full_retset.back().id)
+                    expanded_pq.push_back(sp.second);
+            if (expanded_pq.size() < full_retset.size())
+                expanded_pq.push_back(full_retset.back().distance);
             uint32_t *node_nbrs = (node_buf + 1);
             // compute node_nbrs <-> query dist in PQ space
             cpu_timer.reset();

@@ -11,6 +11,7 @@
 #include <cmath>
 #include <algorithm>
 #include <cstring>
+#include <cstdlib>
 
 namespace diskann {
 
@@ -98,12 +99,39 @@ void InitMCGIContext(const std::string &lid_path, float alpha_min, float alpha_m
 
         std::cout << "[MCGI] LID Stats -> Mean: " << mean << ", StdDev: " << std_dev << std::endl;
 
-        const double k = 1.0;
+        // MCGI_K / MCGI_DIR: same tuning variants as the online path in index.cpp
+        const double k = std::getenv("MCGI_K") ? std::atof(std::getenv("MCGI_K")) : 1.0;
+        const double dir = std::getenv("MCGI_DIR") ? std::atof(std::getenv("MCGI_DIR")) : 1.0;
         for (size_t i = 0; i < lid_values.size(); ++i) {
-            double z_score = (lid_values[i] - mean) / std_dev;
+            double z_score = dir * (lid_values[i] - mean) / std_dev;
             double sigmoid_val = 1.0 / (1.0 + std::exp(-k * z_score));
             g_mcgi_ctx.alpha_table[i] = alpha_min + (float)(sigmoid_val * (alpha_max - alpha_min));
         }
+    }
+
+    // [MCGI] MCGI_LB_GAMMA: build search list of node i scaled by exp(gamma * z_i), normalized to mean 1,
+    // so the total build effort equals the uniform list size
+    if (const char *g = std::getenv("MCGI_LB_GAMMA"))
+    {
+        const double gamma = std::atof(g);
+        double mean = 0, sq = 0;
+        for (float v : lid_values)
+            mean += v;
+        mean /= lid_values.size();
+        for (float v : lid_values)
+            sq += (v - mean) * (v - mean);
+        const double sd = std::max(std::sqrt(sq / lid_values.size()), 1e-6);
+        g_mcgi_ctx.l_scale.resize(lid_values.size());
+        double tot = 0;
+        for (size_t i = 0; i < lid_values.size(); ++i)
+        {
+            double z = std::max(-3.0, std::min(3.0, (lid_values[i] - mean) / sd));
+            g_mcgi_ctx.l_scale[i] = (float)std::exp(gamma * z);
+            tot += g_mcgi_ctx.l_scale[i];
+        }
+        for (auto &v : g_mcgi_ctx.l_scale)
+            v = (float)(v * lid_values.size() / tot);
+        std::cout << "[MCGI] Build list scaled by LID, gamma=" << gamma << std::endl;
     }
 
     g_mcgi_ctx.enabled = true;

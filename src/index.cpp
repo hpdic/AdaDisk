@@ -29,6 +29,18 @@
 
 namespace diskann
 {
+// [MCGI] alpha-mapping variants for tuning, read once from the environment; the defaults
+// reproduce the original mapping. MCGI_FINE=1 runs the last prune round at exactly alpha,
+// MCGI_K is the sigmoid steepness, MCGI_DIR=-1 maps high LID to small alpha.
+static float mcgi_env(const char *name, float dflt)
+{
+    const char *v = std::getenv(name);
+    return v ? (float)std::atof(v) : dflt;
+}
+static const bool g_mcgi_fine = mcgi_env("MCGI_FINE", 0.0f) != 0.0f;
+static const double g_mcgi_k = mcgi_env("MCGI_K", 1.0f);
+static const double g_mcgi_dir = mcgi_env("MCGI_DIR", 1.0f);
+
 // Initialize an index with metric m, load the data of type T with filename
 // (bin), and initialize max_points
 template <typename T, typename TagT, typename LabelT>
@@ -1178,7 +1190,10 @@ void Index<T, TagT, LabelT>::occlude_list(const uint32_t location, std::vector<N
                 }
             }
         }
+        float prev_alpha = cur_alpha;
         cur_alpha *= 1.2f;
+        if (g_mcgi_fine && prev_alpha < alpha && cur_alpha > alpha)
+            cur_alpha = alpha;
     }
 }
 
@@ -1240,8 +1255,8 @@ void Index<T, TagT, LabelT>::prune_neighbors(const uint32_t location, std::vecto
                     // alpha = min + (max - min) * Sigmoid( (lid - avg) / std )
                     if (current_lid > 0.0f)
                     {
-                        double z_score = (current_lid - g_mcgi_ctx.lid_avg) / g_mcgi_ctx.lid_std;
-                        double sigmoid = 1.0 / (1.0 + std::exp(-1.0 * z_score)); // k=1.0 平滑度
+                        double z_score = g_mcgi_dir * (current_lid - g_mcgi_ctx.lid_avg) / g_mcgi_ctx.lid_std;
+                        double sigmoid = 1.0 / (1.0 + std::exp(-g_mcgi_k * z_score)); // k=1.0 平滑度
 
                         alpha = g_mcgi_ctx.alpha_min + (float)(sigmoid * (g_mcgi_ctx.alpha_max - g_mcgi_ctx.alpha_min));
                         // static int debug_print_count = 0;
@@ -1429,13 +1444,21 @@ template <typename T, typename TagT, typename LabelT> void Index<T, TagT, LabelT
         ScratchStoreManager<InMemQueryScratch<T>> manager(_query_scratch);
         auto scratch = manager.scratch_space();
         std::vector<uint32_t> pruned_list;
+        uint32_t node_L = _indexingQueueSize;
+        if (node < g_mcgi_ctx.l_scale.size()) // [MCGI] LID-scaled build search list
+        {
+            node_L = (uint32_t)std::lround(_indexingQueueSize * g_mcgi_ctx.l_scale[node]);
+            node_L = std::max(node_L, std::max(_indexingRange, _indexingQueueSize / 4));
+            if (node_L > scratch->get_L())
+                scratch->resize_for_new_L(node_L);
+        }
         if (_filtered_index)
         {
-            search_for_point_and_prune(node, _indexingQueueSize, pruned_list, scratch, true, _filterIndexingQueueSize);
+            search_for_point_and_prune(node, node_L, pruned_list, scratch, true, _filterIndexingQueueSize);
         }
         else
         {
-            search_for_point_and_prune(node, _indexingQueueSize, pruned_list, scratch);
+            search_for_point_and_prune(node, node_L, pruned_list, scratch);
         }
         assert(pruned_list.size() > 0);
 

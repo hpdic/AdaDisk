@@ -1,0 +1,9 @@
+config,alpha_min,alpha_max,env,ios@90,io_gain@90,ios@95,io_gain@95,ios@98,io_gain@98
+st_s1.2,1.2,1.2,,201.9,1.000,nan,nan,nan,nan
+st_a1.2_2.0,1.2,2.0,,201.6,1.002,nan,nan,nan,nan
+mp_s1.2,1.2,1.2,MCGI_MERGE_PRUNE=1,198.1,1.019,nan,nan,nan,nan
+mp_s1.5,1.5,1.5,MCGI_MERGE_PRUNE=1,197.6,1.022,nan,nan,nan,nan
+mp_s2.0,2.0,2.0,MCGI_MERGE_PRUNE=1,197.8,1.021,nan,nan,nan,nan
+mp_a1.2_2.0,1.2,2.0,MCGI_MERGE_PRUNE=1,197.3,1.024,nan,nan,nan,nan
+mp_a1.0_2.0,1.0,2.0,MCGI_MERGE_PRUNE=1,197.5,1.023,nan,nan,nan,nan
+mp_a1.2_3.0,1.2,3.0,MCGI_MERGE_PRUNE=1,195.0,1.036,nan,nan,nan,nan

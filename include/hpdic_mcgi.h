@@ -20,6 +20,7 @@ struct MCGIContext
     bool enabled = false;
     bool advanced = false;
     std::vector<float> alpha_table;
+    std::vector<float> l_scale; // [MCGI] per-node scale of the build search list (MCGI_LB_GAMMA), mean 1
     float lid_avg = 0.0f;
     float lid_std = 1.0f;
     float alpha_min = 1.0f;

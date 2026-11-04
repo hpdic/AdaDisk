@@ -273,6 +273,20 @@ int search_disk_index(diskann::Metric &metric, const std::string &index_path_pre
         auto mean_io_us = diskann::get_mean_stats<float>(stats, query_num,
                                                          [](const diskann::QueryStats &stats) { return stats.io_us; });
 
+        // [MCGI] MCGI_FEAT_DUMP: per-query I/Os and checkpoint features, <result_path>_<L>_stats.bin
+        if (std::getenv("MCGI_FEAT_DUMP"))
+        {
+            std::vector<float> rows(query_num * 19);
+            for (size_t i = 0; i < query_num; i++)
+            {
+                rows[i * 19] = (float)stats[i].n_ios;
+                for (int j = 0; j < 18; j++)
+                    rows[i * 19 + 1 + j] = stats[i].mcgi_feat[j];
+            }
+            diskann::save_bin<float>(result_output_prefix + "_" + std::to_string(L) + "_stats.bin", rows.data(),
+                                     query_num, 19);
+        }
+
         double recall = 0;
         if (calc_recall_flag)
         {

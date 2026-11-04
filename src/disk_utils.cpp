@@ -626,6 +626,133 @@ void extract_shard_labels(const std::string &in_label_file, const std::string &s
         delete[] ids;
 }
 
+// [MCGI] MCGI_MERGE_PRUNE=1: merge_shards keeps the union of the shard neighborhoods
+// and this pass prunes every node back to R with its own alpha (LID of the union when
+// MCGI is enabled, MCGI_MERGE_ALPHA otherwise), then fills free slots nearest-first,
+// instead of DiskANN's random truncation. L2 distances only.
+template <typename T>
+void mcgi_merge_prune(const std::string &base_file, const std::string &graph_file, uint32_t R)
+{
+    T *data = nullptr;
+    size_t npts, dim;
+    diskann::load_bin<T>(base_file, data, npts, dim);
+
+    std::ifstream in(graph_file, std::ios::binary);
+    uint64_t file_size, frozen;
+    uint32_t width, medoid;
+    in.read((char *)&file_size, sizeof(uint64_t));
+    in.read((char *)&width, sizeof(uint32_t));
+    in.read((char *)&medoid, sizeof(uint32_t));
+    in.read((char *)&frozen, sizeof(uint64_t));
+    std::vector<std::vector<uint32_t>> graph(npts);
+    for (size_t i = 0; i < npts; i++)
+    {
+        uint32_t k;
+        in.read((char *)&k, sizeof(uint32_t));
+        graph[i].resize(k);
+        in.read((char *)graph[i].data(), k * sizeof(uint32_t));
+    }
+    in.close();
+
+    auto env = [](const char *n, double d) { return std::getenv(n) ? std::atof(std::getenv(n)) : d; };
+    const float static_alpha = (float)env("MCGI_MERGE_ALPHA", 1.2);
+    const double k_steep = env("MCGI_K", 1.0), dir = env("MCGI_DIR", 1.0);
+    const bool fill = env("MCGI_MERGE_FILL", 1.0) != 0.0;
+    auto dist = [&](size_t a, size_t b) {
+        float s = 0;
+        for (size_t d = 0; d < dim; d++)
+        {
+            float t = (float)data[a * dim + d] - (float)data[b * dim + d];
+            s += t * t;
+        }
+        return s;
+    };
+    std::vector<float> node_alpha(npts, static_alpha);
+
+#pragma omp parallel for schedule(dynamic, 1024)
+    for (int64_t i = 0; i < (int64_t)npts; i++)
+    {
+        auto &nb = graph[i];
+        if (nb.size() <= R)
+            continue;
+        std::vector<std::pair<float, uint32_t>> pool;
+        for (auto v : nb)
+            pool.emplace_back(dist(i, v), v);
+        std::sort(pool.begin(), pool.end());
+
+        float alpha = static_alpha;
+        if (g_mcgi_ctx.enabled)
+        {
+            size_t k = std::min<size_t>(32, pool.size());
+            double dmax = std::max(pool[k - 1].first, 1e-9f), s = 0;
+            for (size_t j = 0; j < k; j++)
+                s += std::log(dmax / std::max(pool[j].first, 1e-9f));
+            if (s > 1e-6)
+            {
+                double z = dir * ((2.0 * k) / s - g_mcgi_ctx.lid_avg) / g_mcgi_ctx.lid_std;
+                double sig = 1.0 / (1.0 + std::exp(-k_steep * z));
+                alpha = g_mcgi_ctx.alpha_min + (float)(sig * (g_mcgi_ctx.alpha_max - g_mcgi_ctx.alpha_min));
+            }
+        }
+        node_alpha[i] = alpha;
+
+        // Vamana occlusion as in Index::occlude_list, rounds 1, 1.2, ... with the last at alpha
+        std::vector<float> occ(pool.size(), 0.0f);
+        std::vector<uint32_t> out;
+        float cur = 1.0f;
+        while (cur <= alpha && out.size() < R)
+        {
+            for (size_t a = 0; a < pool.size() && out.size() < R; a++)
+            {
+                if (occ[a] > cur)
+                    continue;
+                occ[a] = std::numeric_limits<float>::max();
+                out.push_back(pool[a].second);
+                for (size_t b = a + 1; b < pool.size(); b++)
+                {
+                    if (occ[b] > alpha)
+                        continue;
+                    float djk = dist(pool[a].second, pool[b].second);
+                    occ[b] = djk == 0 ? std::numeric_limits<float>::max() : std::max(occ[b], pool[b].first / djk);
+                }
+            }
+            float prev = cur;
+            cur *= 1.2f;
+            if (prev < alpha && cur > alpha)
+                cur = alpha;
+        }
+        if (fill)
+            for (auto &p : pool)
+            {
+                if (out.size() >= R)
+                    break;
+                if (std::find(out.begin(), out.end(), p.second) == out.end())
+                    out.push_back(p.second);
+            }
+        nb.swap(out);
+    }
+    delete[] data;
+
+    uint64_t size = 24;
+    for (auto &nb : graph)
+        size += sizeof(uint32_t) * (1 + nb.size());
+    std::ofstream out(graph_file, std::ios::binary);
+    out.write((char *)&size, sizeof(uint64_t));
+    out.write((char *)&R, sizeof(uint32_t));
+    out.write((char *)&medoid, sizeof(uint32_t));
+    out.write((char *)&frozen, sizeof(uint64_t));
+    double deg = 0, asum = 0;
+    for (size_t i = 0; i < npts; i++)
+    {
+        uint32_t k = (uint32_t)graph[i].size();
+        out.write((char *)&k, sizeof(uint32_t));
+        out.write((char *)graph[i].data(), k * sizeof(uint32_t));
+        deg += k;
+        asum += node_alpha[i];
+    }
+    diskann::cout << "[MCGI] merge prune: avg degree " << deg / npts << ", mean alpha " << asum / npts << std::endl;
+}
+
 template <typename T, typename LabelT>
 int build_merged_vamana_index(const std::string &base_file, diskann::Metric compareMetric, uint32_t L, uint32_t R,
                               double sampling_rate, double ram_budget, const std::string &mem_index_path,
@@ -688,9 +815,11 @@ int build_merged_vamana_index(const std::string &base_file, diskann::Metric comp
 
     std::string merged_index_prefix = mem_index_path + "_tempFiles";
 
+    // [MCGI] MCGI_SHARD_R overrides DiskANN's shard degree 2R/3
+    const uint32_t shard_R = std::getenv("MCGI_SHARD_R") ? (uint32_t)std::atoi(std::getenv("MCGI_SHARD_R")) : 2 * R / 3;
     Timer timer;
     int num_parts =
-        partition_with_ram_budget<T>(base_file, sampling_rate, ram_budget, 2 * R / 3, merged_index_prefix, 2);
+        partition_with_ram_budget<T>(base_file, sampling_rate, ram_budget, shard_R, merged_index_prefix, 2);
     diskann::cout << timer.elapsed_seconds_for_step("partitioning data ") << std::endl;
 
     std::string cur_centroid_filepath = merged_index_prefix + "_centroids.bin";
@@ -713,7 +842,7 @@ int build_merged_vamana_index(const std::string &base_file, diskann::Metric comp
 
         std::string shard_index_file = merged_index_prefix + "_subshard-" + std::to_string(p) + "_mem.index";
 
-        diskann::IndexWriteParameters low_degree_params = diskann::IndexWriteParametersBuilder(L, 2 * R / 3)
+        diskann::IndexWriteParameters low_degree_params = diskann::IndexWriteParametersBuilder(L, shard_R)
                                                               .with_filter_list_size(Lf)
                                                               .with_saturate_graph(false)
                                                               .with_num_threads(num_threads)
@@ -757,9 +886,12 @@ int build_merged_vamana_index(const std::string &base_file, diskann::Metric comp
     diskann::cout << timer.elapsed_seconds_for_step("building indices on shards") << std::endl;
 
     timer.reset();
+    const bool merge_prune = std::getenv("MCGI_MERGE_PRUNE") && std::atoi(std::getenv("MCGI_MERGE_PRUNE")) != 0;
     diskann::merge_shards(merged_index_prefix + "_subshard-", "_mem.index", merged_index_prefix + "_subshard-",
-                          "_ids_uint32.bin", num_parts, R, mem_index_path, medoids_file, use_filters,
-                          labels_to_medoids_file);
+                          "_ids_uint32.bin", num_parts, merge_prune ? 2 * R : R, mem_index_path, medoids_file,
+                          use_filters, labels_to_medoids_file);
+    if (merge_prune)
+        mcgi_merge_prune<T>(base_file, mem_index_path, R);
     diskann::cout << timer.elapsed_seconds_for_step("merging indices") << std::endl;
 
     // delete tempFiles

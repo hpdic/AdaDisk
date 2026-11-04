@@ -33,6 +33,9 @@ struct QueryStats
     unsigned n_cmps = 0;       // # cmps
     unsigned n_cache_hits = 0; // # cache_hits
     unsigned n_hops = 0;       // # search hops
+    // [MCGI] query features at checkpoints n0, 2 n0, 4 n0 expansions (6 each): log LID, log d1, log d10,
+    // log(PQ noise / (d10 - d1)), log LID of the 64 best candidates, log(1 + candidates within 1.2 d10)
+    float mcgi_feat[18] = {0};
 };
 
 template <typename T>

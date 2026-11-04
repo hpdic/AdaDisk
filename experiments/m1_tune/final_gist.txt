@@ -1,0 +1,4 @@
+diskann_R32_L100  R2=0.228  85: io 1.065 qps 1.057  90: io 1.074 qps 1.087  95: io 1.089 qps 1.090
+diskann_R48_L100  R2=0.196  85: io 1.047 qps 1.034  90: io 1.053 qps 1.030  95: io 1.064 qps 1.090
+diskann_R32_L100_pq480  R2=0.250  85: io 1.071 qps 1.096  90: io 1.064 qps 1.075  95: io 1.115 qps 1.118
+diskann_R48_L100_pq480  R2=0.220  85: io 1.025 qps 1.065  90: io 1.072 qps 1.101  95: io 1.071 qps 1.128

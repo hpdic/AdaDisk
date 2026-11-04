@@ -128,6 +128,15 @@ class NeighborPriorityQueue
         _capacity = capacity;
     }
 
+    // [MCGI] change the capacity of a live queue; shrinking drops the tail
+    void set_capacity(size_t capacity)
+    {
+        reserve(capacity);
+        if (_size > capacity)
+            _size = capacity;
+        if (_cur > _size)
+            _cur = _size;
+    }
     Neighbor &operator[](size_t i)
     {
         return _data[i];

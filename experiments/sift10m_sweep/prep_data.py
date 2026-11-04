@@ -1,8 +1,8 @@
-"""Prepare the SIFT10M subset of BIGANN in DiskANN .bin format.
+"""Prepare the SIFT10M (or SIFTnM) subset of BIGANN in DiskANN .bin format.
 
-base:  first 10M points of base.1B.u8bin
+base:  first N points of base.1B.u8bin (N = 10M, or millions given as the second argument)
 query: bigann_query.bvecs (10K)
-gt:    official idx_10M.ivecs / dis_10M.fvecs, top-100
+gt:    official idx_<N>M.ivecs / dis_<N>M.fvecs, top-100
 All I/O is buffered and sequential (no memory maps).
 """
 import os
@@ -11,7 +11,7 @@ import numpy as np
 
 SRC = os.path.expanduser("~/hpdic/datasets/bigann")
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser("~/data/mcgi/sift10m")
-N = 10_000_000
+N = (int(sys.argv[2]) if len(sys.argv) > 2 else 10) * 1_000_000
 D = 128
 GT_K = 100
 CHUNK = 1_000_000
@@ -45,8 +45,8 @@ def read_vecs(path, dtype):
     a = a.reshape(-1, k + 1)
     return a[:, 1:].copy().view(dtype), k
 
-ids, k = read_vecs(f"{SRC}/gnd/idx_10M.ivecs", np.int32)
-dis, _ = read_vecs(f"{SRC}/gnd/dis_10M.fvecs", np.float32)
+ids, k = read_vecs(f"{SRC}/gnd/idx_{N // 1_000_000}M.ivecs", np.int32)
+dis, _ = read_vecs(f"{SRC}/gnd/dis_{N // 1_000_000}M.fvecs", np.float32)
 assert ids.shape[0] == q.shape[0] and k >= GT_K
 ids = np.ascontiguousarray(ids[:, :GT_K]).astype(np.uint32)
 dis = np.ascontiguousarray(dis[:, :GT_K])
