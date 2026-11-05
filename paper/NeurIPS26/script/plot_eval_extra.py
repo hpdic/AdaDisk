@@ -70,7 +70,7 @@ def ablation():
         for v in {r["variant"] for r in rows if r["dataset"] == ds}:
             gain[ds, v] = at(curve(rows, dataset=ds, variant=v), t) / base
     gamma_main = {"sift": 0.7, "glove": 1.0, "gist": 0.7}
-    fig, axes = plt.subplots(1, 3, figsize=(11.0, 2.9), gridspec_kw={"width_ratios": [1.4, 1, 1]})
+    fig, axes = plt.subplots(1, 3, figsize=(11.0, 2.7), gridspec_kw={"width_ratios": [1.4, 1, 1]})
     variants = [("full", "MCGI", "#5B3B9E"), ("lid", "LID only", "#9C86C9"), ("nolid", "No LID", "#8C8C8C"),
                 ("random", "Random", "#D9B45A")]
     x = np.arange(len(DS))
