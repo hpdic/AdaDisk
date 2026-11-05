@@ -350,7 +350,7 @@ The adaptation adds no disk reads, because every feature reuses distances that t
 \section{Evaluation}
 \label{sec:experiments}
 
-All experiments run on a cloud virtual machine with 192 virtual cores of Intel Xeon Platinum 8468 and 960 GiB of RAM, where the disk-resident indexes reside on a 17.6 TB virtual block device (virtio). Each search reads graph nodes from this device with direct I/O, with a measured I/O time of about 0.34 ms per read at 32 search threads; consequently, the throughput of DiskANN and \ours{}, which share one I/O engine, follows their number of disk reads per query. We evaluate \ours{} on three million-scale benchmarks with dimensionality from 100 to 960, namely SIFT1M~\cite{jegou2011product}, GloVe-100~\cite{pennington2014glove}, and GIST1M~\cite{jegou2011product}, and on the billion-scale SIFT1B~\cite{jegou2011searching} and Deep1B~\cite{babenko2016efficient}. The baseline is DiskANN (Vamana)~\cite{subramanya2019diskann}, which searches the same index with a fixed candidate list. More setup details are in Appendix~\ref{appendix:setup}.
+All experiments run on a cloud virtual machine with 192 virtual cores of Intel Xeon Platinum 8468 and 960 GiB of RAM, where the disk-resident indexes reside on a 17.6 TB virtual block device (virtio). Each search reads graph nodes from this device with direct I/O, with a measured I/O time of about 0.34 ms per read at 32 search threads; consequently, the throughput of DiskANN and \ours{}, which share one I/O engine, follows their number of disk reads per query. We evaluate \ours{} on three million-scale benchmarks with dimensionality from 100 to 960, namely SIFT1M~\cite{jegou2011product}, GloVe-100~\cite{pennington2014glove}, and GIST1M~\cite{jegou2011product}, and on the billion-scale SIFT1B~\cite{jegou2011searching} and Deep1B~\cite{babenko2016efficient}. The main baseline is DiskANN (Vamana)~\cite{subramanya2019diskann}, which searches the same index with a fixed candidate list. On GIST1M, the comparison further includes the pipelined disk-resident search of PipeANN~\cite{osdi25pipeann} and the in-memory indexes HNSW~\cite{malkov2018efficient}, IVF-Flat~\cite{johnson2019billion}, and CSPG~\cite{NEURIPS2024_bab1486c}. More setup details are in Appendix~\ref{appendix:setup}.
 
 \subsection{Million-scale Effectiveness}
 
@@ -560,7 +560,7 @@ Both areas follow from integrating over the polar angle $\phi$, measured from th
 \paragraph{3. Upper Bound on the Success Probability.}
 We show that $P_{success} \le \kappa_0\, d^{-1/2} \gamma^{d}$ for every $d \ge 3$, where $\gamma = \sin\theta_{max} < 1$ and the constant $\kappa_0$ does not depend on $d$; this upper bound suffices for the lemma, because $\mathbb{E}[N_{dist}] = 1/P_{success}$. Since $P_{success}$ is the ratio of the two integrals in Eq.~\eqref{eq:cap_ratio}, we bound the numerator from above in Step 3a and the denominator from below in Step 3b before dividing the two bounds in Step 3c.
 
-\emph{Step 3a: numerator.} The numerator of Eq.~\eqref{eq:cap_ratio} is the cap integral $J = \int_0^{\theta_{max}} \sin^{d-2}\phi \, d\phi$, which measures the improving directions; this step shows that $J \le \frac{\sin^{d-1}\theta_{max}}{(d-1)\cos\theta_{max}}$. The integrand $\sin^{d-2}\phi$ has no elementary antiderivative, so that we bound the integral by integration by parts, which needs a factor of the integrand whose antiderivative is known. We construct such a factor as follows. Since $\theta_{max} < \pi/2$, the function $\cos\phi$ is positive on $[0, \theta_{max}]$, so that we may multiply and divide the integrand by $(d-1)\cos\phi$:
+\emph{Step 3a: numerator.} The numerator of Eq.~\eqref{eq:cap_ratio} is the cap integral $J = \int_0^{\theta_{max}} \sin^{d-2}\phi \, d\phi$, which measures the improving directions; this step shows that $J \le \frac{\sin^{d-1}\theta_{max}}{(d-1)\cos\theta_{max}}$. Because the integrand $\sin^{d-2}\phi$ has no elementary antiderivative, we bound the integral by integration by parts, which needs a factor of the integrand whose antiderivative is known. We construct such a factor as follows. Since $\theta_{max} < \pi/2$, the function $\cos\phi$ is positive on $[0, \theta_{max}]$, which allows us to multiply and divide the integrand by $(d-1)\cos\phi$:
 \begin{equation}
     \sin^{d-2}\phi = \frac{1}{(d-1)\cos\phi} \cdot (d-1)\sin^{d-2}\phi \cos\phi.
 \end{equation}
@@ -587,9 +587,9 @@ The last integral is nonnegative, because $\tan^2\phi \ge 0$ and $\sin^{d-2}\phi
     J \le \frac{\sin^{d-1} \theta_{max}}{(d-1) \cos \theta_{max}}.
 \end{equation}
 
-\emph{Step 3b: denominator.} This step shows that the denominator of Eq.~\eqref{eq:cap_ratio} is at least $1/\sqrt{d}$. The idea is that $\sin\phi$ equals $1$ at the equator $\phi = \pi/2$, so that the integrand $\sin^{d-2}\phi$ stays close to $1$ on a narrow band around the equator. We show that the integrand is at least $\frac{1}{2}$ on the band of half-width $1/\sqrt{d}$; the integral is then at least the width $2/\sqrt{d}$ of the band times $\frac{1}{2}$. The argument has four parts.
+\emph{Step 3b: denominator.} This step shows that the denominator of Eq.~\eqref{eq:cap_ratio} is at least $1/\sqrt{d}$. The idea is that, because $\sin\phi$ equals $1$ at the equator $\phi = \pi/2$, the integrand $\sin^{d-2}\phi$ stays close to $1$ on a narrow band around the equator. We show that the integrand is at least $\frac{1}{2}$ on the band of half-width $1/\sqrt{d}$; the integral is then at least the width $2/\sqrt{d}$ of the band times $\frac{1}{2}$. The argument has four parts.
 
-(i) Restriction to the band. The integrand $\sin^{d-2}\phi$ is nonnegative on $[0, \pi]$, so that the integral over $[0, \pi]$ is at least the integral over the band $[\pi/2 - 1/\sqrt{d},\ \pi/2 + 1/\sqrt{d}]$, which lies inside $[0, \pi]$ because $1/\sqrt{d} \le 1 < \pi/2$.
+(i) Restriction to the band. Because the integrand $\sin^{d-2}\phi$ is nonnegative on $[0, \pi]$, the integral over $[0, \pi]$ is at least the integral over the band $[\pi/2 - 1/\sqrt{d},\ \pi/2 + 1/\sqrt{d}]$, which lies inside $[0, \pi]$ because $1/\sqrt{d} \le 1 < \pi/2$.
 
 (ii) Centering the band at zero. The substitution $\phi = \pi/2 + x$ maps the band to $x \in [-1/\sqrt{d}, 1/\sqrt{d}]$, with $d\phi = dx$ and $\sin(\pi/2 + x) = \sin(\pi/2)\cos x + \cos(\pi/2)\sin x = \cos x$. Parts (i) and (ii) give
 \begin{equation}
@@ -600,7 +600,7 @@ The last integral is nonnegative, because $\tan^2\phi \ge 0$ and $\sin^{d-2}\phi
 \begin{equation}
     \cos^{d-2} x \ge \left(1 - \frac{x^2}{2}\right)^{d-2} \ge 1 - \frac{(d-2)\, x^2}{2} \ge 1 - \frac{d-2}{2d} \ge \frac{1}{2}.
 \end{equation}
-The first inequality follows from $\cos x \ge 1 - x^2/2$, which holds because $1 - \cos x = 2\sin^2(x/2) \le 2\,(x/2)^2 = x^2/2$ by $|\sin y| \le |y|$; both sides are positive for $|x| \le 1$, so that raising them to the power $d-2$ keeps the inequality. The second inequality is Bernoulli's inequality $(1 - y)^n \ge 1 - n y$, which holds for every $y \in [0, 1]$ and every real $n \ge 1$; here $y = x^2/2$ lies in $[0, 1]$ because $x^2 \le 1/d$, and $n = d - 2 \ge 1$ because $d \ge 3$, without $d$ being an integer. The third and the fourth inequality use $x^2 \le 1/d$ and $\frac{d-2}{2d} \le \frac{1}{2}$, respectively.
+The first inequality follows from $\cos x \ge 1 - x^2/2$, which holds because $1 - \cos x = 2\sin^2(x/2) \le 2\,(x/2)^2 = x^2/2$ by $|\sin y| \le |y|$; since both sides are positive for $|x| \le 1$, raising them to the power $d-2$ keeps the inequality. The second inequality is Bernoulli's inequality $(1 - y)^n \ge 1 - n y$, which holds for every $y \in [0, 1]$ and every real $n \ge 1$; here $y = x^2/2$ lies in $[0, 1]$ because $x^2 \le 1/d$, and $n = d - 2 \ge 1$ because $d \ge 3$, without $d$ being an integer. The third and the fourth inequality use $x^2 \le 1/d$ and $\frac{d-2}{2d} \le \frac{1}{2}$, respectively.
 
 (iv) Integration over the band. Integrating the lower bound $\frac{1}{2}$ from part (iii) over the band of width $2/\sqrt{d}$ gives
 \begin{equation}
@@ -621,7 +621,7 @@ where the last step writes $\gamma^d = \exp(d \ln \gamma)$. Defining the decay r
 \end{equation}
 
 \paragraph{4. Complexity Bound.}
-Under the model of the lemma, each distance evaluation independently finds an improving neighbor with probability $P_{success}$, so that the number of evaluations until the first success follows a geometric distribution with mean $\mathbb{E}[N_{dist}] = 1/P_{success}$. Step 3 therefore gives $\mathbb{E}[N_{dist}] \ge \kappa_0^{-1} \sqrt{d}\, \exp(\lambda \cdot d)$ for every $d \ge 3$, i.e.,
+Under the model of the lemma, each distance evaluation independently finds an improving neighbor with probability $P_{success}$. The number of evaluations until the first success therefore follows a geometric distribution with mean $\mathbb{E}[N_{dist}] = 1/P_{success}$. Step 3 therefore gives $\mathbb{E}[N_{dist}] \ge \kappa_0^{-1} \sqrt{d}\, \exp(\lambda \cdot d)$ for every $d \ge 3$, i.e.,
 \begin{equation}
     \mathbb{E}[N_{dist}] \ge \Omega\left( \sqrt{d} \cdot \exp(\lambda \cdot d) \right).
 \end{equation}
@@ -643,7 +643,7 @@ Consider a beam search with width $L$, and model each of its $L$ expansions as a
 \end{equation}
 We solve this condition for $L$ in three steps.
 
-(i) Both sides are positive and the natural logarithm is increasing, so that the condition is equivalent to
+(i) Because both sides are positive and the natural logarithm is increasing, the condition is equivalent to
 \begin{equation}
     L \cdot \ln(1 - P_{success}) \le \ln \delta.
 \end{equation}
@@ -657,7 +657,7 @@ We solve this condition for $L$ in three steps.
 \begin{equation}
     -\ln(1 - x) = \sum_{k=1}^{\infty} \frac{x^k}{k} \le \sum_{k=1}^{\infty} x^k = \frac{x}{1 - x},
 \end{equation}
-so that $-\ln(1 - P_{success}) \le P_{success}/(1 - P_{success})$. Inserting this upper bound into the denominator of step (ii) can only lower the threshold; hence every $L$ that meets the bound $\delta$ satisfies
+hence $-\ln(1 - P_{success}) \le P_{success}/(1 - P_{success})$. Inserting this upper bound into the denominator of step (ii) can only lower the threshold; hence every $L$ that meets the bound $\delta$ satisfies
 \begin{equation}
     L \ge (1 - P_{success}) \cdot \frac{\ln(1/\delta)}{P_{success}}.
 \end{equation}
@@ -707,7 +707,7 @@ For any fixed beam width $\bar{L}$, the probability that the search succeeds at 
 \end{proposition}
 
 \begin{proof}
-Consider a beam search with fixed width $\bar{L}$. Under the model of Definition~\ref{def:iso_recall}, each of its $\bar{L}$ expansions succeeds independently with probability $P_{\mathrm{success}}(q)$, so that the failure probability at query $q$ is
+Consider a beam search with fixed width $\bar{L}$. Under the model of Definition~\ref{def:iso_recall}, each of its $\bar{L}$ expansions succeeds independently with probability $P_{\mathrm{success}}(q)$. The failure probability at query $q$ is therefore
 \begin{equation}
     P(\mathrm{fail} \mid q) = \left(1 - P_{\mathrm{success}}(q)\right)^{\bar{L}}.
 \end{equation}
@@ -747,20 +747,19 @@ We evaluate our method on three standard million-scale benchmarks whose dimensio
 The calibration queries of the query-adaptive search list are disjoint from the evaluation queries. For SIFT1M and GIST1M, they are the first 10{,}000 vectors of the learning set of each dataset. GloVe-100 has no learning set; its calibration queries are 10{,}000 base vectors drawn with a fixed seed, each excluded from its own ground truth. The ground truth of every calibration query consists of its exact 100 nearest neighbors. For SIFT1B and Deep1B, the calibration queries are the even-indexed half of the official queries, whereas the evaluation uses the odd-indexed half, which leaves 5{,}000 evaluation queries on SIFT1B and 4{,}998 on Deep1B.
 
 \paragraph{Baselines}
-We compare \ours{} against DiskANN (Vamana)~\cite{subramanya2019diskann}, the standard disk-resident graph index. Both methods search the same index file with the same compressed vectors, the same beam width, and the same requested list sizes. The comparison therefore isolates the query-adaptive search list of \ours{}, since the index, the I/O path, and the distance computation are identical. On GIST1M, the following baselines complement DiskANN, each searching the 1{,}000 official queries with 32 threads once per setting.
+We compare \ours{} against DiskANN (Vamana)~\cite{subramanya2019diskann} on every dataset and, on GIST1M, additionally against PipeANN~\cite{osdi25pipeann, fast26odinann}, CSPG~\cite{NEURIPS2024_bab1486c}, HNSW~\cite{malkov2018efficient}, and IVF-Flat~\cite{johnson2019billion}. DiskANN is the standard disk-resident graph index; \ours{} and DiskANN search the same index file with the same compressed vectors, the same beam width, and the same requested list sizes. The comparison with DiskANN therefore isolates the query-adaptive search list of \ours{}, since the index, the I/O path, and the distance computation are identical. Each of the four GIST1M baselines searches the 1{,}000 official queries with 32 threads once per setting, with the following configurations.
 \begin{itemize}
     \item PipeANN~\cite{osdi25pipeann, fast26odinann} (pipelined search with \texttt{io\_uring}) searches the DiskANN index files of \ours{} with requested list sizes from 10 to 400 and I/O widths 4 and 32, of which width 4 gives the higher throughput and enters Figure~\ref{fig:gist_compare}. Its entry-point index is built from a 1\% sample of the base vectors; in addition, its per-vector PQ limit is raised from 256 to 512 bytes so that it loads the 322-byte codes of the GIST1M indexes.
-    \item CSPG~\cite{NEURIPS2024_bab1486c} uses the official implementation with the settings of its authors for GIST1M, namely two partitions of Vamana subgraphs, a construction list of 128, $\alpha = 1.2$, and a duplication ratio of 0.5, with $R = 32$ and $R = 48$. Its parallel search assigns queries to threads in blocks of 64, so that the 1{,}000 GIST1M queries occupy at most 16 of the 32 threads.
+    \item CSPG~\cite{NEURIPS2024_bab1486c} uses the official implementation with the settings of its authors for GIST1M, namely two partitions of Vamana subgraphs, a construction list of 128, $\alpha = 1.2$, and a duplication ratio of 0.5, with $R = 32$ and $R = 48$. Its parallel search assigns queries to threads in blocks of 64; the 1{,}000 GIST1M queries therefore occupy at most 16 of the 32 threads.
     \item HNSW~\cite{malkov2018efficient} uses hnswlib with $M = 16$, which bounds the degree of the base layer by 32, and a construction list of 200.
     \item IVF-Flat~\cite{johnson2019billion} uses Faiss with 4{,}096 lists and full-precision vectors.
 \end{itemize}
-The QPS of every method at a target recall is interpolated along its measured curve.
 
 \paragraph{Evaluation Metrics}
 We adhere to the standard evaluation protocol for ANN search and measure Recall@10 against QPS (queries per second). Each method yields one Recall@10 and QPS point per requested list size. The throughput gain at a target recall is the ratio of the QPS of the two methods, where each QPS value is linearly interpolated along the recall axis of its curve.
 
 \paragraph{Build Configuration}
-Table~\ref{tab:build_params} summarizes the dataset specifications and the indexing parameters of the index that both methods search, where the query count is the number of evaluation queries. $R$ denotes the maximum outdegree of each node in the graph, and $L_{build}$ is the size of the candidate list during index construction. Every index uses the standard pruning parameter $\alpha = 1.2$ of DiskANN. $m_{PQ}$ specifies the number of bytes of the Product Quantization (PQ) code of each vector, which follows from the PQ memory budget of the build.
+Table~\ref{tab:build_params} summarizes the dataset specifications and the indexing parameters of the index that \ours{} and DiskANN search on each dataset, where the query count is the number of evaluation queries. $R$ denotes the maximum outdegree of each node in the graph, and $L_{build}$ is the size of the candidate list during index construction. Every index uses the standard pruning parameter $\alpha = 1.2$ of DiskANN. $m_{PQ}$ specifies the number of bytes of the Product Quantization (PQ) code of each vector, which follows from the PQ memory budget of the build.
 
 \begin{table}[t]
 \centering
@@ -780,7 +779,7 @@ Deep1B    & $10^9$ & 96  & 4{,}998  & 32 & 50  & 31  & float32 \\
 \end{table}
 
 \paragraph{Search Configuration}
-Table~\ref{tab:search_params} lists the LID statistics of each dataset and the parameters of the query-adaptive search list. $\mu_{LID}$ and $\sigma_{LID}$ denote the mean and standard deviation of the maximum-likelihood LID estimates of the base vectors with 20 neighbors, which we compute for the million-scale datasets only. The checkpoint of Eq.~\eqref{eq:adaptive_list} follows $n_0 = 24$ expansions; the candidate-list estimator uses the $m = 64$ best candidates; the competition count uses $\epsilon = 0.2$. The list size is bounded from below by the result size $k = 10$ and from above by $c\bar{L}$ with $c = 8$. The strength $\gamma$ is chosen from $\{0.5, 0.7, 1.0, 1.3\}$ on the calibration queries of each dataset.
+Table~\ref{tab:search_params} lists the LID statistics of each dataset and the parameters of the query-adaptive search list. $\mu_{LID}$ and $\sigma_{LID}$ denote the mean and standard deviation of the maximum-likelihood LID estimates of the base vectors with 20 neighbors, which we compute for the million-scale datasets only. The column for the list size $\bar{L}$ gives the range of requested list sizes over which the curves of \ours{} and DiskANN are measured on each dataset. On the million-scale datasets, the range $10 \to 400$ consists of the 14 values 10, 15, 20, 25, 30, 40, 50, 60, 80, 100, 150, 200, 300, and 400; SIFT1B adds the four values 500, 600, 800, and 1{,}000. Deep1B adds these four values together with 1{,}200, 1{,}500, and 2{,}000. The billion-scale datasets need these longer lists because DiskANN reaches high recall on them only with long lists. The checkpoint of Eq.~\eqref{eq:adaptive_list} follows $n_0 = 24$ expansions; the candidate-list estimator uses the $m = 64$ best candidates; the competition count uses $\epsilon = 0.2$. The list size is bounded from below by the result size $k = 10$ and from above by $c\bar{L}$ with $c = 8$. The strength $\gamma$ is chosen from $\{0.5, 0.7, 1.0, 1.3\}$ on the calibration queries of each dataset.
 
 \begin{table}[t]
 \centering
@@ -801,7 +800,7 @@ Deep1B    & -- & -- & $10 \to 2000$ & 0.7 & 32 \\
 \end{table}
 
 \paragraph{Latency}
-Figure~\ref{fig:latency} plots the recall of both methods against the requested list size $\bar{L}$ on GIST1M and the mean query latency against recall on GIST1M, SIFT1B, and Deep1B. The recall of \ours{} closely follows that of DiskANN at every requested list size, so $\bar{L}$ remains the single knob of the search. At matched recall, \ours{} lowers the mean latency, at 95\% recall from 93 to 75~ms on GIST1M and from 290 to 245~ms on Deep1B, and at 90\% recall from 86 to 74~ms on SIFT1B.
+Figure~\ref{fig:latency} plots the recall of \ours{} and DiskANN against the requested list size $\bar{L}$ on GIST1M and the mean query latency against recall on GIST1M, SIFT1B, and Deep1B. The recall of \ours{} closely follows that of DiskANN at every requested list size, so $\bar{L}$ remains the single knob of the search. At matched recall, \ours{} lowers the mean latency, at 95\% recall from 93 to 75~ms on GIST1M and from 290 to 245~ms on Deep1B, and at 90\% recall from 86 to 74~ms on SIFT1B.
 
 \begin{figure*}[t]
     \centering
@@ -834,9 +833,9 @@ Deep1B    & 3{,}373 & 15{,}029 & 836 & 19{,}317 & 289 \\
 \subsection{Limitations}
 \label{appendix:limitations}
 
-All throughput gains in Section~\ref{sec:experiments} come from the query-adaptive search list on indexes built with the standard Vamana pruning rule. The construction-time rule of Section~\ref{subsec:mapping} relaxes the pruning test of high-LID nodes; however, under the degree bound of a disk-resident index, nodes typically fill their neighbor lists with either rule, so that the construction-time rule mainly changes the choice of edges of a node. For this reason, Proposition~\ref{prop:connectivity} assumes no degree bound, while the evaluation attributes no gain to the construction-time rule. Similarly, the analysis of Section~\ref{sec:theory} models each beam step as an independent trial under a uniform local model of the data, so that its bounds describe trends rather than exact recall values.
+All throughput gains in Section~\ref{sec:experiments} come from the query-adaptive search list on indexes built with the standard Vamana pruning rule. The construction-time rule of Section~\ref{subsec:mapping} relaxes the pruning test of high-LID nodes; however, under the degree bound of a disk-resident index, nodes typically fill their neighbor lists with either rule. The construction-time rule therefore changes mainly the choice of edges of a node rather than their number, which is why the evaluation attributes no gain to it. The connectivity guarantee of Proposition~\ref{prop:connectivity} likewise holds only without the degree bound. Similarly, because the analysis of Section~\ref{sec:theory} models each beam step as an independent trial under a uniform local model of the data, its bounds describe trends rather than exact recall values.
 
-The query-adaptive list also carries two costs that its mean throughput hides. First, hard queries receive lists up to eight times longer than the requested list, so that the 99.9th-percentile latency at matched recall rises while the mean latency falls; on GIST1M at 95\% recall, for example, the tail latency grows from 119 to 181~ms. Second, every index needs its own calibration with a few thousand queries from the query distribution and their exact nearest neighbors, since the fitted weights hold only for the index on which they were fitted.
+The query-adaptive list also carries two costs that its mean throughput hides. First, because hard queries receive lists up to eight times longer than the requested list, the 99.9th-percentile latency at matched recall rises while the mean latency falls; on GIST1M at 95\% recall, for example, the tail latency grows from 119 to 181~ms. Second, every index needs its own calibration with a few thousand queries from the query distribution and their exact nearest neighbors, since the fitted weights hold only for the index on which they were fitted.
 
 \subsection{Algorithm Pseudo-Code}
 \label{appendix:alg}
