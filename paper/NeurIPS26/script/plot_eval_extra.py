@@ -1,9 +1,9 @@
 """Comparison, ablation, and latency figures of the evaluation.
 
-figures/gist_compare.pdf  Recall-QPS of DiskANN, PipeANN, and MCGI on the same GIST1M index (R = 32 and 48)
+Tables 2 and 3          QPS at 95% recall of DiskANN, PipeANN, MCGI (same GIST1M index) and the in-memory baselines (printed)
 figures/ablation_features.pdf, ablation_sensitivity.pdf  QPS gain of MCGI variants over DiskANN on the same index, at the highest target recall
 figures/latency.pdf       recall against the requested list size, and mean latency against recall (appendix)
-Data: data/gist_compare.csv, data/ablation.csv, data/latency.csv (experiments/baselines/export_eval_extra.py).
+Data: data/gist_compare.csv, data/memory_gist.csv, data/ablation.csv, data/latency.csv (experiments/baselines/export_eval_extra.py).
 """
 import csv
 import os
@@ -43,23 +43,17 @@ def top_legend(fig, axes, ncol, top):
     fig.tight_layout(rect=(0, 0, 1, top))
 
 
-def gist_compare():
+def tables():
+    """Tables 2 and 3: QPS (and disk reads per query) at 95% recall, interpolated along each measured curve."""
     rows = load("gist_compare.csv")
-    fig, axes = plt.subplots(1, 2, figsize=(6.8, 3.3))
-    for ax, R in zip(axes, (32, 48)):
-        for method, key in (("DiskANN", "DiskANN"), ("PipeANN", "PipeANN-W4"), ("MCGI", "MCGI")):
-            c = curve(rows, R=R, method=key)
-            c = c[c[:, 0] >= 83]
-            ax.plot(c[:, 0], c[:, 1], label=method, **STYLE[method])
-        ax.set_xlim(85, 99.5 if R == 48 else 98)
-        ax.set_ylim(bottom=0)
-        ax.set_title(f"GIST1M, $R = {R}$", fontsize=17)
-        ax.set_xlabel("Recall@10 (%)")
-        ax.xaxis.set_major_locator(plt.MaxNLocator(4, integer=True))
-        ax.grid(True, linestyle="--", alpha=0.3)
-    axes[0].set_ylabel("QPS (queries/s)")
-    top_legend(fig, axes, 3, 0.86)
-    fig.savefig(os.path.join(FIG, "gist_compare.pdf"), bbox_inches="tight")
+    for R in (32, 48):
+        for method in ("DiskANN", "PipeANN-W4", "PipeANN-W32", "MCGI"):
+            c = curve(rows, R=R, method=method)
+            io = curve(rows, y="mean_ios", R=R, method=method)
+            print(f"R={R} {method}: QPS {at(c, 95):.0f}, reads {at(io, 95):.1f}")
+    rows = load("memory_gist.csv")
+    for method in sorted({r["method"] for r in rows}):
+        print(f"{method}: QPS {at(curve(rows, method=method), 95):.0f}")
 
 
 def ablation():
@@ -143,6 +137,6 @@ def latency():
 
 
 if __name__ == "__main__":
-    gist_compare()
+    tables()
     ablation()
     latency()
