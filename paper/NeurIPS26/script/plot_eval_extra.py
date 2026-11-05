@@ -74,11 +74,11 @@ def ablation():
 
     # feature ablation (one figure)
     fig, ax = plt.subplots(figsize=(4.6, 2.9))
-    variants = [("full", "MCGI", "#5B3B9E"), ("lid", "No distance", "#9C86C9"), ("nolid", "No LID", "#8C8C8C"),
-                ("random", "Random", "#D9B45A")]
+    variants = [("full", "MCGI", "#5B3B9E", ""), ("lid", "No distance", "#9C86C9", "///"),
+                ("nolid", "No LID", "#8C8C8C", "\\\\\\"), ("random", "Random", "#D9B45A", "...")]
     x = np.arange(len(DS))
-    for i, (v, label, color) in enumerate(variants):
-        ax.bar(x + (i - 1.5) * 0.2, [gain[ds, v] for ds in DS], 0.2, label=label, color=color,
+    for i, (v, label, color, hatch) in enumerate(variants):
+        ax.bar(x + (i - 1.5) * 0.2, [gain[ds, v] for ds in DS], 0.2, label=label, color=color, hatch=hatch,
                edgecolor="black", linewidth=0.6)
     ax.set_xticks(x, [DS[ds][0] for ds in DS])
     ax.set_ylabel("QPS gain")
