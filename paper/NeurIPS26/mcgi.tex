@@ -350,11 +350,13 @@ The adaptation adds no disk reads, because every feature reuses distances that t
 \section{Evaluation}
 \label{sec:experiments}
 
-All experiments run on a cloud virtual machine with 192 virtual cores of Intel Xeon Platinum 8468 and 960 GiB of RAM, where the disk-resident indexes reside on a 17.6 TB virtual block device (virtio). Each search reads graph nodes from this device with direct I/O, with a measured I/O time of about 0.34 ms per read at 32 search threads; consequently, the throughput of DiskANN and \ours{}, which share one I/O engine, follows their number of disk reads per query. We evaluate \ours{} on three million-scale benchmarks with dimensionality from 100 to 960, namely SIFT1M~\cite{jegou2011product}, GloVe-100~\cite{pennington2014glove}, and GIST1M~\cite{jegou2011product}, and on the billion-scale SIFT1B~\cite{jegou2011searching} and Deep1B~\cite{babenko2016efficient}. The main baseline is DiskANN (Vamana)~\cite{subramanya2019diskann}, which searches the same index with a fixed candidate list. On GIST1M, the comparison further includes the pipelined disk-resident search of PipeANN~\cite{osdi25pipeann} and the in-memory indexes HNSW~\cite{malkov2018efficient}, IVF-Flat~\cite{johnson2019billion}, and CSPG~\cite{NEURIPS2024_bab1486c}. More setup details are in Appendix~\ref{appendix:setup}.
+All experiments run on a cloud virtual machine with 192 virtual cores of Intel Xeon Platinum 8468 and 960 GiB of RAM, where the disk-resident indexes reside on a 17.6 TB virtual block device (virtio). Each search reads graph nodes from this device with direct I/O, with a measured I/O time of about 0.34 ms per read at 32 search threads; consequently, the throughput of DiskANN and \ours{}, which share one I/O engine, follows their number of disk reads per query. We evaluate \ours{} on three million-scale benchmarks with dimensionality from 100 to 960, namely SIFT1M~\cite{jegou2011product}, GloVe-100~\cite{pennington2014glove}, and GIST1M~\cite{jegou2011product}, and on the billion-scale SIFT1B~\cite{jegou2011searching} and Deep1B~\cite{babenko2016efficient}. The baselines are the fixed-list search of DiskANN (Vamana)~\cite{subramanya2019diskann} on the same index, the pipelined disk-resident search of PipeANN~\cite{osdi25pipeann}, and the in-memory indexes HNSW~\cite{malkov2018efficient}, IVF-Flat~\cite{johnson2019billion}, and CSPG~\cite{NEURIPS2024_bab1486c}; the latter four run on GIST1M. More setup details are in Appendix~\ref{appendix:setup}.
 
 \subsection{Million-scale Effectiveness}
 
-We compare \ours{} with DiskANN on a single index per dataset, so that the two methods differ only in the candidate list of each query. Both methods search an index built with the standard Vamana pruning rule, using the same compressed vectors and the same requested list sizes $\bar{L}$ from 10 to 400. The weights of Eq.~\eqref{eq:adaptive_list} come from 10{,}000 calibration queries per dataset, which are disjoint from the official evaluation queries. Each method runs once per list size on an otherwise idle machine, with the page cache dropped before each run.
+On each million-scale dataset, \ours{} and the fixed-list search of DiskANN run on one shared index, so that the two differ only in the candidate list of each query. Both methods search an index built with the standard Vamana pruning rule, using the same compressed vectors and the same requested list sizes $\bar{L}$ from 10 to 400. The weights of Eq.~\eqref{eq:adaptive_list} come from 10{,}000 calibration queries per dataset, which are disjoint from the official evaluation queries. Each method runs once per list size on an otherwise idle machine, with the page cache dropped before each run.
+
+Figure~\ref{fig:results} plots the query throughput against Recall@10 for the two methods. \ours{} raises the throughput of DiskANN on all three million-scale datasets, with an improvement that grows with the target recall. On SIFT1M, the gain rises from $1.15\times$ at 95\% recall to $1.33\times$ at 99\%. GloVe-100 and GIST1M follow the same trend, with gains from $1.12\times$ at 80\% to $1.43\times$ at 90\% and from $1.12\times$ at 85\% to $1.20\times$ at 95\%, respectively. The growth with recall agrees with Proposition~\ref{prop:fixed_beam}, because a high target recall forces a fixed search to use a long list for every query, including the many queries in low-LID regions that converge early. \ours{} shortens the lists of these queries and lengthens the lists of queries in high-LID regions, which removes disk reads that do not improve the result.
 
 \begin{figure*}[t]
     \centering
@@ -363,61 +365,88 @@ We compare \ours{} with DiskANN on a single index per dataset, so that the two m
     \label{fig:results}
 \end{figure*}
 
-Figure~\ref{fig:results} plots the query throughput against Recall@10 for the two methods. \ours{} raises the throughput of DiskANN on all three million-scale datasets, with an improvement that grows with the target recall. On SIFT1M, the gain rises from $1.15\times$ at 95\% recall to $1.33\times$ at 99\%. GloVe-100 and GIST1M follow the same trend, with gains from $1.12\times$ at 80\% to $1.43\times$ at 90\% and from $1.12\times$ at 85\% to $1.20\times$ at 95\%, respectively. The growth with recall agrees with Proposition~\ref{prop:fixed_beam}, because a high target recall forces a fixed search to use a long list for every query, including the many queries in low-LID regions that converge early. \ours{} shortens the lists of these queries and lengthens the lists of queries in high-LID regions, which removes disk reads that do not improve the result.
 
 \subsection{Billion-scale Scalability}
 
 We build one DiskANN index for each of SIFT1B and Deep1B with the standard sharded construction under a memory budget of 300 GiB. The construction splits the 8-bit vectors of SIFT1B into three overlapping shards and completes in 4.8 hours on the CPU cores of the platform, while the 32-bit vectors of Deep1B need seven shards and 5.4 hours. Both methods again search the same index, which uses $R = 32$, $L_{build} = 50$, and 31-byte PQ codes. The calibration queries of each dataset are the even-indexed half of its 10{,}000 official queries, whereas the evaluation uses the odd-indexed half. The requested list sizes extend to $\bar{L} = 1{,}000$ on SIFT1B and to $\bar{L} = 2{,}000$ on Deep1B, since DiskANN needs a list longer than 400 on SIFT1B and longer than 800 on Deep1B to reach 95\% recall.
 
-\begin{figure*}[t]
+\begin{figure}[t]
     \centering
-    \includegraphics[width=0.49\textwidth]{figures/recall_qps_1b.pdf}
-    \hfill
-    \includegraphics[width=0.49\textwidth]{figures/gist_compare.pdf}
-    \caption{Recall-QPS at one billion vectors (left) and of disk-resident indexes on GIST1M (right).}
+    \includegraphics[width=0.67\textwidth]{figures/recall_qps_1b.pdf}
+    \caption{Recall-QPS trade-off of \ours{} and DiskANN on SIFT1B and Deep1B.}
     \label{fig:results_1b}
-    \label{fig:gist_compare}
-\end{figure*}
+\end{figure}
 
-The left two panels of Figure~\ref{fig:results_1b} show that the gain of \ours{} persists at one billion vectors on both datasets and again grows with the target recall. On SIFT1B, \ours{} raises the throughput of DiskANN from $1.07\times$ at 85\% recall to $1.17\times$ at 95\% and to $1.22\times$ at 97\%, where the throughput rises from 115 to 141 queries per second. Deep1B follows the same trend with gains from $1.08\times$ at 85\% to $1.18\times$ at 95\% and to $1.24\times$ at 97\%, where the throughput rises from 58 to 72 queries per second. At the longest list that we evaluate, DiskANN stays below 98\% recall on both datasets, whereas \ours{} reaches 98.2\% on each of them, at 89 queries per second on SIFT1B and 42 on Deep1B.
+Figure~\ref{fig:results_1b} shows that the gain of \ours{} persists at one billion vectors on both datasets and again grows with the target recall. On SIFT1B, \ours{} raises the throughput of DiskANN from $1.07\times$ at 85\% recall to $1.17\times$ at 95\% and to $1.22\times$ at 97\%, where the throughput rises from 115 to 141 queries per second. Deep1B follows the same trend with gains from $1.08\times$ at 85\% to $1.18\times$ at 95\% and to $1.24\times$ at 97\%, where the throughput rises from 58 to 72 queries per second. At the longest list that we evaluate, DiskANN stays below 98\% recall on both datasets, whereas \ours{} reaches 98.2\% on each of them, at 89 queries per second on SIFT1B and 42 on Deep1B.
 
 \subsection{Comparison with Pipelined and In-memory Search}
 
-We compare \ours{} with PipeANN~\cite{osdi25pipeann, fast26odinann}, which overlaps the disk reads of each query in a pipelined beam search, on GIST1M with $R = 32$ and $R = 48$. PipeANN searches the same DiskANN index files as DiskANN and \ours{}, with 32 threads, its in-memory entry-point index built from a 1\% sample, and the better of the I/O widths 4 and 32. HNSW~\cite{malkov2018efficient}, IVF-Flat~\cite{johnson2019billion}, and CSPG~\cite{NEURIPS2024_bab1486c} serve as in-memory references, since they keep every full-precision vector in RAM.
+On GIST1M, two groups of baselines complement the fixed-list search of DiskANN, and both are compared at 95\% Recall@10. The first group is the pipelined disk-resident search of PipeANN~\cite{osdi25pipeann, fast26odinann}, which overlaps the disk reads of each query; PipeANN searches the same DiskANN index files as \ours{} with 32 threads, an in-memory entry-point index built from a 1\% sample, and the better of the I/O widths 4 and 32. The second group consists of the in-memory indexes HNSW~\cite{malkov2018efficient}, IVF-Flat~\cite{johnson2019billion}, and CSPG~\cite{NEURIPS2024_bab1486c}, which keep every full-precision vector in RAM and therefore show the speed that a disk-resident index gives up for its small memory footprint. Table~\ref{tab:gist_compare} covers the first group, whereas Table~\ref{tab:memory_compare} covers the second.
 
 \begin{table}[t]
 \centering
 \small
-\caption{QPS and disk reads per query on GIST1M at 95\% Recall@10 ($^\dagger$in memory).}
+\begin{minipage}[t]{0.54\textwidth}
+\centering
+\caption{QPS and disk reads per query at 95\% recall.}
 \label{tab:gist_compare}
-\begin{tabular}{llcccccc}
+\begin{tabular}{lcccc}
 \toprule
-$R$ & Metric & DiskANN & PipeANN & \ours{} & CSPG$^\dagger$ & HNSW$^\dagger$ & IVF-Flat$^\dagger$ \\
+ & \multicolumn{2}{c}{$R = 32$} & \multicolumn{2}{c}{$R = 48$} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5}
+Method & QPS & Reads & QPS & Reads \\
 \midrule
-32 & QPS   & 351   & 545   & 420            & 5{,}742 & 6{,}678 & 1{,}292 \\
-   & Reads & 272.7 & 268.3 & \textbf{223.7} & --      & --      & --      \\
-\midrule
-48 & QPS   & 659   & 780   & \textbf{785}   & 9{,}107 & --      & 1{,}292 \\
-   & Reads & 146.7 & 143.8 & \textbf{125.5} & --      & --      & --      \\
+DiskANN & 351 & 272.7 & 659 & 146.7 \\
+PipeANN & \textbf{545} & 268.3 & 780 & 143.8 \\
+\ours{} & 420 & \textbf{223.7} & \textbf{785} & \textbf{125.5} \\
 \bottomrule
 \end{tabular}
+\end{minipage}
+\hfill
+\begin{minipage}[t]{0.44\textwidth}
+\centering
+\caption{QPS and RAM at 95\% recall.}
+\label{tab:memory_compare}
+\begin{tabular}{lcc}
+\toprule
+Method & QPS & RAM \\
+\midrule
+IVF-Flat & 1{,}292 & 3.84~GB \\
+CSPG ($R = 32$) & 5{,}742 & 3.84~GB \\
+HNSW ($M = 16$) & 6{,}678 & 3.84~GB \\
+CSPG ($R = 48$) & 9{,}107 & 3.84~GB \\
+\ours{} ($R = 48$) & 785 & 0.32~GB \\
+\bottomrule
+\end{tabular}
+\end{minipage}
 \end{table}
 
+Against pipelined search, \ours{} issues the fewest disk reads per query, whereas PipeANN gains its speed by overlapping the reads that it issues. Table~\ref{tab:gist_compare} shows that \ours{} reads 13--18\% fewer nodes per query than DiskANN and PipeANN, whose reads differ by at most 2\%. By overlapping its reads, PipeANN reaches a higher throughput with $R = 32$, while \ours{} matches it with $R = 48$. Because the two techniques act on different costs, the query-adaptive list can also size the candidate list of a pipelined search.
 
-The right two panels of Figure~\ref{fig:gist_compare} and Table~\ref{tab:gist_compare} show that \ours{} issues the fewest disk reads of the three disk-resident methods. At 95\% recall, \ours{} reads 224 nodes per query with $R = 32$ and 126 with $R = 48$, 13--18\% fewer than both DiskANN and PipeANN, whose reads differ by at most 2\%. By overlapping these reads, PipeANN reaches a higher throughput at $R = 32$, with 545 queries per second against 420 for \ours{}. With $R = 48$, \ours{} matches PipeANN at 95\% recall with 785 against 780 queries per second and surpasses it at 97\% recall with 564 against 521. Because PipeANN shortens the wait for each read and \ours{} removes reads, the two techniques act on different costs; hence, the query-adaptive list can also size the candidate list of a pipelined search. The in-memory indexes reach 1{,}292 to 9{,}107 queries per second at 95\% recall, at the price of holding the 3.84~GB of full-precision vectors in RAM, whereas the disk-resident methods hold mainly the 322~MB of PQ codes.
+The in-memory indexes exceed every disk-resident method in throughput, at the price of a memory footprint that grows with the full-precision vectors. Table~\ref{tab:memory_compare} shows that they serve 1{,}292 to 9{,}107 queries per second, whereas \ours{} serves 785. In exchange, the in-memory indexes hold the 3.84~GB of full-precision vectors in RAM, whereas \ours{} holds mainly the 0.32~GB of PQ codes; this trade-off motivates disk-resident indexes at billion scale.
 
 \subsection{Ablation and Sensitivity}
 
-Figure~\ref{fig:ablation} attributes the gain of \ours{} at the highest target recall of each million-scale dataset, namely 99\% on SIFT1M, 90\% on GloVe-100, and 95\% on GIST1M. Each variant is fitted on the same calibration queries and searched once on the same index as DiskANN. The random variant keeps the fitted list sizes of \ours{} in distribution but assigns them to queries at random, which lowers the throughput to $0.72\times$--$0.84\times$ that of DiskANN. The gain therefore comes from matching each list to the geometry of its query, not from varying the list size. The two LID features alone retain gains of $1.18\times$--$1.33\times$; similarly, a model that uses only the first and tenth expanded distances and the candidate count retains $1.25\times$--$1.37\times$, because the LID estimate is a function of these distances.
+Figure~\ref{fig:ablation} attributes the gain of \ours{} at the highest target recall of each million-scale dataset, namely 99\% on SIFT1M, 90\% on GloVe-100, and 95\% on GIST1M. Each variant is fitted on the same calibration queries and searched once on the same index as DiskANN. The random variant keeps the fitted list sizes of \ours{} in distribution but assigns them to queries at random, which lowers the throughput to $0.72\times$--$0.84\times$ that of DiskANN. The gain therefore comes from matching each list to the geometry of its query, not from varying the list size. Removing a single feature group, in contrast, changes the gain of \ours{} by only a few percent. Without the three distance features, which are the first and tenth expanded distances and the candidate count, the gain falls by 1--7\%, with the largest drop on GloVe-100 from $1.43\times$ to $1.33\times$. Without the two LID features, it falls by 4\% on SIFT1M and GloVe-100 and rises by 5\% on GIST1M. The two groups therefore carry largely the same information, because the LID estimate is a function of these distances.
 
 \begin{figure*}[t]
     \centering
-    \includegraphics[width=\textwidth]{figures/ablation.pdf}
-    \caption{QPS gain of \ours{} variants over DiskANN at the highest target recall of each dataset.}
-    \label{fig:ablation}
+    \begin{minipage}[t]{0.46\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/ablation_features.pdf}
+        \caption{Removing LID or distance features.}
+        \label{fig:ablation}
+    \end{minipage}
+    \hfill
+    \begin{minipage}[t]{0.52\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{figures/ablation_sensitivity.pdf}
+        \caption{Sensitivity to $\gamma$ and $n_0$.}
+        \label{fig:sensitivity}
+    \end{minipage}
 \end{figure*}
 
-The last two panels of Figure~\ref{fig:ablation} vary the strength $\gamma$ of Eq.~\eqref{eq:adaptive_list} from 0.5 to 1.3 and the checkpoint $n_0$ from 12 to 48 expansions around the calibrated setting. Every setting keeps a gain of at least $1.17\times$, with the calibrated setting within $0.08\times$ of the best setting on each dataset. Consequently, neither parameter needs careful tuning, so that the default $n_0 = 24$ serves all datasets.
+Figure~\ref{fig:sensitivity} varies the strength $\gamma$ of Eq.~\eqref{eq:adaptive_list} from 0.5 to 1.3 and the checkpoint $n_0$ from 12 to 48 expansions around the calibrated setting. Every setting keeps a gain of at least $1.17\times$, with the calibrated setting within $0.08\times$ of the best setting on each dataset. Consequently, neither parameter needs careful tuning, so that the default $n_0 = 24$ serves all datasets.
 
 \section{Conclusion}
 
@@ -428,7 +457,7 @@ MCGI addresses the Euclidean-Geodesic mismatch by adapting the candidate list of
 
 \begin{ack}
 Results presented in this paper were obtained using the Chameleon testbed supported by the National Science Foundation.
-The author appreciates the feedback and praise from early users around the world (e.g., South Korea, New Zealand) of MCGI and AdaDisk (the parent project of MCGI), without which the author would not have been able to continue improving the system and pushing the performance boundary.
+% The author appreciates the feedback and praise from early users around the world (e.g., South Korea, New Zealand) of MCGI and AdaDisk (the parent project of MCGI), without which the author would not have been able to continue improving the system and pushing the performance boundary.
 Copilot and Claude assisted with the system implementation, the experiments, and the writing of this paper; the author verified all results and takes full responsibility for the content. 
 
 The source code of MCGI is available at \url{https://github.com/hpdic/mcgi}. 
@@ -749,7 +778,7 @@ The calibration queries of the query-adaptive search list are disjoint from the 
 \paragraph{Baselines}
 We compare \ours{} against DiskANN (Vamana)~\cite{subramanya2019diskann} on every dataset and, on GIST1M, additionally against PipeANN~\cite{osdi25pipeann, fast26odinann}, CSPG~\cite{NEURIPS2024_bab1486c}, HNSW~\cite{malkov2018efficient}, and IVF-Flat~\cite{johnson2019billion}. DiskANN is the standard disk-resident graph index; \ours{} and DiskANN search the same index file with the same compressed vectors, the same beam width, and the same requested list sizes. The comparison with DiskANN therefore isolates the query-adaptive search list of \ours{}, since the index, the I/O path, and the distance computation are identical. Each of the four GIST1M baselines searches the 1{,}000 official queries with 32 threads once per setting, with the following configurations.
 \begin{itemize}
-    \item PipeANN~\cite{osdi25pipeann, fast26odinann} (pipelined search with \texttt{io\_uring}) searches the DiskANN index files of \ours{} with requested list sizes from 10 to 400 and I/O widths 4 and 32, of which width 4 gives the higher throughput and enters Figure~\ref{fig:gist_compare}. Its entry-point index is built from a 1\% sample of the base vectors; in addition, its per-vector PQ limit is raised from 256 to 512 bytes so that it loads the 322-byte codes of the GIST1M indexes.
+    \item PipeANN~\cite{osdi25pipeann, fast26odinann} (pipelined search with \texttt{io\_uring}) searches the DiskANN index files of \ours{} with requested list sizes from 10 to 400 and I/O widths 4 and 32, of which width 4 gives the higher throughput and enters Table~\ref{tab:gist_compare}. Its entry-point index is built from a 1\% sample of the base vectors; in addition, its per-vector PQ limit is raised from 256 to 512 bytes so that it loads the 322-byte codes of the GIST1M indexes.
     \item CSPG~\cite{NEURIPS2024_bab1486c} uses the official implementation with the settings of its authors for GIST1M, namely two partitions of Vamana subgraphs, a construction list of 128, $\alpha = 1.2$, and a duplication ratio of 0.5, with $R = 32$ and $R = 48$. Its parallel search assigns queries to threads in blocks of 64; the 1{,}000 GIST1M queries therefore occupy at most 16 of the 32 threads.
     \item HNSW~\cite{malkov2018efficient} uses hnswlib with $M = 16$, which bounds the degree of the base layer by 32, and a construction list of 200.
     \item IVF-Flat~\cite{johnson2019billion} uses Faiss with 4{,}096 lists and full-precision vectors.

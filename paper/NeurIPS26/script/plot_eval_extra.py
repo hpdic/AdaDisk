@@ -1,7 +1,7 @@
 """Comparison, ablation, and latency figures of the evaluation.
 
 figures/gist_compare.pdf  Recall-QPS of DiskANN, PipeANN, and MCGI on the same GIST1M index (R = 32 and 48)
-figures/ablation.pdf      QPS gain of MCGI variants over DiskANN on the same index, at the highest target recall
+figures/ablation_features.pdf, ablation_sensitivity.pdf  QPS gain of MCGI variants over DiskANN on the same index, at the highest target recall
 figures/latency.pdf       recall against the requested list size, and mean latency against recall (appendix)
 Data: data/gist_compare.csv, data/ablation.csv, data/latency.csv (experiments/baselines/export_eval_extra.py).
 """
@@ -69,42 +69,48 @@ def ablation():
         base = at(curve(rows, dataset=ds, variant="stock"), t)
         for v in {r["variant"] for r in rows if r["dataset"] == ds}:
             gain[ds, v] = at(curve(rows, dataset=ds, variant=v), t) / base
-    gamma_main = {"sift": 0.7, "glove": 1.0, "gist": 0.7}
-    fig, axes = plt.subplots(1, 3, figsize=(11.0, 2.7), gridspec_kw={"width_ratios": [1.4, 1, 1]})
-    variants = [("full", "MCGI", "#5B3B9E"), ("lid", "LID only", "#9C86C9"), ("nolid", "No LID", "#8C8C8C"),
+    kw = dict(frameon=True, edgecolor="black", facecolor="white", framealpha=1.0, fontsize=13, columnspacing=0.7,
+              handlelength=1.2)
+
+    # feature ablation (one figure)
+    fig, ax = plt.subplots(figsize=(4.6, 2.9))
+    variants = [("full", "MCGI", "#5B3B9E"), ("lid", "No distance", "#9C86C9"), ("nolid", "No LID", "#8C8C8C"),
                 ("random", "Random", "#D9B45A")]
     x = np.arange(len(DS))
     for i, (v, label, color) in enumerate(variants):
-        axes[0].bar(x + (i - 1.5) * 0.2, [gain[ds, v] for ds in DS], 0.2, label=label, color=color,
-                    edgecolor="black", linewidth=0.6)
-    axes[0].set_xticks(x, [DS[ds][0] for ds in DS])
-    axes[0].set_ylabel("QPS gain")
-    axes[0].set_ylim(0.6, 1.55)
+        ax.bar(x + (i - 1.5) * 0.2, [gain[ds, v] for ds in DS], 0.2, label=label, color=color,
+               edgecolor="black", linewidth=0.6)
+    ax.set_xticks(x, [DS[ds][0] for ds in DS])
+    ax.set_ylabel("QPS gain")
+    ax.set_ylim(0.6, 1.55)
+    ax.axhline(1.0, color="black", linewidth=1)
+    ax.grid(True, axis="y", linestyle="--", alpha=0.3)
+    fig.legend(*ax.get_legend_handles_labels(), loc="upper center", bbox_to_anchor=(0.5, 1.0), ncol=2, **kw)
+    fig.tight_layout(rect=(0, 0, 1, 0.78))
+    fig.savefig(os.path.join(FIG, "ablation_features.pdf"), bbox_inches="tight")
 
+    # sensitivity to gamma and n0 (one figure, two panels)
+    gamma_main = {"sift": 0.7, "glove": 1.0, "gist": 0.7}
+    fig, axes = plt.subplots(1, 2, figsize=(5.4, 2.9))
     marks = {"sift": "o", "glove": "s", "gist": "^"}
     for ds in DS:
         g = [(gm, gain[ds, "full"] if gm == gamma_main[ds] else gain[ds, f"g{gm:g}"]) for gm in (0.5, 0.7, 1.0, 1.3)]
-        axes[1].plot([a for a, _ in g], [b for _, b in g], marker=marks[ds], label=DS[ds][0], color="#5B3B9E",
+        axes[0].plot([a for a, _ in g], [b for _, b in g], marker=marks[ds], label=DS[ds][0], color="#5B3B9E",
                      linestyle="-", alpha={"sift": 1.0, "glove": 0.65, "gist": 0.4}[ds])
         n = [(12, gain[ds, "n12"]), (24, gain[ds, "full"]), (48, gain[ds, "n48"])]
-        axes[2].plot([a for a, _ in n], [b for _, b in n], marker=marks[ds], label=DS[ds][0], color="#5B3B9E",
+        axes[1].plot([a for a, _ in n], [b for _, b in n], marker=marks[ds], label=DS[ds][0], color="#5B3B9E",
                      linestyle="-", alpha={"sift": 1.0, "glove": 0.65, "gist": 0.4}[ds])
-    axes[1].set_xlabel(r"Strength $\gamma$")
-    axes[1].set_xticks([0.5, 0.7, 1.0, 1.3])
-    axes[2].set_xlabel(r"Checkpoint $n_0$")
-    axes[2].set_xticks([12, 24, 48])
-    for ax in axes[1:]:
-        ax.set_ylim(1.0, 1.55)
-
+    axes[0].set_xlabel(r"Strength $\gamma$")
+    axes[0].set_xticks([0.5, 0.7, 1.0, 1.3])
+    axes[0].set_ylabel("QPS gain")
+    axes[1].set_xlabel(r"Checkpoint $n_0$")
+    axes[1].set_xticks([12, 24, 48])
     for ax in axes:
-        ax.axhline(1.0, color="black", linewidth=1)
+        ax.set_ylim(1.0, 1.55)
         ax.grid(True, axis="y", linestyle="--", alpha=0.3)
-    kw = dict(frameon=True, edgecolor="black", facecolor="white", framealpha=1.0, fontsize=13, columnspacing=0.7,
-              handlelength=1.2)
-    fig.legend(*axes[0].get_legend_handles_labels(), loc="upper left", bbox_to_anchor=(0.0, 1.0), ncol=4, **kw)
-    fig.legend(*axes[1].get_legend_handles_labels(), loc="upper right", bbox_to_anchor=(1.0, 1.0), ncol=3, **kw)
-    fig.tight_layout(rect=(0, 0, 1, 0.86))
-    fig.savefig(os.path.join(FIG, "ablation.pdf"), bbox_inches="tight")
+    fig.legend(*axes[0].get_legend_handles_labels(), loc="upper center", bbox_to_anchor=(0.5, 1.0), ncol=3, **kw)
+    fig.tight_layout(rect=(0, 0, 1, 0.84))
+    fig.savefig(os.path.join(FIG, "ablation_sensitivity.pdf"), bbox_inches="tight")
     for k in sorted(gain):
         print(k, round(gain[k], 3))
 
