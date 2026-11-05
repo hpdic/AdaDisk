@@ -84,7 +84,7 @@ Theoretical metrics such as the doubling dimension~\cite{gupta2003bounded} and e
 \section{Methodology} 
 \label{method}
 
-Greedy routing needs more steps to find a descent direction where the local intrinsic dimensionality (LID) around the target is high. \ours{} therefore spends more of the resources of a disk-resident graph index where the LID is high and fewer where it is low. During search, \ours{} gives a query with a high LID a longer candidate list and a query with a low LID a shorter one, because a fixed list fails on the first kind of query and wastes disk reads on the second. During construction, \ours{} can apply the same rule to the pruning parameter of each node: a node with a high LID receives a larger pruning parameter, which relaxes the pruning test for its candidate edges. Under the degree bound of the index, nodes typically fill their neighbor lists with either parameter, so that this construction-time rule mainly changes the choice of edges of a node. The search-time rule applies to any Vamana index, regardless of how the index was built.
+Greedy routing needs more steps to find a descent direction where the local intrinsic dimensionality (LID) around the target is high. \ours{} therefore spends more of the resources of a disk-resident graph index where the LID is high and fewer where it is low. During search, \ours{} gives a query with a high LID a longer candidate list and a query with a low LID a shorter one, because a fixed list fails on the first kind of query and wastes disk reads on the second. During construction, \ours{} can apply the same rule to the pruning parameter of each node: a node with a high LID receives a larger pruning parameter, which relaxes the pruning test for its candidate edges. Under the degree bound of the index, nodes typically fill their neighbor lists with either parameter; this construction-time rule thus mainly changes the choice of edges of a node. The search-time rule applies to any Vamana index, regardless of how the index was built.
 
 \subsection{Mapping Function from LID to Pruning Parameter}
 \label{subsec:mapping}
@@ -284,7 +284,7 @@ Consider a query $q$ and a beam search toward $q$, and model each expansion of t
 A search algorithm is \emph{recall-optimal} if it uses the list size $L^*(q)$ for every query $q$.
 \end{definition}
 
-The list size $L^*(q)$ grows exponentially with the LID of $q$, because the success probability $P_{\mathrm{success}}(q)$ in its denominator decays exponentially with the LID. Specifically, one expansion evaluates at most $R$ neighbors, where $R$ is the maximum out-degree of the index. Lemma~\ref{lemma:complexity} bounds the probability that one neighbor yields a descent step by $\kappa_0\, \mathrm{LID}(q)^{-1/2} \exp(-\lambda \cdot \mathrm{LID}(q))$, where $\lambda > 0$ and $\kappa_0 > 0$ are the constants of the lemma. The union bound over these at most $R$ neighbors, together with $\mathrm{LID}(q) \ge 1$, then gives
+The list size $L^*(q)$ grows exponentially with the LID of $q$, because the success probability $P_{\mathrm{success}}(q)$ in its denominator, which counts one expansion rather than one neighbor, decays exponentially with the LID. Specifically, one expansion evaluates at most $R$ neighbors, where $R$ is the maximum out-degree of the index. Lemma~\ref{lemma:complexity} bounds the probability that one neighbor yields a descent step by $\kappa_0\, \mathrm{LID}(q)^{-1/2} \exp(-\lambda \cdot \mathrm{LID}(q))$, where $\lambda > 0$ and $\kappa_0 > 0$ are the constants of the lemma. The union bound over these at most $R$ neighbors, together with $\mathrm{LID}(q) \ge 3$, then gives
 \begin{equation}
     L^*(q) \ge C_\delta \cdot \exp\!\left(\lambda \cdot \mathrm{LID}(q)\right), \qquad C_\delta = \frac{\ln(1/\delta)}{R\, \kappa_0}.
     \label{eq:oracle_schedule}
@@ -405,11 +405,12 @@ PipeANN & \textbf{545} & 268.3 & 780 & 143.8 \\
 \hfill
 \begin{minipage}[t]{0.44\textwidth}
 \centering
-\caption{QPS and RAM at 95\% recall.}
+\caption{QPS and vector RAM at 95\% recall.}
 \label{tab:memory_compare}
+\setlength{\tabcolsep}{4pt}
 \begin{tabular}{lcc}
 \toprule
-Method & QPS & RAM \\
+Method & QPS & Vectors in RAM \\
 \midrule
 IVF-Flat & 1{,}292 & 3.84~GB \\
 CSPG ($R = 32$) & 5{,}742 & 3.84~GB \\
@@ -446,12 +447,12 @@ Figure~\ref{fig:ablation} attributes the gain of \ours{} at the highest target r
     \end{minipage}
 \end{figure*}
 
-Figure~\ref{fig:sensitivity} varies the strength $\gamma$ of Eq.~\eqref{eq:adaptive_list} from 0.5 to 1.3 and the checkpoint $n_0$ from 12 to 48 expansions around the calibrated setting. Every setting keeps a gain of at least $1.17\times$, with the calibrated setting within $0.08\times$ of the best setting on each dataset. Consequently, neither parameter needs careful tuning, so that the default $n_0 = 24$ serves all datasets.
+Figure~\ref{fig:sensitivity} varies the strength $\gamma$ of Eq.~\eqref{eq:adaptive_list} from 0.5 to 1.3 and the checkpoint $n_0$ from 12 to 48 expansions around the setting of Figure~\ref{fig:results}. Every setting keeps a gain of at least $1.17\times$, and the setting of Figure~\ref{fig:results} lies within $0.08\times$ of the best setting on each dataset. Neither parameter therefore needs careful tuning, and the default $n_0 = 24$ serves all datasets.
 
 \section{Conclusion}
 
 This paper presents MCGI, a geometry-aware disk-resident indexing method for high-dimensional data of varying intrinsic dimensionality.
-MCGI addresses the Euclidean-Geodesic mismatch by adapting the candidate list of each query, and optionally the pruning parameter of each node, to local intrinsic dimensionality. Our theoretical analysis shows that the success probability of any fixed beam width decays exponentially with the LID of the query, which motivates a query-adaptive list that approximates the iso-recall schedule from distances that the search has already computed. At matched high recall, MCGI raises the throughput of DiskANN by up to $1.43\times$ on benchmarks of 96 to 960 dimensions and by up to $1.24\times$ at one billion vectors.
+MCGI addresses the Euclidean-Geodesic mismatch by adapting the candidate list of each query, and optionally the pruning parameter of each node, to local intrinsic dimensionality. Our theoretical analysis shows that the success probability of any fixed beam width decays exponentially with the LID of the query, which motivates a query-adaptive list that approximates the iso-recall schedule from distances that the search has already computed. At matched high recall, MCGI raises the throughput of DiskANN by up to $1.43\times$ on three million-scale benchmarks and by up to $1.24\times$ at one billion vectors.
 
 % Our future work will explore several promising directions. First, we plan to extend the MCGI framework to support dynamic updates, enabling efficient insertions and deletions while maintaining manifold-consistent routing. Second, we aim to investigate more sophisticated geometric metrics beyond LID, such as curvature or local density estimates, to further refine the pruning strategy. Finally, we will explore the integration of MCGI with emerging hardware accelerators (e.g., NVMe SSDs with built-in compute capabilities) to push the boundaries of disk-resident indexing performance.
 
@@ -839,7 +840,7 @@ Figure~\ref{fig:latency} plots the recall of \ours{} and DiskANN against the req
 \end{figure*}
 
 \paragraph{Offline Cost}
-Table~\ref{tab:offline_cost} lists the offline cost of each index, where every build runs alone on the platform with 192 threads and the calibration runs alone with 32 search threads. For the million-scale datasets, the table reports a separate rebuild with the same parameters, because the evaluated indexes were built while other jobs shared the machine. The training of the PQ codebooks dominates the build of the million-scale indexes, whereas the graph construction over the shards and their merge dominates at one billion vectors. The only offline step that \ours{} adds is the calibration of Eq.~\eqref{eq:adaptive_list}, which searches the calibration queries once at each list size of a fixed grid and then fits the weights by ridge regression within seconds. The grid has 14 list sizes from 10 to 400 for the million-scale datasets and SIFT1B, and 18 list sizes from 10 to 1{,}000 for Deep1B. Calibration takes about 3 minutes on each million-scale dataset, and 1.6 and 4.8 minutes on SIFT1B and Deep1B, which is at most 1.5\% of the build time of a billion-scale index.
+Table~\ref{tab:offline_cost} lists the offline cost of each index, where every build runs alone on the platform with 192 threads and the calibration runs alone with 32 search threads. For the million-scale datasets, the table reports a separate rebuild with the same parameters, because the evaluated indexes were built while other jobs shared the machine. The training of the PQ codebooks dominates the build of the million-scale indexes, whereas the graph construction over the shards and their merge dominates at one billion vectors. The only offline step that the query-adaptive search list adds is the calibration of Eq.~\eqref{eq:adaptive_list}, which searches the calibration queries once at each list size of a fixed grid and then fits the weights by ridge regression within seconds. The grid has 14 list sizes from 10 to 400 for the million-scale datasets and SIFT1B, and 18 list sizes from 10 to 1{,}000 for Deep1B. Calibration takes about 3 minutes on each million-scale dataset, and 1.6 and 4.8 minutes on SIFT1B and Deep1B, which is at most 1.5\% of the build time of a billion-scale index.
 
 \begin{table}[t]
 \centering
